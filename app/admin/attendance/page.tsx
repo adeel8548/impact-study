@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { sortByNewest } from "@/lib/utils";
 
 interface Class {
   id: string;
@@ -193,13 +194,15 @@ export default function AttendanceManagement() {
       if (!response.ok) throw new Error("Failed to fetch classes");
       const result = await response.json();
       const classesData = result.classes || result;
-      setClasses(Array.isArray(classesData) ? classesData : []);
+      const normalized = Array.isArray(classesData)
+        ? sortByNewest(classesData)
+        : [];
+      setClasses(normalized);
       if (
-        Array.isArray(classesData) &&
-        classesData.length > 0 &&
+        normalized.length > 0 &&
         !selectedClass
       ) {
-        setSelectedClass(classesData[0].id);
+        setSelectedClass(normalized[0].id);
       }
     } catch (error) {
       console.error("Error fetching classes:", error);
@@ -215,7 +218,10 @@ export default function AttendanceManagement() {
       if (!response.ok) throw new Error("Failed to fetch students");
       const result = await response.json();
       const studentsData = result.students || result;
-      setStudents(Array.isArray(studentsData) ? studentsData : []);
+      const normalized = Array.isArray(studentsData)
+        ? sortByNewest(studentsData)
+        : [];
+      setStudents(normalized);
     } catch (error) {
       console.error("Error fetching students:", error);
       toast.error("Failed to load students");
@@ -270,7 +276,10 @@ export default function AttendanceManagement() {
       if (!response.ok) throw new Error("Failed to fetch teachers");
       const result = await response.json();
       const teachersData = result.teachers || result;
-      setTeachers(Array.isArray(teachersData) ? teachersData : []);
+      const normalized = Array.isArray(teachersData)
+        ? sortByNewest(teachersData)
+        : [];
+      setTeachers(normalized);
     } catch (error) {
       console.error("Error fetching teachers:", error);
       toast.error("Failed to load teachers");

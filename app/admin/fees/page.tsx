@@ -24,6 +24,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { sortByNewest } from "@/lib/utils";
 
 const COLORS = ["#3b82f6", "#ef4444"];
 
@@ -52,7 +53,7 @@ export default function FeesManagement() {
       const response = await fetch("/api/fees");
       if (!response.ok) throw new Error("Failed to fetch fees");
       const data = await response.json();
-      setFees(data.fees || []);
+      setFees(sortByNewest(data.fees || []));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load fees data");
       console.error("[v0] Fees error:", err);

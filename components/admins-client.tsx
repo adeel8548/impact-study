@@ -8,6 +8,7 @@ import { AdminModal } from "@/components/modals/admin-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { deleteProfile } from "@/lib/actions/profiles";
 import type { Profile } from "@/lib/types";
+import { sortByNewest } from "@/lib/utils";
 
 interface AdminsClientComponentProps {
   initialAdmins: Profile[];
@@ -16,7 +17,7 @@ interface AdminsClientComponentProps {
 export function AdminsClientComponent({
   initialAdmins,
 }: AdminsClientComponentProps) {
-  const [admins, setAdmins] = useState(initialAdmins);
+  const [admins, setAdmins] = useState(sortByNewest(initialAdmins));
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Profile | undefined>();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);

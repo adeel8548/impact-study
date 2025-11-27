@@ -11,7 +11,7 @@ import { TeacherModal } from "@/components/modals/teacher-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { deleteTeacher } from "@/lib/actions/teacher";
 import { toast } from "sonner";
-import { getClasses } from "@/lib/actions/classes";
+import { sortByNewest } from "@/lib/utils";
 interface Teacher {
   id: string;
   name: string;
@@ -50,7 +50,8 @@ export default function TeacherManagement() {
     try {
       const res = await fetch(`/api/classes`);
       const json = await res.json();
-      setClasses(json.classes || []);
+      const classList = Array.isArray(json.classes) ? json.classes : [];
+      setClasses(sortByNewest(classList));
     } catch (err) {
       console.error("Failed to load classes:", err);
     }
@@ -63,7 +64,7 @@ export default function TeacherManagement() {
       const json = await res.json();
       console.log("Teachers API response:", json);
       const data = json.teachers || [];
-      setTeachers(data);
+      setTeachers(sortByNewest(data));
       console.log("Loaded teachers:", data);
       // Load classes for each teacher using API route
       const classesData: Record<string, any[]> = {};

@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
       query = query.eq("class_id", classId);
     }
 
+    query = query.order("created_at", { ascending: false, nullsLast: true });
+
     const { data, error } = await query;
 
     if (error) throw error;

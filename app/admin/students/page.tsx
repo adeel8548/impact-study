@@ -25,8 +25,14 @@ export default async function StudentManagement() {
     redirect("/teacher");
   }
 
-  const { data: students = [] } = await supabase.from("students").select("*");
-  const { data: classes = [] } = await supabase.from("classes").select("*");
+  const { data: students = [] } = await supabase
+    .from("students")
+    .select("*")
+    .order("created_at", { ascending: false, nullsLast: true });
+  const { data: classes = [] } = await supabase
+    .from("classes")
+    .select("*")
+    .order("created_at", { ascending: false, nullsLast: true });
 
   // Fetch current month fees for all students
   const now = new Date();

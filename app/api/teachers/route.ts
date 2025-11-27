@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("role", "teacher");
+      .eq("role", "teacher")
+      .order("created_at", { ascending: false, nullsLast: true });
 
     if (error) {
       console.error("Supabase select error (anon):", error);
@@ -21,7 +22,8 @@ export async function GET(request: NextRequest) {
         const { data: adminData, error: adminErr } = await adminClient
           .from("profiles")
           .select("*")
-          .eq("role", "teacher");
+          .eq("role", "teacher")
+          .order("created_at", { ascending: false, nullsLast: true });
 
         if (adminErr) {
           console.error("Admin client error fetching teachers:", adminErr);

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/client"; // supabase client
+import { sortByNewest } from "@/lib/utils";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 
 export default function ClassManagement() {
   const router = useRouter();
@@ -15,6 +17,10 @@ export default function ClassManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [className, setClassName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingClass, setEditingClass] = useState<any | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -31,13 +37,28 @@ export default function ClassManagement() {
     const supabase = createClient();
     if (!supabase) return;
 
-    const { data, error } = await supabase.from("classes").select("*");
-    if (data) setClasses(data);
+    const { data, error } = await supabase
+      .from("classes")
+      .select("*")
+      .order("created_at", { ascending: false, nullsLast: true });
+    if (data) setClasses(sortByNewest(data));
   };
 
-  // Add new class
-  const handleAddClass = async () => {
-    if (!className) return;
+  const handleOpenModal = (cls?: any) => {
+    if (cls) {
+      setEditingClass(cls);
+      setClassName(cls?.name || "");
+    } else {
+      setEditingClass(null);
+      setClassName("");
+    }
+    setModalOpen(true);
+  };
+
+  // Add or update class
+  const handleSaveClass = async () => {
+    const trimmedName = className.trim();
+    if (!trimmedName) return;
     setSaving(true);
 
     const supabase = createClient();
@@ -47,22 +68,72 @@ export default function ClassManagement() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("classes")
-      .insert([{ name: className }])
-      .select()
-      .single();
+    try {
+      if (editingClass) {
+        const { data, error } = await supabase
+          .from("classes")
+          .update({ name: trimmedName })
+          .eq("id", editingClass.id)
+          .select()
+          .single();
 
-    if (error) {
+        if (error) throw error;
+        setClasses((prev) =>
+          sortByNewest(
+            prev.map((cls) => (cls.id === data.id ? { ...cls, ...data } : cls)),
+          ),
+        );
+      } else {
+        const { data, error } = await supabase
+          .from("classes")
+          .insert([{ name: trimmedName }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        setClasses((prev) => sortByNewest([...prev, data]));
+      }
+      setClassName("");
+      setModalOpen(false);
+      setEditingClass(null);
+    } catch (error) {
       console.error(error);
+    } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteClick = (cls: any) => {
+    setClassToDelete(cls);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!classToDelete) return;
+    setDeleting(true);
+
+    const supabase = createClient();
+    if (!supabase) {
+      console.error("Supabase client not available");
+      setDeleting(false);
       return;
     }
 
-    setClasses([...classes, data]);
-    setClassName("");
-    setModalOpen(false);
-    setSaving(false);
+    try {
+      const { error } = await supabase
+        .from("classes")
+        .delete()
+        .eq("id", classToDelete.id);
+
+      if (error) throw error;
+      setClasses((prev) => prev.filter((cls) => cls.id !== classToDelete.id));
+      setClassToDelete(null);
+      setDeleteModalOpen(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (isLoading) return null;
@@ -84,7 +155,7 @@ export default function ClassManagement() {
             </div>
             <Button
               className="gap-2 bg-primary text-primary-foreground"
-              onClick={() => setModalOpen(true)}
+              onClick={() => handleOpenModal()}
             >
               <Plus className="w-4 h-4" />
               Add Class
@@ -107,6 +178,7 @@ export default function ClassManagement() {
                       size="sm"
                       variant="outline"
                       className="gap-1 bg-transparent"
+                      onClick={() => handleOpenModal(cls)}
                     >
                       <Edit2 className="w-3 h-3" />
                     </Button>
@@ -114,6 +186,7 @@ export default function ClassManagement() {
                       size="sm"
                       variant="outline"
                       className="gap-1 text-red-600 hover:text-red-700 bg-transparent"
+                      onClick={() => handleDeleteClick(cls)}
                     >
                       <Trash2 className="w-3 h-3" />
                     </Button>
@@ -130,7 +203,9 @@ export default function ClassManagement() {
           {modalOpen && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
               <div className="bg-white dark:bg-slate-900 p-6 rounded-lg w-80 shadow-lg">
-                <h2 className="text-lg font-bold mb-4">Add New Class</h2>
+                <h2 className="text-lg font-bold mb-4">
+                  {editingClass ? "Update Class" : "Add New Class"}
+                </h2>
                 <Input
                   placeholder="Class Name"
                   value={className}
@@ -138,16 +213,40 @@ export default function ClassManagement() {
                   className="mb-4"
                 />
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setModalOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setModalOpen(false);
+                      setEditingClass(null);
+                      setClassName("");
+                    }}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleAddClass} disabled={saving}>
-                    {saving ? "Saving..." : "Add"}
+                  <Button onClick={handleSaveClass} disabled={saving}>
+                    {saving
+                      ? "Saving..."
+                      : editingClass
+                        ? "Update"
+                        : "Add"}
                   </Button>
                 </div>
               </div>
             </div>
           )}
+          <DeleteConfirmationModal
+            open={deleteModalOpen}
+            onOpenChange={(open) => {
+              setDeleteModalOpen(open);
+              if (!open) {
+                setClassToDelete(null);
+              }
+            }}
+            title="Delete Class"
+            description="Are you sure you want to delete this class? This action cannot be undone."
+            onConfirm={handleConfirmDelete}
+            isLoading={deleting}
+          />
         </div>
       </div>
     </div>

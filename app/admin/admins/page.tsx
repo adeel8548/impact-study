@@ -27,7 +27,8 @@ export default async function AdminManagement() {
   const { data: admins = [] } = await supabase
     .from("profiles")
     .select("*")
-    .eq("role", "admin");
+    .eq("role", "admin")
+    .order("created_at", { ascending: false, nullsLast: true });
 
   return (
     <div className="min-h-screen bg-background">
