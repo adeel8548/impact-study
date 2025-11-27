@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,14 +17,76 @@ interface StudentsClientComponentProps {
   feeSummary?: { totalFees: number; paidFees: number; unpaidFees: number };
 }
 
+const normalizeClassName = (value?: string) => value?.trim().toLowerCase() ?? "";
+const CLASS_FILTER_STORAGE_KEY = "studentsClassFilter";
+const preferredClassOrder = [
+  "10th",
+  "9th",
+  "pre 9th",
+  "8th",
+  "pre 8th",
+  "7th",
+];
+
 export function StudentsClientComponent({
   initialStudents,
-  classes,
+  classes = [],
   feeSummary = { totalFees: 0, paidFees: 0, unpaidFees: 0 },
 }: StudentsClientComponentProps) {
   const [students, setStudents] = useState(initialStudents);
   const [searchTerm, setSearchTerm] = useState("");
-  const [classFilter, setClassFilter] = useState("");
+
+  const classOrderMap = useMemo(() => {
+    const map = new Map<string, number>();
+    preferredClassOrder.forEach((name, index) =>
+      map.set(normalizeClassName(name), index),
+    );
+    return map;
+  }, []);
+
+  const sortedClasses = useMemo(() => {
+    return [...classes].sort((a, b) => {
+      const normalizedA = normalizeClassName(a?.name);
+      const normalizedB = normalizeClassName(b?.name);
+      const rankA = classOrderMap.get(normalizedA);
+      const rankB = classOrderMap.get(normalizedB);
+
+      if (rankA !== undefined && rankB !== undefined) {
+        return rankA - rankB;
+      }
+      if (rankA !== undefined) return -1;
+      if (rankB !== undefined) return 1;
+      return normalizedA.localeCompare(normalizedB);
+    });
+  }, [classes, classOrderMap]);
+
+  const defaultClassId = useMemo(() => {
+    const ten = sortedClasses.find(
+      (cls) => normalizeClassName(cls?.name) === normalizeClassName("10th"),
+    )?.id;
+    return ten ? String(ten) : "";
+  }, [sortedClasses]);
+
+  const [classFilter, setClassFilter] = useState<string>("");
+
+  const persistClassFilter = useCallback((value: string) => {
+    setClassFilter(value);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(CLASS_FILTER_STORAGE_KEY, value);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedValue =
+      window.sessionStorage.getItem(CLASS_FILTER_STORAGE_KEY) || "";
+    if (storedValue) {
+      setClassFilter(storedValue);
+    } else if (defaultClassId) {
+      setClassFilter(defaultClassId);
+      window.sessionStorage.setItem(CLASS_FILTER_STORAGE_KEY, defaultClassId);
+    }
+  }, [defaultClassId]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | undefined>();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -34,16 +96,44 @@ export function StudentsClientComponent({
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student?.roll_number?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClass = !classFilter || student?.class_id === classFilter;
+    const matchesClass =
+      !classFilter || String(student?.class_id) === classFilter;
     return matchesSearch && matchesClass;
   });
+
+  const orderedStudents = useMemo(() => {
+    if (!filteredStudents) return [];
+
+    const getTimestamp = (student: any) =>
+      new Date(student?.created_at || student?.createdAt || 0).getTime();
+
+    return [...filteredStudents].sort((a, b) => {
+      const dateDiff = getTimestamp(b) - getTimestamp(a);
+      if (dateDiff !== 0) return dateDiff;
+
+      const classA = classes?.find((cls) => cls.id === a?.class_id);
+      const classB = classes?.find((cls) => cls.id === b?.class_id);
+      const rankA =
+        classOrderMap.get(normalizeClassName(classA?.name)) ??
+        preferredClassOrder.length;
+      const rankB =
+        classOrderMap.get(normalizeClassName(classB?.name)) ??
+        preferredClassOrder.length;
+
+      if (rankA !== rankB) return rankA - rankB;
+      return a.name.localeCompare(b.name);
+    });
+  }, [filteredStudents, classes, classOrderMap]);
 
   const handleOpenModal = (student?: Student) => {
     setSelectedStudent(student);
     setModalOpen(true);
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (payload?: { classId?: string }) => {
+    if (payload?.classId) {
+      persistClassFilter(String(payload.classId));
+    }
     window.location.reload();
   };
 
@@ -139,11 +229,11 @@ export function StudentsClientComponent({
           <select
             className="px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
+            onChange={(e) => persistClassFilter(e.target.value)}
           >
             <option value="">All Classes</option>
-            {classes?.map((cls) => (
-              <option key={cls.id} value={cls.id}>
+            {sortedClasses?.map((cls) => (
+              <option key={cls.id} value={String(cls.id)}>
                 {cls?.name}
               </option>
             ))}
@@ -178,7 +268,7 @@ export function StudentsClientComponent({
               </tr>
             </thead>
             <tbody>
-              {filteredStudents?.map((student) => {
+              {orderedStudents?.map((student) => {
                 const studentClass = classes?.find(
                   (c) => c.id === student?.class_id,
                 );

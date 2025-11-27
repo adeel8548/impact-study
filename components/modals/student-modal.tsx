@@ -28,7 +28,7 @@ interface StudentModalProps {
   onOpenChange: (open: boolean) => void;
   student?: any;
   classes: SchoolClass[];
-  onSuccess: () => void;
+  onSuccess: (payload: { classId: string }) => void;
 }
 
 export function StudentModal({
@@ -75,7 +75,7 @@ export function StudentModal({
           setError(result.error);
         } else {
           onOpenChange(false);
-          onSuccess();
+          onSuccess({ classId: formData.class_id });
         }
       } else {
         const result = await createStudent({
@@ -85,7 +85,7 @@ export function StudentModal({
           setError(result.error);
         } else {
           onOpenChange(false);
-          onSuccess();
+          onSuccess({ classId: formData.class_id });
         }
       }
     } catch (err) {
