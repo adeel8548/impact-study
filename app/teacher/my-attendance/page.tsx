@@ -32,7 +32,9 @@ export default function TeacherMyAttendancePage() {
   const [outDisabled, setOutDisabled] = useState(false);
   const midnightTimerRef = useRef<any>(null);
   // Store today's attendance row UUID so we can update it when marking OUT
-  const [todayAttendanceId, setTodayAttendanceId] = useState<string | null>(null);
+  const [todayAttendanceId, setTodayAttendanceId] = useState<string | null>(
+    null
+  );
 
   // Range filter for this view
   const [rangeOption, setRangeOption] = useState<string>("currentMonth");
@@ -189,7 +191,7 @@ export default function TeacherMyAttendancePage() {
           new Date().getMonth() + 1
         ).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
         const filtered = (prev || []).filter((a) => a.date !== dateStr);
-        
+
         // Normalize date on returned record
         if (updatedRecord && updatedRecord.date) {
           try {
@@ -199,14 +201,14 @@ export default function TeacherMyAttendancePage() {
             ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           } catch (e) {}
         }
-        
+
         return [...filtered, updatedRecord];
       });
 
       toast.success("OUT time recorded");
       setOutDisabled(true);
       scheduleEnableAtMidnight();
-        window.location.reload();
+      window.location.reload();
     } catch (error) {
       console.error("Error marking OUT:", error);
       toast.error("Failed to record OUT time");
@@ -424,10 +426,11 @@ export default function TeacherMyAttendancePage() {
   };
 
   const getStatusColor = (record: AttendanceRecord | undefined) => {
-    if (!record) return "bg-gray-200 dark:bg-gray-700";
-    if (record.status === "present") return "bg-green-500";
-    if (record.status === "absent") return "bg-red-500";
-    return "bg-gray-400 dark:bg-gray-600";
+    if (!record) return "bg-gray-200 text-gray-700"; // No record default
+    if (record.status === "present") return "bg-green-500 text-white";
+    if (record.status === "absent") return "bg-red-500 text-white";
+    if (record.status === "leave") return "bg-gray-400 text-white";
+    return "bg-gray-200 text-gray-700";
   };
 
   const getStatusText = (day: number) => {
@@ -443,7 +446,11 @@ export default function TeacherMyAttendancePage() {
     if (!iso) return "";
     try {
       const d = new Date(iso);
-      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+      return d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
     } catch (e) {
       return "";
     }
@@ -609,47 +616,55 @@ export default function TeacherMyAttendancePage() {
                       <button
                         key={day}
                         onClick={() => {
-                          if (
-                            !sunday &&
-                            (today_ || (record && record.status))
-                          ) {
+                          if (!sunday) {
+                            const record = getAttendanceRecord(day);
+
+                            // 🟦 STATUS normal mapping
+                            let currentStatus: "present" | "absent" | "leave" =
+                              "leave";
+                            if (record?.status === "present")
+                              currentStatus = "present";
+                            else if (record?.status === "absent")
+                              currentStatus = "absent";
+                            else if (record?.status === "leave")
+                              currentStatus = "leave";
+
+                            // ✅ Ab jo bhi button click ho ga, ye 3 me se hi string jayegi
                             handleAttendanceToggle(
                               `${year}-${String(month + 1).padStart(
                                 2,
                                 "0"
                               )}-${String(day).padStart(2, "0")}`,
-                              record?.status || null
+                              currentStatus
                             );
+
+                            window.location.reload(); // optional ✅
                           }
                         }}
-                        disabled={
-                          sunday || (past && !record) || (!today_ && !record)
-                        }
-                        className={`
-                        aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all
-                        ${
-                          sunday
-                            ? "bg-gray-200 dark:bg-gray-700 text-muted-foreground cursor-default"
-                            : today_
-                            ? "border-2 border-primary bg-primary/10 text-foreground cursor-pointer hover:bg-primary/20"
-                            : past || record
-                            ? `${getStatusColor(
-                                record
-                              )} text-white cursor-pointer hover:opacity-80`
-                            : "bg-gray-100 dark:bg-gray-800 text-muted-foreground cursor-default opacity-50"
-                        }
-                      `}
-                        title={
-                          sunday
-                            ? "Sunday - Off"
-                            : today_
-                            ? "Click to mark attendance"
-                            : `${record?.status ? record.status : "No record"}`
-                        }
+                        disabled={sunday}
+                        className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all ${
+                          !record
+                            ? "bg-gray-200 text-gray-700"
+                            : record.status === "present"
+                            ? "bg-green-500 text-white"
+                            : record.status === "absent"
+                            ? "bg-red-500 text-white"
+                            : record.status === "leave"
+                            ? "bg-gray-400 text-white"
+                            : "bg-gray-200 text-gray-700"
+                        }`}
                       >
                         <div className="text-center">
                           <div className="text-xs opacity-70">{day}</div>
-                          <div className="text-base">{getStatusText(day)}</div>
+                          <div className="text-base">
+                            {sunday
+                              ? "Off"
+                              : record?.status === "present"
+                              ? "✓"
+                              : record?.status === "absent"
+                              ? "✗"
+                              : "—"}
+                          </div>
                         </div>
                       </button>
                     );
@@ -670,9 +685,14 @@ export default function TeacherMyAttendancePage() {
                   const today = new Date();
                   const dateStr = `${today.getFullYear()}-${String(
                     today.getMonth() + 1
-                  ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+                  ).padStart(2, "0")}-${String(today.getDate()).padStart(
+                    2,
+                    "0"
+                  )}`;
                   const rec = attendance.find((a) => a.date === dateStr);
-                  return rec && (rec as any).out_time ? formatTime((rec as any).out_time) : "Not marked";
+                  return rec && (rec as any).out_time
+                    ? formatTime((rec as any).out_time)
+                    : "Not marked";
                 })()}
               </p>
             </div>
@@ -686,7 +706,11 @@ export default function TeacherMyAttendancePage() {
                     : "bg-primary text-primary-foreground hover:bg-primary/90"
                 }`}
               >
-                {outDisabled ? "OUT Marked" : isFetching ? "Saving..." : "Mark OUT"}
+                {outDisabled
+                  ? "OUT Marked"
+                  : isFetching
+                  ? "Saving..."
+                  : "Mark OUT"}
               </button>
             </div>
           </div>
