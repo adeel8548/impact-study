@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [envError, setEnvError] = useState("");
   const router = useRouter();
-
+ const year = new Date().getFullYear();
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -80,7 +80,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="p-8 shadow-lg">
+        <Card className="p-8 shadow-lg ">
           <div className="text-center mb-8">
             <div className="  rounded-lg flex items-center justify-center mx-auto mb-4 ">
                <img src={Logo.src} alt="Impact Academy Logo" className="w-20 h-20 md:w-48 md:h-48" />
@@ -91,9 +91,9 @@ export default function LoginPage() {
             <p className="text-muted-foreground mt-2">Management System</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4 ">
             {(error || envError) && (
-              <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex gap-3 p-3  bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-600 dark:text-red-400">
                   {error || envError}
@@ -130,21 +130,22 @@ export default function LoginPage() {
                 required
               />
             </div>
-
+              <div className="pb-10">
             <Button
               type="submit"
               disabled={isLoading || !!envError}
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all"
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all "
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
+            </div>
           </form>
 
        
         </Card>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Impact Academy Management System
+        <p className="absolute bottom-1 left-0 right-0 text-center text-sm text-muted-foreground mt-6">
+         Design & Developed by Adeel Tariq All rights reserved © {year} 
         </p>
       </div>
     </div>
