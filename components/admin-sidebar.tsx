@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { BarChart3, Users, BookOpen, Clock, DollarSign, Briefcase, LogOut, Menu, X, Home } from "lucide-react"
 import { useState } from "react"
-
+import Logo from '@/app/Assests/imgs/logo_2.png'
 const menuItems = [
   // { href: "/admin", label: "Dashboard", icon: Home },
   { href: "/admin/students", label: "Students", icon: Users },
@@ -40,14 +40,14 @@ export function AdminSidebar() {
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="p-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-white" />
+        <div className="p-6 border-b text-center border-sidebar-border">
+          <div className="flex justify-center items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+             <img src={Logo.src} alt="SchoolHub Logo" className="w-10 h-10" />
             </div>
-            <h1 className="text-xl font-bold text-sidebar-foreground">SchoolHub</h1>
+           
           </div>
-          <p className="text-xs text-muted-foreground">Admin Portal</p>
+           <h1 className="text-xl font-bold text-sidebar-foreground">Impact Academy</h1>
         </div>
 
         <nav className="flex flex-col gap-1 p-4 flex-1">

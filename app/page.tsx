@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, Lock, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-
+import Logo from '@/app/Assests/imgs/logo_2.png'
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,8 +82,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Card className="p-8 shadow-lg">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-md">
-              <Lock className="w-8 h-8 text-white" />
+            <div className="  rounded-lg flex items-center justify-center mx-auto mb-4 ">
+               <img src={Logo.src} alt="Impact Academy Logo" className="w-20 h-20 md:w-48 md:h-48" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">
               Impact Academy
@@ -140,29 +140,11 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-            <p className="text-xs text-muted-foreground font-semibold mb-3">
-              Demo Credentials:
-            </p>
-            <div className="space-y-2 text-xs">
-              <p>
-                <span className="font-semibold">Admin:</span> admin@school.com /
-                admin123
-              </p>
-              <p>
-                <span className="font-semibold">Teacher:</span>{" "}
-                teacher@school.com / teacher123
-              </p>
-              <p>
-                <span className="font-semibold">Student:</span>{" "}
-                student@school.com / student123
-              </p>
-            </div>
-          </div>
+       
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Professional School Management System
+          Impact Academy Management System
         </p>
       </div>
     </div>
