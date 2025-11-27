@@ -59,7 +59,7 @@ export function AttendanceGrid({
         0,
         0,
         1,
-        0
+        0,
       );
       const ms = nextMidnight.getTime() - current.getTime();
 
@@ -92,7 +92,7 @@ export function AttendanceGrid({
 
   const isHoliday = (date: Date): boolean => {
     const dateStr = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
+      date.getMonth() + 1,
     ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     return holidays.some((h) => h.date === dateStr);
   };
@@ -215,7 +215,7 @@ export function AttendanceGrid({
         <div className="flex gap-2">
           {dates.map((date) => {
             const dateStr = `${date.getFullYear()}-${String(
-              date.getMonth() + 1
+              date.getMonth() + 1,
             ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
             const isOff = isOffDay(date);
             const isPast = isPastDate(date);
@@ -257,8 +257,8 @@ export function AttendanceGrid({
                       status === "present"
                         ? "default"
                         : status === "absent"
-                        ? "destructive"
-                        : "outline"
+                          ? "destructive"
+                          : "outline"
                     }
                     size="sm"
                     onClick={() => {
@@ -271,15 +271,15 @@ export function AttendanceGrid({
                       status === "present"
                         ? "bg-green-500 hover:bg-green-600"
                         : status === "absent"
-                        ? "bg-red-500 hover:bg-red-600"
-                        : ""
+                          ? "bg-red-500 hover:bg-red-600"
+                          : ""
                     }`}
                   >
                     {status === "present"
                       ? "✓ Present"
                       : status === "absent"
-                      ? "✗ Absent"
-                      : "—"}
+                        ? "✗ Absent"
+                        : "—"}
                   </Button>
                 )}
                 {/* Show timestamp for admin if requested and we have a record */}

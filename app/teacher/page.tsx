@@ -52,7 +52,7 @@ export default async function TeacherDashboard() {
     : { data: [] };
 
   const todayAttendance = (attendance || []).filter(
-    (a) => new Date(a.date).toDateString() === new Date().toDateString()
+    (a) => new Date(a.date).toDateString() === new Date().toDateString(),
   );
 
   const attendanceData = [
@@ -147,7 +147,7 @@ export default async function TeacherDashboard() {
           <div className="space-y-3">
             {(classes || []).map((cls) => {
               const classStudents = (students || []).filter(
-                (s) => s.class_id === cls.id
+                (s) => s.class_id === cls.id,
               );
               return (
                 <div

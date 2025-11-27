@@ -1,66 +1,72 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Plus, Search, Edit2, Trash2, User } from "lucide-react"
-import { StudentModal } from "@/components/modals/student-modal"
-import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal"
-import { FeeStatusButton } from "@/components/fee-status-button"
-import { deleteStudent } from "@/lib/actions/students"
-import type { Student, Class as SchoolClass } from "@/lib/types"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Plus, Search, Edit2, Trash2, User } from "lucide-react";
+import { StudentModal } from "@/components/modals/student-modal";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
+import { FeeStatusButton } from "@/components/fee-status-button";
+import { deleteStudent } from "@/lib/actions/students";
+import type { Student, Class as SchoolClass } from "@/lib/types";
 
 interface StudentsClientComponentProps {
-  initialStudents: any[]
-  classes: SchoolClass[]
+  initialStudents: any[];
+  classes: SchoolClass[];
 }
 
-export function StudentsClientComponent({ initialStudents, classes }: StudentsClientComponentProps) {
-  const [students, setStudents] = useState(initialStudents)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [classFilter, setClassFilter] = useState("")
-  const [modalOpen, setModalOpen] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState<Student | undefined>()
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [studentToDelete, setStudentToDelete] = useState<string | null>(null)
+export function StudentsClientComponent({
+  initialStudents,
+  classes,
+}: StudentsClientComponentProps) {
+  const [students, setStudents] = useState(initialStudents);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [classFilter, setClassFilter] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | undefined>();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
 
   const filteredStudents = students?.filter((student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student?.roll_number?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesClass = !classFilter || student?.class_id === classFilter
-    return matchesSearch && matchesClass
-  })
+      student?.roll_number?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesClass = !classFilter || student?.class_id === classFilter;
+    return matchesSearch && matchesClass;
+  });
 
   const handleOpenModal = (student?: Student) => {
-    setSelectedStudent(student)
-    setModalOpen(true)
-  }
+    setSelectedStudent(student);
+    setModalOpen(true);
+  };
 
   const handleSuccess = () => {
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   const handleDeleteClick = (studentId: string) => {
-    setStudentToDelete(studentId)
-    setDeleteModalOpen(true)
-  }
+    setStudentToDelete(studentId);
+    setDeleteModalOpen(true);
+  };
 
   const handleConfirmDelete = async () => {
     if (studentToDelete) {
-      await deleteStudent(studentToDelete)
-      setStudents(students?.filter((s) => s.id !== studentToDelete))
-      setDeleteModalOpen(false)
-      setStudentToDelete(null)
+      await deleteStudent(studentToDelete);
+      setStudents(students?.filter((s) => s.id !== studentToDelete));
+      setDeleteModalOpen(false);
+      setStudentToDelete(null);
     }
-  }
+  };
 
   return (
     <>
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1">
-          <Button onClick={() => handleOpenModal()} className="gap-2 bg-primary text-primary-foreground">
+          <Button
+            onClick={() => handleOpenModal()}
+            className="gap-2 bg-primary text-primary-foreground"
+          >
             <Plus className="w-4 h-4" />
             Add Student
           </Button>
@@ -100,36 +106,63 @@ export function StudentsClientComponent({ initialStudents, classes }: StudentsCl
           <table className="w-full">
             <thead className="bg-secondary border-b border-border">
               <tr>
-                <th className="text-left p-4 font-semibold text-foreground">Name</th>
-                <th className="text-left p-4 font-semibold text-foreground">Roll No.</th>
-                <th className="text-left p-4 font-semibold text-foreground">Class</th>
-                <th className="text-left p-4 font-semibold text-foreground">Email</th>
-                 
-                <th className="text-center p-4 font-semibold text-foreground">Fees Status</th>
-                <th className="text-center p-4 font-semibold text-foreground">Actions</th>
+                <th className="text-left p-4 font-semibold text-foreground">
+                  Name
+                </th>
+                <th className="text-left p-4 font-semibold text-foreground">
+                  Roll No.
+                </th>
+                <th className="text-left p-4 font-semibold text-foreground">
+                  Class
+                </th>
+                <th className="text-left p-4 font-semibold text-foreground">
+                  Email
+                </th>
+
+                <th className="text-center p-4 font-semibold text-foreground">
+                  Fees Status
+                </th>
+                <th className="text-center p-4 font-semibold text-foreground">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredStudents?.map((student) => {
-                const studentClass = classes?.find((c) => c.id === student?.class_id)
+                const studentClass = classes?.find(
+                  (c) => c.id === student?.class_id,
+                );
                 return (
-                  <tr key={student.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                  <tr
+                    key={student.id}
+                    className="border-b border-border hover:bg-secondary/50 transition-colors"
+                  >
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                           <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <span className="font-medium text-foreground">{student.name}</span>
+                        <span className="font-medium text-foreground">
+                          {student.name}
+                        </span>
                       </div>
                     </td>
-                    <td className="p-4 text-foreground">{student?.roll_number}</td>
-                    <td className="p-4 text-foreground">{studentClass?.name}</td>
-                    <td className="p-4 text-muted-foreground text-sm">{student.email || "—"}</td>
-                    
+                    <td className="p-4 text-foreground">
+                      {student?.roll_number}
+                    </td>
+                    <td className="p-4 text-foreground">
+                      {studentClass?.name}
+                    </td>
+                    <td className="p-4 text-muted-foreground text-sm">
+                      {student.email || "—"}
+                    </td>
+
                     <td className="p-4">
                       {student.currentFee ? (
                         <div className="flex flex-col ">
-                          <span className="font-medium text-foreground">PKR {student.currentFee.amount}</span>
+                          <span className="font-medium text-foreground">
+                            PKR {student.currentFee.amount}
+                          </span>
                           <FeeStatusButton
                             feeId={student.currentFee.id}
                             studentId={student.id}
@@ -138,7 +171,9 @@ export function StudentsClientComponent({ initialStudents, classes }: StudentsCl
                           />
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">No fees set</span>
+                        <span className="text-xs text-muted-foreground">
+                          No fees set
+                        </span>
                       )}
                     </td>
                     <td className="p-4">
@@ -164,7 +199,7 @@ export function StudentsClientComponent({ initialStudents, classes }: StudentsCl
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -194,5 +229,5 @@ export function StudentsClientComponent({ initialStudents, classes }: StudentsCl
         onConfirm={handleConfirmDelete}
       />
     </>
-  )
+  );
 }

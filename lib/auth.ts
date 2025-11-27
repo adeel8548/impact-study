@@ -1,5 +1,5 @@
 // Simple in-memory authentication (for demo; use database in production)
-let currentUser: any = null
+let currentUser: any = null;
 
 export const mockUsers = [
   {
@@ -16,25 +16,27 @@ export const mockUsers = [
     name: "John Teacher",
     role: "teacher" as const,
   },
-]
+];
 
 export function login(email: string, password: string) {
-  const user = mockUsers.find((u) => u.email === email && u.password === password)
+  const user = mockUsers.find(
+    (u) => u.email === email && u.password === password,
+  );
   if (user) {
-    currentUser = user
-    return user
+    currentUser = user;
+    return user;
   }
-  return null
+  return null;
 }
 
 export function logout() {
-  currentUser = null
+  currentUser = null;
 }
 
 export function getCurrentUser() {
-  return currentUser
+  return currentUser;
 }
 
 export function isAuthenticated() {
-  return currentUser !== null
+  return currentUser !== null;
 }

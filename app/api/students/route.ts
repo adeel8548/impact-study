@@ -1,48 +1,62 @@
-import { createClient } from "@/lib/supabase/server"
-import { type NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient()
-  const classId = request.nextUrl.searchParams.get("classId")
+  const supabase = await createClient();
+  const classId = request.nextUrl.searchParams.get("classId");
 
   try {
-    let query = supabase.from("students").select("*")
+    let query = supabase.from("students").select("*");
 
     if (classId) {
-      query = query.eq("class_id", classId)
+      query = query.eq("class_id", classId);
     }
 
-    const { data, error } = await query
+    const { data, error } = await query;
 
-    if (error) throw error
+    if (error) throw error;
 
-    return NextResponse.json({ students: data || [], success: true })
+    return NextResponse.json({ students: data || [], success: true });
   } catch (error) {
-    console.error("Error fetching students:", error)
+    console.error("Error fetching students:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch students", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch students",
+        success: false,
+      },
       { status: 500 },
-    )
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   try {
-    const body = await request.json()
+    const body = await request.json();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized", success: false }, { status: 401 })
+      return NextResponse.json(
+        { error: "Unauthorized", success: false },
+        { status: 401 },
+      );
     }
 
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", user.id).single()
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("school_id")
+      .eq("id", user.id)
+      .single();
 
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found", success: false }, { status: 404 })
+      return NextResponse.json(
+        { error: "Profile not found", success: false },
+        { status: 404 },
+      );
     }
 
     const { data, error } = await supabase
@@ -51,16 +65,20 @@ export async function POST(request: NextRequest) {
         ...body,
         school_id: profile.school_id,
       })
-      .select()
+      .select();
 
-    if (error) throw error
+    if (error) throw error;
 
-    return NextResponse.json({ student: data?.[0], success: true })
+    return NextResponse.json({ student: data?.[0], success: true });
   } catch (error) {
-    console.error("Error creating student:", error)
+    console.error("Error creating student:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create student", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to create student",
+        success: false,
+      },
       { status: 500 },
-    )
+    );
   }
 }

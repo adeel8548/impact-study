@@ -51,7 +51,7 @@ export default function TeacherAttendance() {
         const firstOfThisMonth = new Date(
           today.getFullYear(),
           today.getMonth(),
-          1
+          1,
         );
         end = new Date(firstOfThisMonth.getTime() - 1 * 24 * 60 * 60 * 1000);
         start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -65,21 +65,21 @@ export default function TeacherAttendance() {
         start = new Date(
           today.getFullYear(),
           today.getMonth() - 3,
-          today.getDate()
+          today.getDate(),
         );
         break;
       case "last6Months":
         start = new Date(
           today.getFullYear(),
           today.getMonth() - 6,
-          today.getDate()
+          today.getDate(),
         );
         break;
       case "lastYear":
         start = new Date(
           today.getFullYear() - 1,
           today.getMonth(),
-          today.getDate()
+          today.getDate(),
         );
         break;
       default:
@@ -161,7 +161,7 @@ export default function TeacherAttendance() {
         try {
           const d = new Date(a.date);
           const localDate = toLocalDate(
-            new Date(d.getFullYear(), d.getMonth(), d.getDate())
+            new Date(d.getFullYear(), d.getMonth(), d.getDate()),
           );
           return { ...a, date: localDate };
         } catch (e) {
@@ -182,7 +182,7 @@ export default function TeacherAttendance() {
   const loadAttendance = async () => {
     try {
       const response = await fetch(
-        `/api/attendance?classId=${selectedClass}&teacherId=${teacherId}`
+        `/api/attendance?classId=${selectedClass}&teacherId=${teacherId}`,
       );
       const data = await response.json();
       const attendanceMap: Record<string, "present" | "absent" | "leave"> = {};
@@ -191,7 +191,7 @@ export default function TeacherAttendance() {
         data.attendance.forEach((record: any) => {
           const rDate = new Date(record.date);
           const localDate = toLocalDate(
-            new Date(rDate.getFullYear(), rDate.getMonth(), rDate.getDate())
+            new Date(rDate.getFullYear(), rDate.getMonth(), rDate.getDate()),
           );
           if (localDate === selectedDate) {
             attendanceMap[record.student_id] = record.status;
@@ -222,7 +222,7 @@ export default function TeacherAttendance() {
         const present = recs.filter((x: any) => x.status === "present").length;
         const absent = recs.filter((x: any) => x.status === "absent").length;
         const notMarked = recs.filter(
-          (x: any) => !x.status || x.status === "notmarked"
+          (x: any) => !x.status || x.status === "notmarked",
         ).length;
         const total = recs.length;
 
@@ -256,7 +256,7 @@ export default function TeacherAttendance() {
 
   const handleAttendanceChange = (
     studentId: string,
-    status: "present" | "absent" | "leave"
+    status: "present" | "absent" | "leave",
   ) => {
     setAttendance((prev) => ({
       ...prev,
@@ -446,7 +446,7 @@ export default function TeacherAttendance() {
                         <td className="p-4 text-foreground">
                           {student.roll_number}
                         </td>
-                       
+
                         <td className="p-4 text-foreground text-sm font-mono bg-secondary/30 rounded px-2 py-1">
                           {classes.find((cls) => cls.id === selectedClass)
                             ?.name || "N/A"}

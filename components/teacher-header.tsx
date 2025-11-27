@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Bell } from "lucide-react";
-import Logo from '@/app/Assests/imgs/logo_2.png'
+import Logo from "@/app/Assests/imgs/logo_2.png";
 export function TeacherHeader() {
   const router = useRouter();
   const pathname = usePathname();
@@ -25,7 +25,11 @@ export function TeacherHeader() {
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10  rounded-lg flex items-center justify-center">
-           <img src={Logo.src} alt="Impact Academy Logo" className="w-10 h-10" />
+            <img
+              src={Logo.src}
+              alt="Impact Academy Logo"
+              className="w-10 h-10"
+            />
           </div>
           <div>
             <h1 className="font-bold text-foreground">

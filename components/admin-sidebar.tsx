@@ -1,11 +1,22 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { BarChart3, Users, BookOpen, Clock, DollarSign, Briefcase, LogOut, Menu, X, Home } from "lucide-react"
-import { useState } from "react"
-import Logo from '@/app/Assests/imgs/logo_2.png'
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  BarChart3,
+  Users,
+  BookOpen,
+  Clock,
+  DollarSign,
+  Briefcase,
+  LogOut,
+  Menu,
+  X,
+  Home,
+} from "lucide-react";
+import { useState } from "react";
+import Logo from "@/app/Assests/imgs/logo_2.png";
 const menuItems = [
   // { href: "/admin", label: "Dashboard", icon: Home },
   { href: "/admin/students", label: "Students", icon: Users },
@@ -14,17 +25,17 @@ const menuItems = [
   { href: "/admin/attendance", label: "Attendance", icon: Clock },
   // { href: "/admin/fees", label: "Fees", icon: DollarSign },
   // { href: "/admin/salaries", label: "Salaries", icon: BarChart3 },
-]
+];
 
 export function AdminSidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("currentUser")
-    router.push("/")
-  }
+    localStorage.removeItem("currentUser");
+    router.push("/");
+  };
 
   return (
     <>
@@ -43,17 +54,19 @@ export function AdminSidebar() {
         <div className="p-6 border-b text-center border-sidebar-border">
           <div className="flex justify-center items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-             <img src={Logo.src} alt="SchoolHub Logo" className="w-10 h-10" />
+              <img src={Logo.src} alt="SchoolHub Logo" className="w-10 h-10" />
             </div>
-           
           </div>
-           <h1 className="text-xl font-bold text-sidebar-foreground">Impact Academy</h1>
+          <h1 className="text-xl font-bold text-sidebar-foreground">
+            Impact Academy
+          </h1>
         </div>
 
         <nav className="flex flex-col gap-1 p-4 flex-1">
           {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}
@@ -68,17 +81,20 @@ export function AdminSidebar() {
                 <Icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
               </Link>
-            )
+            );
           })}
         </nav>
 
         <div className="p-4 border-t border-sidebar-border">
-          <Button onClick={handleLogout} className="w-full justify-center gap-2 bg-red-500 hover:bg-red-600 text-white">
+          <Button
+            onClick={handleLogout}
+            className="w-full justify-center gap-2 bg-red-500 hover:bg-red-600 text-white"
+          >
             <LogOut className="w-4 h-4" />
             Logout
           </Button>
         </div>
       </aside>
     </>
-  )
+  );
 }

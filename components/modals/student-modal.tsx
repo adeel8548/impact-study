@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,7 @@ export function StudentModal({
     phone: student?.phone || "",
     guardian_name: student?.guardian_name || "",
     fees: student?.fees || "",
-  })
+  });
 
   // <-- Add this useEffect here
   useEffect(() => {
@@ -60,8 +60,8 @@ export function StudentModal({
       phone: student?.phone || "",
       guardian_name: student?.guardian_name || "",
       fees: student?.fees || "",
-    })
-  }, [student])
+    });
+  }, [student]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

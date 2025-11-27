@@ -25,7 +25,7 @@ export default function TeacherMyAttendancePage() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [isFetching, setIsFetching] = useState(false);
   const [teacher, setTeacher] = useState<{ id: string; name: string } | null>(
-    null
+    null,
   );
 
   // OUT button state: disabled until midnight after marking out
@@ -33,7 +33,7 @@ export default function TeacherMyAttendancePage() {
   const midnightTimerRef = useRef<any>(null);
   // Store today's attendance row UUID so we can update it when marking OUT
   const [todayAttendanceId, setTodayAttendanceId] = useState<string | null>(
-    null
+    null,
   );
 
   // Range filter for this view
@@ -55,7 +55,7 @@ export default function TeacherMyAttendancePage() {
         const firstOfThisMonth = new Date(
           today.getFullYear(),
           today.getMonth(),
-          1
+          1,
         );
         end = new Date(firstOfThisMonth.getTime() - 1 * 24 * 60 * 60 * 1000);
         start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -69,21 +69,21 @@ export default function TeacherMyAttendancePage() {
         start = new Date(
           today.getFullYear(),
           today.getMonth() - 3,
-          today.getDate()
+          today.getDate(),
         );
         break;
       case "last6Months":
         start = new Date(
           today.getFullYear(),
           today.getMonth() - 6,
-          today.getDate()
+          today.getDate(),
         );
         break;
       case "lastYear":
         start = new Date(
           today.getFullYear() - 1,
           today.getMonth(),
-          today.getDate()
+          today.getDate(),
         );
         break;
       default:
@@ -96,11 +96,11 @@ export default function TeacherMyAttendancePage() {
     return {
       start: `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(
         2,
-        "0"
+        "0",
       )}-${String(s.getDate()).padStart(2, "0")}`,
       end: `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(
         2,
-        "0"
+        "0",
       )}-${String(e.getDate()).padStart(2, "0")}`,
     };
   };
@@ -121,7 +121,7 @@ export default function TeacherMyAttendancePage() {
       0,
       0,
       0,
-      0
+      0,
     );
     const ms = nextMidnight.getTime() - now.getTime();
     midnightTimerRef.current = setTimeout(() => {
@@ -136,7 +136,7 @@ export default function TeacherMyAttendancePage() {
     try {
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(
-        today.getMonth() + 1
+        today.getMonth() + 1,
       ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
       const todayRecord = attendance.find((a) => a.date === todayStr);
       if (todayRecord) {
@@ -188,7 +188,7 @@ export default function TeacherMyAttendancePage() {
       // Update attendance state with the returned record
       setAttendance((prev) => {
         const dateStr = `${new Date().getFullYear()}-${String(
-          new Date().getMonth() + 1
+          new Date().getMonth() + 1,
         ).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
         const filtered = (prev || []).filter((a) => a.date !== dateStr);
 
@@ -197,7 +197,7 @@ export default function TeacherMyAttendancePage() {
           try {
             const d = new Date(updatedRecord.date);
             updatedRecord.date = `${d.getFullYear()}-${String(
-              d.getMonth() + 1
+              d.getMonth() + 1,
             ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           } catch (e) {}
         }
@@ -237,7 +237,7 @@ export default function TeacherMyAttendancePage() {
         try {
           const d = new Date(a.date);
           const localDate = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
+            d.getMonth() + 1,
           ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           return { ...a, date: localDate };
         } catch (e) {
@@ -293,7 +293,7 @@ export default function TeacherMyAttendancePage() {
         try {
           const d = new Date(a.date);
           const localDate = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
+            d.getMonth() + 1,
           ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           return { ...a, date: localDate };
         } catch (e) {
@@ -325,7 +325,7 @@ export default function TeacherMyAttendancePage() {
 
   const handleAttendanceToggle = async (
     date: string,
-    currentStatus: "present" | "absent" | null
+    currentStatus: "present" | "absent" | null,
   ) => {
     if (!teacher) return;
 
@@ -357,7 +357,7 @@ export default function TeacherMyAttendancePage() {
         try {
           const d = new Date(updatedRecord.date);
           updatedRecord.date = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
+            d.getMonth() + 1,
           ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         } catch (e) {
           // ignore
@@ -406,7 +406,7 @@ export default function TeacherMyAttendancePage() {
 
   const getAttendanceRecord = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-      day
+      day,
     ).padStart(2, "0")}`;
     return attendance.find((a) => a.date === dateStr);
   };
@@ -591,7 +591,7 @@ export default function TeacherMyAttendancePage() {
                       >
                         {day}
                       </div>
-                    )
+                    ),
                   )}
                 </div>
 
@@ -633,9 +633,9 @@ export default function TeacherMyAttendancePage() {
                             handleAttendanceToggle(
                               `${year}-${String(month + 1).padStart(
                                 2,
-                                "0"
+                                "0",
                               )}-${String(day).padStart(2, "0")}`,
-                              currentStatus
+                              currentStatus,
                             );
 
                             window.location.reload(); // optional ✅
@@ -646,12 +646,12 @@ export default function TeacherMyAttendancePage() {
                           !record
                             ? "bg-gray-200 text-gray-700"
                             : record.status === "present"
-                            ? "bg-green-500 text-white"
-                            : record.status === "absent"
-                            ? "bg-red-500 text-white"
-                            : record.status === "leave"
-                            ? "bg-gray-400 text-white"
-                            : "bg-gray-200 text-gray-700"
+                              ? "bg-green-500 text-white"
+                              : record.status === "absent"
+                                ? "bg-red-500 text-white"
+                                : record.status === "leave"
+                                  ? "bg-gray-400 text-white"
+                                  : "bg-gray-200 text-gray-700"
                         }`}
                       >
                         <div className="text-center">
@@ -660,10 +660,10 @@ export default function TeacherMyAttendancePage() {
                             {sunday
                               ? "Off"
                               : record?.status === "present"
-                              ? "✓"
-                              : record?.status === "absent"
-                              ? "✗"
-                              : "—"}
+                                ? "✓"
+                                : record?.status === "absent"
+                                  ? "✗"
+                                  : "—"}
                           </div>
                         </div>
                       </button>
@@ -684,10 +684,10 @@ export default function TeacherMyAttendancePage() {
                 {(() => {
                   const today = new Date();
                   const dateStr = `${today.getFullYear()}-${String(
-                    today.getMonth() + 1
+                    today.getMonth() + 1,
                   ).padStart(2, "0")}-${String(today.getDate()).padStart(
                     2,
-                    "0"
+                    "0",
                   )}`;
                   const rec = attendance.find((a) => a.date === dateStr);
                   return rec && (rec as any).out_time
@@ -709,8 +709,8 @@ export default function TeacherMyAttendancePage() {
                 {outDisabled
                   ? "OUT Marked"
                   : isFetching
-                  ? "Saving..."
-                  : "Mark OUT"}
+                    ? "Saving..."
+                    : "Mark OUT"}
               </button>
             </div>
           </div>

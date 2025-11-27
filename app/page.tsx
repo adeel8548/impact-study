@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, Lock, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import Logo from '@/app/Assests/imgs/logo_2.png'
+import Logo from "@/app/Assests/imgs/logo_2.png";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,14 +16,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [envError, setEnvError] = useState("");
   const router = useRouter();
- const year = new Date().getFullYear();
+  const year = new Date().getFullYear();
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
       setEnvError(
-        "Supabase configuration missing. Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your environment variables."
+        "Supabase configuration missing. Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your environment variables.",
       );
     }
   }, []);
@@ -45,7 +45,7 @@ export default function LoginPage() {
         {
           email,
           password,
-        }
+        },
       );
 
       if (authError) {
@@ -65,7 +65,9 @@ export default function LoginPage() {
           localStorage.setItem("accessToken", data.session?.access_token || "");
 
           // Redirect
-          router.push(profileData.role === "admin" ? "/admin/students" : "/teacher");
+          router.push(
+            profileData.role === "admin" ? "/admin/students" : "/teacher",
+          );
         } else {
           setError("Failed to fetch user profile");
         }
@@ -83,7 +85,11 @@ export default function LoginPage() {
         <Card className="p-8 shadow-lg ">
           <div className="text-center mb-8">
             <div className="  rounded-lg flex items-center justify-center mx-auto mb-4 ">
-               <img src={Logo.src} alt="Impact Academy Logo" className="w-20 h-20 md:w-48 md:h-48" />
+              <img
+                src={Logo.src}
+                alt="Impact Academy Logo"
+                className="w-20 h-20 md:w-48 md:h-48"
+              />
             </div>
             <h1 className="text-3xl font-bold text-foreground">
               Impact Academy
@@ -130,22 +136,20 @@ export default function LoginPage() {
                 required
               />
             </div>
-              <div className="pb-10">
-            <Button
-              type="submit"
-              disabled={isLoading || !!envError}
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all "
-            >
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
+            <div className="pb-10">
+              <Button
+                type="submit"
+                disabled={isLoading || !!envError}
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all "
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
             </div>
           </form>
-
-       
         </Card>
 
         <p className="absolute bottom-1 left-0 right-0 text-center text-sm text-muted-foreground mt-6">
-         Design & Developed by Adeel Tariq All rights reserved © {year} 
+          Design & Developed by Adeel Tariq All rights reserved © {year}
         </p>
       </div>
     </div>

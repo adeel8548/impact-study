@@ -1,17 +1,20 @@
-"use server"
+"use server";
 
-import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export async function deleteProfile(profileId: string) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
-  const { error } = await supabase.from("profiles").delete().eq("id", profileId)
+  const { error } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", profileId);
 
   if (error) {
-    return { error: error.message }
+    return { error: error.message };
   }
 
-  revalidatePath("/admin/admins")
-  return { error: null }
+  revalidatePath("/admin/admins");
+  return { error: null };
 }
