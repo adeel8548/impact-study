@@ -85,7 +85,7 @@ export function StudentsClientComponent({
             <span className="text-3xl font-bold text-blue-900 dark:text-blue-100">
               {feeSummary.totalFees.toLocaleString("en-US", {
                 style: "currency",
-                currency: "USD",
+                currency: "PkR",
                 minimumFractionDigits: 0,
               })}
             </span>
@@ -100,7 +100,7 @@ export function StudentsClientComponent({
             <span className="text-3xl font-bold text-green-900 dark:text-green-100">
               {feeSummary.paidFees.toLocaleString("en-US", {
                 style: "currency",
-                currency: "USD",
+                currency: "PKR",
                 minimumFractionDigits: 0,
               })}
             </span>
@@ -115,7 +115,7 @@ export function StudentsClientComponent({
             <span className="text-3xl font-bold text-red-900 dark:text-red-100">
               {feeSummary.unpaidFees.toLocaleString("en-US", {
                 style: "currency",
-                currency: "USD",
+                currency: "PKR",
                 minimumFractionDigits: 0,
               })}
             </span>
