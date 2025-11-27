@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { StudentsClientComponent } from "@/components/students-client";
+import { getFeeSummary } from "@/lib/actions/fees";
 
 export default async function StudentManagement() {
   const supabase = await createClient();
@@ -47,6 +48,9 @@ export default async function StudentManagement() {
     currentFee: feesMap.get(student.id),
   }));
 
+  // Get fee summary
+  const { totalFees, paidFees, unpaidFees } = await getFeeSummary();
+
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar />
@@ -67,6 +71,7 @@ export default async function StudentManagement() {
           <StudentsClientComponent
             initialStudents={studentsWithFees || []}
             classes={classes || []}
+            feeSummary={{ totalFees, paidFees, unpaidFees }}
           />
         </div>
       </div>

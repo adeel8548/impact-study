@@ -38,7 +38,15 @@ export function FeeStatusButton({
       if (fee.status === "paid" && fee.paid_date) {
         const paidDate = new Date(fee.paid_date);
         // Last moment of the paid month
-        const lastOfMonth = new Date(paidDate.getFullYear(), paidDate.getMonth() + 1, 0, 23, 59, 59, 999);
+        const lastOfMonth = new Date(
+          paidDate.getFullYear(),
+          paidDate.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
 
         const now = new Date();
         const remaining = Math.ceil(

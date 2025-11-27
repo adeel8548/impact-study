@@ -61,14 +61,25 @@ export async function checkFeeExpiration() {
       if (!f.paid_date) continue;
       const paidDate = new Date(f.paid_date);
       // Last moment of the paid month
-      const lastOfMonth = new Date(paidDate.getFullYear(), paidDate.getMonth() + 1, 0, 23, 59, 59, 999);
+      const lastOfMonth = new Date(
+        paidDate.getFullYear(),
+        paidDate.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
       if (now > lastOfMonth) {
         expiredIds.push(f.id);
       }
     }
 
     if (expiredIds.length > 0) {
-      await supabase.from("student_fees").update({ status: "unpaid" }).in("id", expiredIds);
+      await supabase
+        .from("student_fees")
+        .update({ status: "unpaid" })
+        .in("id", expiredIds);
     }
   }
 
@@ -90,7 +101,15 @@ export async function getStudentFeeStatus(feeId: string) {
   if (fee.status === "paid" && fee.paid_date) {
     const paidDate = new Date(fee.paid_date);
     // Last moment of the paid month
-    const lastOfMonth = new Date(paidDate.getFullYear(), paidDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    const lastOfMonth = new Date(
+      paidDate.getFullYear(),
+      paidDate.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
 
     const isPaidExpired = new Date() > lastOfMonth;
 
@@ -105,4 +124,27 @@ export async function getStudentFeeStatus(feeId: string) {
   }
 
   return { fee, isPaidExpired: false };
+}
+
+export async function getFeeSummary() {
+  const supabase = await createClient();
+
+  const { data: allFees, error } = await supabase
+    .from("student_fees")
+    .select("amount, status");
+
+  if (error) {
+    return { totalFees: 0, paidFees: 0, unpaidFees: 0, error: error.message };
+  }
+
+  const fees = allFees || [];
+  const totalFees = fees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+  const paidFees = fees
+    .filter((fee) => fee.status === "paid")
+    .reduce((sum, fee) => sum + (fee.amount || 0), 0);
+  const unpaidFees = fees
+    .filter((fee) => fee.status === "unpaid")
+    .reduce((sum, fee) => sum + (fee.amount || 0), 0);
+
+  return { totalFees, paidFees, unpaidFees, error: null };
 }
