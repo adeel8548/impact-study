@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Bell } from "lucide-react";
-
+import Logo from '@/app/Assests/imgs/logo_2.png'
 export function TeacherHeader() {
   const router = useRouter();
   const pathname = usePathname();
@@ -24,10 +24,8 @@ export function TeacherHeader() {
     <header className="bg-card border-b border-border sticky top-0 z-30 shadow-sm">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">
-              {user.name?.[0] || "T"}
-            </span>
+          <div className="w-10 h-10  rounded-lg flex items-center justify-center">
+           <img src={Logo.src} alt="Impact Academy Logo" className="w-10 h-10" />
           </div>
           <div>
             <h1 className="font-bold text-foreground">
