@@ -37,12 +37,12 @@ export function FeeStatusButton({
 
       if (fee.status === "paid" && fee.paid_date) {
         const paidDate = new Date(fee.paid_date);
-        const thirtyDaysLater = new Date(paidDate);
-        thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+        // Last moment of the paid month
+        const lastOfMonth = new Date(paidDate.getFullYear(), paidDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
         const now = new Date();
         const remaining = Math.ceil(
-          (thirtyDaysLater.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+          (lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
         );
         setDaysRemaining(Math.max(0, remaining));
       }

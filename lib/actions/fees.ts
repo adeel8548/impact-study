@@ -47,22 +47,29 @@ export async function updateFeeStatus(
 export async function checkFeeExpiration() {
   const supabase = await createClient();
 
-  // Get all paid fees that were marked as paid more than 30 days ago
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const { data: expiredFees } = await supabase
+  // Get all paid fees and mark those unpaid where the paid_date's month has passed
+  const { data: paidFees } = await supabase
     .from("student_fees")
-    .select("id")
-    .eq("status", "paid")
-    .lt("paid_date", thirtyDaysAgo.toISOString());
+    .select("id, paid_date")
+    .eq("status", "paid");
 
-  if (expiredFees && expiredFees.length > 0) {
-    const ids = expiredFees.map((f) => f.id);
-    await supabase
-      .from("student_fees")
-      .update({ status: "unpaid" })
-      .in("id", ids);
+  if (paidFees && paidFees.length > 0) {
+    const now = new Date();
+    const expiredIds: string[] = [];
+
+    for (const f of paidFees) {
+      if (!f.paid_date) continue;
+      const paidDate = new Date(f.paid_date);
+      // Last moment of the paid month
+      const lastOfMonth = new Date(paidDate.getFullYear(), paidDate.getMonth() + 1, 0, 23, 59, 59, 999);
+      if (now > lastOfMonth) {
+        expiredIds.push(f.id);
+      }
+    }
+
+    if (expiredIds.length > 0) {
+      await supabase.from("student_fees").update({ status: "unpaid" }).in("id", expiredIds);
+    }
   }
 
   return { error: null };
@@ -79,13 +86,13 @@ export async function getStudentFeeStatus(feeId: string) {
 
   if (!fee) return { fee: null, isPaidExpired: false };
 
-  // Check if the fee was paid and is now expired (30 days passed)
+  // Check if the fee was paid and is now expired (end of paid month passed)
   if (fee.status === "paid" && fee.paid_date) {
     const paidDate = new Date(fee.paid_date);
-    const thirtyDaysLater = new Date(paidDate);
-    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+    // Last moment of the paid month
+    const lastOfMonth = new Date(paidDate.getFullYear(), paidDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const isPaidExpired = new Date() >= thirtyDaysLater;
+    const isPaidExpired = new Date() > lastOfMonth;
 
     if (isPaidExpired) {
       // Update status back to unpaid if expired
