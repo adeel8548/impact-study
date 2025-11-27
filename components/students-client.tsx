@@ -77,7 +77,7 @@ export function StudentsClientComponent({
 
       {/* Fee Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+        <Card className="p-6 bg-white border-2 border-gray-100 ">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
               Total Fees
@@ -92,7 +92,7 @@ export function StudentsClientComponent({
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
+        <Card className="p-6 p-6  bg-white border-2 border-gray-100 ">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
               Paid
@@ -107,7 +107,7 @@ export function StudentsClientComponent({
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
+        <Card className="p-6  bg-white border-2 border-gray-100 ">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
               Unpaid
