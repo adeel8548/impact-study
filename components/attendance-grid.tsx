@@ -20,6 +20,8 @@ interface AttendanceGridProps {
   title: string;
   onStatusChange: (date: string, status: "present" | "absent") => void;
   daysToShow?: number;
+  // If provided, the grid will start from this ISO date (YYYY-MM-DD)
+  startDateIso?: string;
   // When true the grid will show a small timestamp under each day's cell
   // useful for admin views to see when attendance was marked.
   showTimestamps?: boolean;
@@ -35,14 +37,32 @@ export function AttendanceGrid({
   title,
   onStatusChange,
   daysToShow = 7,
+  startDateIso,
   showTimestamps = false,
 }: AttendanceGridProps) {
   const [startDate, setStartDate] = useState(() => {
+    if (startDateIso) {
+      const [y, m, d] = startDateIso.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
     const today = new Date();
     const date = new Date(today);
     date.setDate(date.getDate() - daysToShow + 1);
     return date;
   });
+
+  // When props change, update startDate accordingly
+  useEffect(() => {
+    if (startDateIso) {
+      const [y, m, d] = startDateIso.split("-").map(Number);
+      setStartDate(new Date(y, m - 1, d));
+      return;
+    }
+    const today = new Date();
+    const date = new Date(today);
+    date.setDate(date.getDate() - daysToShow + 1);
+    setStartDate(date);
+  }, [startDateIso, daysToShow]);
 
   // Track current time so the component can react when the day rolls over at midnight.
   const [now, setNow] = useState<Date>(() => new Date());

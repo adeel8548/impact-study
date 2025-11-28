@@ -762,6 +762,17 @@ export default function AttendanceManagement() {
                                     : undefined
                                 ).days
                               }
+                                startDateIso={
+                                  computeRange(
+                                    studentRange,
+                                    studentRange === "custom"
+                                      ? {
+                                          start: studentCustomStart,
+                                          end: studentCustomEnd,
+                                        }
+                                      : undefined
+                                  ).start
+                                }
                             />
                           </div>
                         );
@@ -958,6 +969,17 @@ export default function AttendanceManagement() {
                                     }
                                   : undefined
                               ).days
+                            }
+                            startDateIso={
+                              computeRange(
+                                teacherRange,
+                                teacherRange === "custom"
+                                  ? {
+                                      start: teacherCustomStart,
+                                      end: teacherCustomEnd,
+                                    }
+                                  : undefined
+                              ).start
                             }
                             showTimestamps={true}
                           />
