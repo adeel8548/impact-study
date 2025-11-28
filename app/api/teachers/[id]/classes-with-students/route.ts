@@ -12,23 +12,23 @@ export async function GET(
   try {
     console.log("Fetching classes and students for teacher:", teacherId);
 
-    // 1. Get teacher's class_ids from teacher_classes mapping
-    const { data: mapping, error: mappingError } = await adminClient
-      .from("teacher_classes")
+    // 1. Get teacher's class_ids from profiles table
+    const { data: profile, error: profileError } = await adminClient
+      .from("profiles")
       .select("class_ids")
-      .eq("teacher_id", teacherId)
+      .eq("id", teacherId)
       .maybeSingle();
 
-    if (mappingError) {
-      console.error("Error fetching teacher_classes row:", mappingError);
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
       return NextResponse.json(
         { classes: [], students: [], success: false },
         { status: 500 },
       );
     }
 
-    const classIds: string[] = (mapping?.class_ids as string[]) || [];
-    console.log("Teacher class_ids:", classIds);
+    const classIds: string[] = (profile?.class_ids as string[]) || [];
+    console.log("Teacher class_ids from profiles:", classIds);
 
     if (classIds.length === 0) {
       return NextResponse.json({ classes: [], students: [], success: true });

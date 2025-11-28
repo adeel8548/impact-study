@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, AlertCircle, Edit2, Trash2 } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Edit2, Trash2, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TeacherSalaryCardProps {
@@ -22,6 +22,7 @@ interface TeacherSalaryCardProps {
   }) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onViewAttendance?: () => void;
 }
 
 export function TeacherSalaryCard({
@@ -30,6 +31,7 @@ export function TeacherSalaryCard({
   onStatusChange,
   onEdit,
   onDelete,
+  onViewAttendance,
 }: TeacherSalaryCardProps) {
   const [status, setStatus] = useState<"paid" | "unpaid">(
     teacher.salary?.status ?? "unpaid",
@@ -134,6 +136,15 @@ export function TeacherSalaryCard({
         >
           {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
           Mark {status === "paid" ? "Unpaid" : "Paid"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onViewAttendance}
+          className="p-2"
+          title="View attendance"
+        >
+          <Calendar className="w-4 h-4" />
         </Button>
         <Button
           size="sm"

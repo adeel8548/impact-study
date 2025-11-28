@@ -4,10 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Edit2, Trash2, User } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, User, Calendar } from "lucide-react";
 import { StudentModal } from "@/components/modals/student-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { StudentFeesListModal } from "@/components/modals/student-fees-list-modal";
+import { StudentAttendanceViewModal } from "@/components/modals/student-attendance-view-modal";
 import { FeeStatusButton } from "@/components/fee-status-button";
 import { deleteStudent } from "@/lib/actions/students";
 import type { Student, Class as SchoolClass } from "@/lib/types";
@@ -96,6 +97,9 @@ export function StudentsClientComponent({
   const [feesListStatus, setFeesListStatus] = useState<"paid" | "unpaid">(
     "paid",
   );
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [selectedStudentForAttendance, setSelectedStudentForAttendance] =
+    useState<Student | null>(null);
 
   const filteredStudents = students?.filter((student) => {
     const matchesSearch =
@@ -338,6 +342,18 @@ export function StudentsClientComponent({
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => {
+                            setSelectedStudentForAttendance(student);
+                            setAttendanceModalOpen(true);
+                          }}
+                          className="gap-1 bg-transparent"
+                          title="View attendance"
+                        >
+                          <Calendar className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleOpenModal(student)}
                           className="gap-1 bg-transparent"
                         >
@@ -393,6 +409,16 @@ export function StudentsClientComponent({
         students={students}
         classes={classes}
       />
+
+      {selectedStudentForAttendance && (
+        <StudentAttendanceViewModal
+          open={attendanceModalOpen}
+          onOpenChange={setAttendanceModalOpen}
+          studentId={selectedStudentForAttendance.id}
+          studentName={selectedStudentForAttendance.name}
+          studentClass={classes.find((c) => c.id === (selectedStudentForAttendance as any).class_id)}
+        />
+      )}
     </>
   );
 }

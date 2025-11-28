@@ -1,0 +1,310 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Card } from "@/components/ui/card";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Calendar,
+} from "lucide-react";
+import { toast } from "sonner";
+
+interface AttendanceRecord {
+  id: string;
+  student_id: string;
+  date: string;
+  status: "present" | "absent" | "leave";
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+}
+
+interface StudentAttendanceViewModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  studentId: string;
+  studentName: string;
+  studentClass?: Class;
+}
+
+const normalizeClassName = (value?: string) => value?.trim().toLowerCase() ?? "";
+
+export function StudentAttendanceViewModal({
+  open,
+  onOpenChange,
+  studentId,
+  studentName,
+  studentClass,
+}: StudentAttendanceViewModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+
+  // Fetch attendance data when modal opens or date changes
+  useEffect(() => {
+    if (open) {
+      fetchAttendance(currentDate);
+    }
+  }, [open, currentDate, studentId]);
+
+  const fetchAttendance = async (date: Date) => {
+    try {
+      setIsLoading(true);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const monthStr = `${year}-${month}`;
+
+      const params = new URLSearchParams({
+        studentId,
+        month: monthStr,
+      });
+
+      const response = await fetch(`/api/attendance?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch attendance");
+
+      const result = await response.json();
+      const attendanceData = result.attendance || result;
+
+      // Normalize dates to local YYYY-MM-DD
+      const normalized = (
+        Array.isArray(attendanceData) ? attendanceData : []
+      ).map((a: any) => {
+        try {
+          const d = new Date(a.date);
+          const localDate = `${d.getFullYear()}-${String(
+            d.getMonth() + 1,
+          ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          return { ...a, date: localDate };
+        } catch (e) {
+          return a;
+        }
+      });
+
+      setAttendance(normalized);
+    } catch (error) {
+      console.error("Error fetching attendance:", error);
+      toast.error("Failed to load attendance");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMonthChange = (direction: "prev" | "next") => {
+    const newDate = new Date(currentDate);
+    if (direction === "prev") {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  // Get first day of month and number of days
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Create array of days to display
+  const days: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  // Calculate stats - only for current selected month
+  let presentCount = 0;
+  let absentCount = 0;
+  
+  attendance.forEach((record) => {
+    // Filter records to only current month
+    try {
+      const recordDate = new Date(record.date);
+      const recordYear = recordDate.getFullYear();
+      const recordMonth = recordDate.getMonth();
+      
+      if (recordYear === year && recordMonth === month) {
+        if (record.status === "present") presentCount++;
+        if (record.status === "absent") absentCount++;
+      }
+    } catch (e) {
+      // ignore
+    }
+  });
+
+  const getAttendanceRecord = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+      day,
+    ).padStart(2, "0")}`;
+    return attendance.find((a) => a.date === dateStr);
+  };
+
+  const isSunday = (day: number) => {
+    const date = new Date(year, month, day);
+    return date.getDay() === 0;
+  };
+
+  const getStatusText = (day: number) => {
+    if (isSunday(day)) return "Off";
+    const record = getAttendanceRecord(day);
+    if (!record) return "—";
+    if (record.status === "present") return "✓";
+    if (record.status === "absent") return "✗";
+    return "—";
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            <span>Attendance: {studentName}</span>
+            {studentClass && (
+              <span className="text-sm text-muted-foreground ml-2">
+                ({studentClass.name})
+              </span>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4 border-l-4 border-l-green-500">
+                <p className="text-muted-foreground text-xs font-medium mb-1">
+                  Present
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {presentCount}
+                </p>
+              </Card>
+
+              <Card className="p-4 border-l-4 border-l-red-500">
+                <p className="text-muted-foreground text-xs font-medium mb-1">
+                  Absent
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {absentCount}
+                </p>
+              </Card>
+            </div>
+
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => handleMonthChange("prev")}
+                className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h3 className="text-lg font-semibold text-foreground">
+                {currentDate.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </h3>
+              <button
+                onClick={() => handleMonthChange("next")}
+                className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Legend */}
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-green-500"></div>
+                <span className="text-sm text-foreground">Present</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-red-500"></div>
+                <span className="text-sm text-foreground">Absent</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-gray-400"></div>
+                <span className="text-sm text-foreground">Off / No Record</span>
+              </div>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="overflow-x-auto">
+              <div className="min-w-full">
+                {/* Day headers */}
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                    (day) => (
+                      <div
+                        key={day}
+                        className="text-center font-semibold text-xs text-muted-foreground"
+                      >
+                        {day}
+                      </div>
+                    ),
+                  )}
+                </div>
+
+                {/* Calendar days */}
+                <div className="grid grid-cols-7 gap-2">
+                  {days.map((day, index) => {
+                    if (day === null) {
+                      return (
+                        <div
+                          key={`empty-${index}`}
+                          className="aspect-square"
+                        ></div>
+                      );
+                    }
+
+                    const record = getAttendanceRecord(day);
+                    const sunday = isSunday(day);
+
+                    return (
+                      <div
+                        key={day}
+                        className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all ${
+                          !record
+                            ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                            : record.status === "present"
+                              ? "bg-green-500 text-white"
+                              : record.status === "absent"
+                                ? "bg-red-500 text-white"
+                                : "bg-gray-400 text-white dark:bg-gray-600"
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="text-xs opacity-70">{day}</div>
+                          <div className="text-base">{getStatusText(day)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

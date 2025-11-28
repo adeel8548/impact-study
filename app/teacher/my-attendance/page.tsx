@@ -329,6 +329,18 @@ export default function TeacherMyAttendancePage() {
   ) => {
     if (!teacher) return;
 
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(
+      today.getMonth() + 1,
+    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    // Only allow marking attendance for today
+    if (date !== todayStr) {
+      toast.error("You can only mark attendance for today");
+      return;
+    }
+
     try {
       const newStatus = currentStatus === "present" ? "absent" : "present";
 
@@ -616,18 +628,16 @@ export default function TeacherMyAttendancePage() {
                       <button
                         key={day}
                         onClick={() => {
-                          if (!sunday) {
+                          if (!sunday && isToday(day)) {
                             const record = getAttendanceRecord(day);
 
                             // 🟦 STATUS normal mapping
-                            let currentStatus: "present" | "absent" | "leave" =
-                              "leave";
+                            let currentStatus: "present" | "absent" | null =
+                              null;
                             if (record?.status === "present")
                               currentStatus = "present";
                             else if (record?.status === "absent")
                               currentStatus = "absent";
-                            else if (record?.status === "leave")
-                              currentStatus = "leave";
 
                             // ✅ Ab jo bhi button click ho ga, ye 3 me se hi string jayegi
                             handleAttendanceToggle(
@@ -641,7 +651,7 @@ export default function TeacherMyAttendancePage() {
                             window.location.reload(); // optional ✅
                           }
                         }}
-                        disabled={sunday}
+                        disabled={sunday || !isToday(day)}
                         className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all ${
                           !record
                             ? "bg-gray-200 text-gray-700"
@@ -652,7 +662,7 @@ export default function TeacherMyAttendancePage() {
                                 : record.status === "leave"
                                   ? "bg-gray-400 text-white"
                                   : "bg-gray-200 text-gray-700"
-                        }`}
+                        } ${(sunday || !isToday(day)) ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:shadow-md"}`}
                       >
                         <div className="text-center">
                           <div className="text-xs opacity-70">{day}</div>
@@ -721,23 +731,22 @@ export default function TeacherMyAttendancePage() {
           <h3 className="font-semibold text-foreground mb-2">How to use</h3>
           <ul className="text-sm text-foreground space-y-1">
             <li>
-              ✓ <strong>Today's box:</strong> Click to toggle between Present
-              and Absent
+              ✓ <strong>Today's box only:</strong> Click to toggle between Present and Absent (only for today)
             </li>
             <li>
-              ✓ <strong>Past days:</strong> Display your recorded attendance
-              (read-only display, but click to update)
+              ✓ <strong>Past days:</strong> Display your recorded attendance (read-only, cannot modify)
+            </li>
+            <li>
+              ✓ <strong>Future days:</strong> Cannot mark attendance for future dates
             </li>
             <li>
               ✓ <strong>Sundays:</strong> Marked as "Off" and cannot be changed
             </li>
             <li>
-              ✓ <strong>Automatic saving:</strong> All changes are instantly
-              saved to the database
+              ✓ <strong>Automatic saving:</strong> All changes are instantly saved to the database
             </li>
             <li>
-              ✓ <strong>Month navigation:</strong> Use arrows to view previous
-              or future months
+              ✓ <strong>Month navigation:</strong> Use arrows to view previous or future months
             </li>
           </ul>
         </Card>

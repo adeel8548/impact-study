@@ -19,6 +19,7 @@ import {
 import { TeacherModal } from "@/components/modals/teacher-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { TeacherSalaryListModal } from "@/components/modals/teacher-salary-list-modal";
+import { TeacherAttendanceViewModal } from "@/components/modals/teacher-attendance-view-modal";
 import { deleteTeacher } from "@/lib/actions/teacher";
 import { toast } from "sonner";
 import { sortByNewest } from "@/lib/utils";
@@ -105,6 +106,7 @@ export default function TeacherManagement() {
   const [salaryListStatus, setSalaryListStatus] = useState<"paid" | "unpaid">(
     "paid",
   );
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -515,6 +517,10 @@ export default function TeacherManagement() {
                         }
                         onEdit={() => handleEditTeacher(teacher)}
                         onDelete={() => handleDeleteClick(teacher)}
+                        onViewAttendance={() => {
+                          setSelectedTeacher(teacher);
+                          setAttendanceModalOpen(true);
+                        }}
                       />
                     );
                   })}
@@ -582,6 +588,14 @@ export default function TeacherManagement() {
         onOpenChange={setSalaryListModalOpen}
         status={salaryListStatus}
         teachers={teachers}
+      />
+
+      {/* Attendance View Modal */}
+      <TeacherAttendanceViewModal
+        open={attendanceModalOpen}
+        onOpenChange={setAttendanceModalOpen}
+        teacherId={selectedTeacher?.id || ""}
+        teacherName={selectedTeacher?.name || ""}
       />
     </div>
   );
