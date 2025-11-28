@@ -41,19 +41,23 @@ interface TeacherSalary {
   teacher_id: string;
   amount: number;
   status: "paid" | "unpaid";
-  month: number;
-  year: number;
+  month: number | string;
+  year: number | string;
   paid_date?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-type TeacherSalarySnapshot = Partial<TeacherSalary> & {
+type TeacherSalarySnapshot = {
+  id?: string;
   teacher_id: string;
   amount: number;
   status: "paid" | "unpaid";
-  month: number;
-  year: number;
+  month: number | string;
+  year: number | string;
+  paid_date?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 interface SalarySummary {
@@ -67,6 +71,19 @@ interface SalarySummary {
 const CURRENT_MONTH = new Date().getMonth() + 1;
 const CURRENT_YEAR = new Date().getFullYear();
 
+const toNumericAmount = (value: number | string | null | undefined) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const emptySummary = (): SalarySummary => ({
+  paidAmount: 0,
+  unpaidAmount: 0,
+  paidCount: 0,
+  unpaidCount: 0,
+  totalAmount: 0,
+});
+
 export default function TeacherManagement() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -76,13 +93,8 @@ export default function TeacherManagement() {
   const [teacherSalaryMap, setTeacherSalaryMap] = useState<
     Record<string, TeacherSalarySnapshot>
   >({});
-  const [salarySummary, setSalarySummary] = useState<SalarySummary>({
-    paidAmount: 0,
-    unpaidAmount: 0,
-    paidCount: 0,
-    unpaidCount: 0,
-    totalAmount: 0,
-  });
+  const [salarySummary, setSalarySummary] =
+    useState<SalarySummary>(emptySummary());
 
   // Modal states
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
@@ -111,6 +123,26 @@ export default function TeacherManagement() {
     }
   };
 
+  const summarizeTeachers = (list: Teacher[]) => {
+    return list.reduce<SalarySummary>((acc, teacher) => {
+      const salary = teacher.salary;
+      if (!salary) return acc;
+
+      const amount = toNumericAmount(salary.amount);
+      acc.totalAmount += amount;
+
+      if (salary.status === "paid") {
+        acc.paidAmount += amount;
+        acc.paidCount += 1;
+      } else {
+        acc.unpaidAmount += amount;
+        acc.unpaidCount += 1;
+      }
+
+      return acc;
+    }, emptySummary());
+  };
+
   const loadTeachers = async () => {
     setIsLoading(true);
     try {
@@ -118,20 +150,22 @@ export default function TeacherManagement() {
       const json = await res.json();
       const data = json.teachers || [];
       const normalized = sortByNewest(data);
-      setTeachers(normalized as Teacher[]);
-      const salaryMap: Record<string, TeacherSalary> = {};
+      const typedTeachers = normalized as Teacher[];
+      setTeachers(typedTeachers);
+      const salaryMap: Record<string, TeacherSalarySnapshot> = {};
       normalized.forEach((teacher: any) => {
         if (teacher.salary) {
           salaryMap[teacher.id] = {
             teacher_id: teacher.id,
-            amount: Number(teacher.salary.amount) || 0,
+            amount: toNumericAmount(teacher.salary.amount),
             status: teacher.salary.status,
-            month: new Date().getMonth() + 1,
-            year: new Date().getFullYear(),
-          } as TeacherSalary;
+            month: CURRENT_MONTH,
+            year: CURRENT_YEAR,
+          };
         }
       });
       setTeacherSalaryMap(salaryMap);
+      setSalarySummary(summarizeTeachers(typedTeachers));
       
       // class_ids are already loaded from the teacher profiles
     } catch (error) {
@@ -152,15 +186,22 @@ export default function TeacherManagement() {
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      const current = salaries.filter(
-        (salary) =>
+      const currentMonthKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+      const current = salaries.filter((salary) => {
+        if (!salary) return false;
+        if (String(salary.month) === currentMonthKey) return true;
+        if (
           Number(salary.month) === currentMonth &&
-          Number(salary.year) === currentYear,
-      );
+          Number(salary.year) === currentYear
+        ) {
+          return true;
+        }
+        return false;
+      });
 
       const summary = current.reduce<SalarySummary>(
         (acc, salary) => {
-          const amount = Number(salary.amount) || 0;
+          const amount = toNumericAmount(salary.amount);
           acc.totalAmount += amount;
           if (salary.status === "paid") {
             acc.paidAmount += amount;
@@ -171,16 +212,10 @@ export default function TeacherManagement() {
           }
           return acc;
         },
-        {
-          paidAmount: 0,
-          unpaidAmount: 0,
-          paidCount: 0,
-          unpaidCount: 0,
-          totalAmount: 0,
-        },
+        emptySummary(),
       );
 
-      const latestMap: Record<string, TeacherSalary> = {};
+      const latestMap: Record<string, TeacherSalarySnapshot> = {};
       current.forEach((salary) => {
         const existing = latestMap[salary.teacher_id];
         const existingTs = existing
@@ -190,7 +225,10 @@ export default function TeacherManagement() {
           salary.updated_at || salary.created_at || 0,
         ).getTime();
         if (!existing || salaryTs >= existingTs) {
-          latestMap[salary.teacher_id] = salary;
+          latestMap[salary.teacher_id] = {
+            ...salary,
+            amount: toNumericAmount(salary.amount),
+          };
         }
       });
 
@@ -230,6 +268,26 @@ export default function TeacherManagement() {
     toast.success("Teacher deleted successfully");
     await loadTeachers();
     await loadSalaryData();
+  };
+
+  const resolveSalarySnapshot = (
+    teacherId: string,
+    fallback?: Teacher["salary"] | null,
+  ) => {
+    const snapshot = teacherSalaryMap[teacherId];
+    if (snapshot) {
+      return {
+        amount: toNumericAmount(snapshot.amount),
+        status: snapshot.status,
+      };
+    }
+    if (fallback) {
+      return {
+        amount: toNumericAmount(fallback.amount),
+        status: fallback.status,
+      };
+    }
+    return null;
   };
 
   const handleCardStatusChange = (
@@ -421,18 +479,28 @@ export default function TeacherManagement() {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredTeachers?.map((teacher) => (
-                    <TeacherSalaryCard
-                      key={teacher.id}
-                      teacher={teacher}
-                      assignedClasses={getAssignedClasses(teacher)}
-                      onStatusChange={({ status, amount }) =>
-                        handleCardStatusChange(teacher.id, amount, status)
-                      }
-                      onEdit={() => handleEditTeacher(teacher)}
-                      onDelete={() => handleDeleteClick(teacher)}
-                    />
-                  ))}
+                  {filteredTeachers?.map((teacher) => {
+                    const resolvedSalary = resolveSalarySnapshot(
+                      teacher.id,
+                      teacher.salary,
+                    );
+                    const teacherWithResolvedSalary = resolvedSalary
+                      ? { ...teacher, salary: resolvedSalary }
+                      : teacher;
+
+                    return (
+                      <TeacherSalaryCard
+                        key={teacher.id}
+                        teacher={teacherWithResolvedSalary}
+                        assignedClasses={getAssignedClasses(teacher)}
+                        onStatusChange={({ status, amount }) =>
+                          handleCardStatusChange(teacher.id, amount, status)
+                        }
+                        onEdit={() => handleEditTeacher(teacher)}
+                        onDelete={() => handleDeleteClick(teacher)}
+                      />
+                    );
+                  })}
                 </div>
 
                 {filteredTeachers.length === 0 && (

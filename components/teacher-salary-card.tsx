@@ -35,6 +35,7 @@ export function TeacherSalaryCard({
     teacher.salary?.status ?? "unpaid",
   );
   const [isPending, startTransition] = useTransition();
+  const salaryAmount = Number(teacher.salary?.amount ?? 0) || 0;
 
   useEffect(() => {
     console.log(`TeacherSalaryCard for ${teacher.name} received assignedClasses:`, assignedClasses);
@@ -56,7 +57,7 @@ export function TeacherSalaryCard({
         setStatus(json.status);
         onStatusChange?.({
           status: json.status,
-          amount: teacher.salary?.amount ?? 0,
+          amount: salaryAmount,
         });
       }
     });
@@ -100,7 +101,7 @@ export function TeacherSalaryCard({
       <div>
         <p className="text-sm text-muted-foreground">Monthly Salary</p>
         <p className="text-2xl font-semibold text-foreground">
-          PKR {(teacher.salary?.amount ?? 0).toLocaleString()}
+          PKR {salaryAmount.toLocaleString()}
         </p>
       </div>
 
