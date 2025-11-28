@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,45 +8,33 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Calendar,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface AttendanceRecord {
   id: string;
-  student_id: string;
+  teacher_id: string;
   date: string;
   status: "present" | "absent" | "leave";
+  school_id?: string;
   created_at?: string;
   updated_at?: string;
+  out_time?: string;
 }
 
-interface Class {
-  id: string;
-  name: string;
-}
-
-interface StudentAttendanceViewModalProps {
+interface TeacherOwnAttendanceViewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  studentId: string;
-  studentName: string;
-  studentClass?: Class;
+  teacherId: string;
+  teacherName: string;
 }
 
-const normalizeClassName = (value?: string) => value?.trim().toLowerCase() ?? "";
-
-export function StudentAttendanceViewModal({
+export function TeacherOwnAttendanceViewModal({
   open,
   onOpenChange,
-  studentId,
-  studentName,
-  studentClass,
-}: StudentAttendanceViewModalProps) {
+  teacherId,
+  teacherName,
+}: TeacherOwnAttendanceViewModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -134,7 +122,7 @@ export function StudentAttendanceViewModal({
     if (open) {
       fetchAttendance(currentDate);
     }
-  }, [open, currentDate, studentId]);
+  }, [open, currentDate, teacherId]);
 
   const fetchAttendance = async (date: Date) => {
     try {
@@ -144,11 +132,11 @@ export function StudentAttendanceViewModal({
       const monthStr = `${year}-${month}`;
 
       const params = new URLSearchParams({
-        studentId,
+        teacherId,
         month: monthStr,
       });
 
-      const response = await fetch(`/api/attendance?${params}`);
+      const response = await fetch(`/api/teacher-attendance?${params}`);
       if (!response.ok) throw new Error("Failed to fetch attendance");
 
       const result = await response.json();
@@ -182,11 +170,11 @@ export function StudentAttendanceViewModal({
       setIsFetching(true);
       const { start, end } = computeRange(option);
       const params = new URLSearchParams({
-        studentId,
+        teacherId,
         startDate: start,
         endDate: end,
       });
-      const response = await fetch(`/api/attendance?${params}`);
+      const response = await fetch(`/api/teacher-attendance?${params}`);
       if (!response.ok) throw new Error("Failed to fetch attendance");
       const result = await response.json();
       const attendanceData = result.attendance || result;
@@ -244,14 +232,13 @@ export function StudentAttendanceViewModal({
   // Calculate stats - only for current selected month
   let presentCount = 0;
   let absentCount = 0;
-  
+
   attendance.forEach((record) => {
-    // Filter records to only current month
     try {
       const recordDate = new Date(record.date);
       const recordYear = recordDate.getFullYear();
       const recordMonth = recordDate.getMonth();
-      
+
       if (recordYear === year && recordMonth === month) {
         if (record.status === "present") presentCount++;
         if (record.status === "absent") absentCount++;
@@ -263,7 +250,7 @@ export function StudentAttendanceViewModal({
 
   const getAttendanceRecord = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-      day,
+      day
     ).padStart(2, "0")}`;
     return attendance.find((a) => a.date === dateStr);
   };
@@ -282,20 +269,25 @@ export function StudentAttendanceViewModal({
     return "—";
   };
 
+  const formatTime = (iso?: string) => {
+    if (!iso) return "—";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (e) {
+      return "—";
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex flex-col items-start gap-2">
-            <span className="font-semibold text-gray-800 flex gap-2 items-center">
-              Student Name: <span className="text-blue-800">{studentName}</span>
-            </span>
-            {studentClass && (
-              <span className="font-semibold text-gray-800 flex gap-2 items-center">
-                Class: <span className="text-blue-800">({studentClass.name})</span>
-              </span>
-            )}
-          </DialogTitle>
+          <DialogTitle>My Attendance Records</DialogTitle>
         </DialogHeader>
 
         {isLoading ? (
@@ -311,7 +303,7 @@ export function StudentAttendanceViewModal({
                   Present
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {attendance.filter(a => a.status === "present").length}
+                  {presentCount}
                 </p>
               </Card>
 
@@ -320,7 +312,7 @@ export function StudentAttendanceViewModal({
                   Absent
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {attendance.filter(a => a.status === "absent").length}
+                  {absentCount}
                 </p>
               </Card>
             </div>
@@ -349,7 +341,7 @@ export function StudentAttendanceViewModal({
               </div>
 
               {/* Range Filter */}
-              <div className="flex gap-2 items-center flex-wrap">
+              {/* <div className="flex gap-2 items-center flex-wrap">
                 <select
                   value={rangeOption}
                   onChange={(e) => setRangeOption(e.target.value)}
@@ -374,7 +366,7 @@ export function StudentAttendanceViewModal({
                 >
                   {isFetching ? "Loading..." : "Load"}
                 </button>
-              </div>
+              </div> */}
             </div>
 
             {/* Legend */}
@@ -393,13 +385,6 @@ export function StudentAttendanceViewModal({
               </div>
             </div>
 
-            {/* Note - This is Read-Only */}
-            <Card className="p-3 bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-500">
-              <p className="text-sm text-foreground">
-                <strong>Note:</strong> This is a read-only view of your attendance history. To mark attendance, ask your admin or teacher.
-              </p>
-            </Card>
-
             {/* Calendar Grid */}
             <div className="overflow-x-auto">
               <div className="min-w-full">
@@ -413,7 +398,7 @@ export function StudentAttendanceViewModal({
                       >
                         {day}
                       </div>
-                    ),
+                    )
                   )}
                 </div>
 
@@ -435,20 +420,29 @@ export function StudentAttendanceViewModal({
                     return (
                       <div
                         key={day}
-                        className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all ${
+                        className={`rounded-lg font-semibold text-sm flex flex-col justify-between transition-all min-h-28 p-2 ${
                           !record
                             ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                             : record.status === "present"
-                              ? "bg-green-500 text-white"
-                              : record.status === "absent"
-                                ? "bg-red-500 text-white"
-                                : "bg-gray-400 text-white dark:bg-gray-600"
+                            ? "bg-green-500 text-white"
+                            : record.status === "absent"
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-400 text-white dark:bg-gray-600"
                         }`}
                       >
+                        {/* Top: Day number and Status */}
                         <div className="text-center">
                           <div className="text-xs opacity-70">{day}</div>
                           <div className="text-base">{getStatusText(day)}</div>
                         </div>
+
+                        {/* Bottom: Time In / Out */}
+                        {record && record.status === "present" && (
+                          <div className="text-xs text-center mt-2 pt-1 border-t border-current/30 w-full">
+                            <div>In: {formatTime(record.created_at)}</div>
+                            <div>Out: {formatTime(record.out_time)}</div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

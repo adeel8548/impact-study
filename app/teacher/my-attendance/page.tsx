@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
+import { TeacherOwnAttendanceViewModal } from "@/components/modals/teacher-own-attendance-view-modal";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
 
 interface AttendanceRecord {
   id: string;
@@ -27,6 +28,7 @@ export default function TeacherMyAttendancePage() {
   const [teacher, setTeacher] = useState<{ id: string; name: string } | null>(
     null,
   );
+  const [viewModalOpen, setViewModalOpen] = useState(false);
 
   // OUT button state: disabled until midnight after marking out
   const [outDisabled, setOutDisabled] = useState(false);
@@ -473,13 +475,22 @@ export default function TeacherMyAttendancePage() {
       <TeacherHeader />
 
       <div className="p-4 md:p-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            My Attendance
-          </h1>
-          <p className="text-muted-foreground">
-            Track your daily attendance records for the current month
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              My Attendance
+            </h1>
+            <p className="text-muted-foreground">
+              Track your daily attendance records for the current month
+            </p>
+          </div>
+          <button
+            onClick={() => setViewModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Calendar className="w-4 h-4" />
+            View Records
+          </button>
         </div>
 
         {/* Stats */}
@@ -750,6 +761,16 @@ export default function TeacherMyAttendancePage() {
             </li>
           </ul>
         </Card>
+
+        {/* View Attendance Modal */}
+        {teacher && (
+          <TeacherOwnAttendanceViewModal
+            open={viewModalOpen}
+            onOpenChange={setViewModalOpen}
+            teacherId={teacher.id}
+            teacherName={teacher.name}
+          />
+        )}
       </div>
     </div>
   );

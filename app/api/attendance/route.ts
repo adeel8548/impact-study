@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const classId = request.nextUrl.searchParams.get("classId");
+  const studentId = request.nextUrl.searchParams.get("studentId");
   const teacherId = request.nextUrl.searchParams.get("teacherId");
   const startDate = request.nextUrl.searchParams.get("startDate");
   const endDate = request.nextUrl.searchParams.get("endDate");
@@ -11,7 +12,9 @@ export async function GET(request: NextRequest) {
   try {
     let query = supabase.from("student_attendance").select("*");
 
-    if (classId) {
+    if (studentId) {
+      query = query.eq("student_id", studentId);
+    } else if (classId) {
       const { data: students } = await supabase
         .from("students")
         .select("id")

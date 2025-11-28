@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AttendanceGrid } from "@/components/attendance-grid";
+import { AdminAttendanceMarkingModal } from "@/components/modals/admin-attendance-marking-modal";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -60,6 +61,14 @@ export default function AttendanceManagement() {
     AttendanceRecord[]
   >([]);
   const [teachersPastLoaded, setTeachersPastLoaded] = useState(false);
+
+  // Marking modal state
+  const [markingModalOpen, setMarkingModalOpen] = useState(false);
+  const [markingType, setMarkingType] = useState<"teacher" | "student">(
+    "teacher"
+  );
+  const [markingTargetId, setMarkingTargetId] = useState("");
+  const [markingTargetName, setMarkingTargetName] = useState("");
 
   // Helper to produce local YYYY-MM-DD strings
   const toLocalDate = (d: Date) => {
@@ -448,6 +457,26 @@ export default function AttendanceManagement() {
     }
   };
 
+  const openMarkingModal = (
+    type: "teacher" | "student",
+    id: string,
+    name: string
+  ) => {
+    setMarkingType(type);
+    setMarkingTargetId(id);
+    setMarkingTargetName(name);
+    setMarkingModalOpen(true);
+  };
+
+  const handleMarked = (date: string, status: "present" | "absent" | "leave") => {
+    // Refresh attendance after marking
+    if (markingType === "teacher") {
+      fetchTeacherAttendance(teacherRange);
+    } else {
+      fetchStudentAttendance(studentRange);
+    }
+  };
+
   if (isLoading) return null;
 
   const selectedClassObj = classes.find((c) => c.id === selectedClass);
@@ -614,13 +643,23 @@ export default function AttendanceManagement() {
                             key={student.id}
                             className="border border-border rounded-lg p-4"
                           >
-                            <div className="mb-3">
-                              <p className="font-semibold text-foreground">
-                                {student.name}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Roll #: {student.roll_number}
-                              </p>
+                            <div className="mb-3 flex justify-between items-start">
+                              <div>
+                                <p className="font-semibold text-foreground">
+                                  {student.name}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Roll #: {student.roll_number}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  openMarkingModal("student", student.id, student.name)
+                                }
+                                className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
+                              >
+                                Mark Any Date
+                              </button>
                             </div>
                             <AttendanceGrid
                               records={studentRecords}
@@ -750,13 +789,23 @@ export default function AttendanceManagement() {
                           key={teacher.id}
                           className="border border-border rounded-lg p-4"
                         >
-                          <div className="mb-3">
-                            <p className="font-semibold text-foreground">
-                              {teacher.name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {teacher.email}
-                            </p>
+                          <div className="mb-3 flex justify-between items-start">
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {teacher.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {teacher.email}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                openMarkingModal("teacher", teacher.id, teacher.name)
+                              }
+                              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
+                            >
+                              Mark Any Date
+                            </button>
                           </div>
                           <AttendanceGrid
                             records={teacherRecords}
@@ -779,6 +828,16 @@ export default function AttendanceManagement() {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Marking Modal */}
+          <AdminAttendanceMarkingModal
+            open={markingModalOpen}
+            onOpenChange={setMarkingModalOpen}
+            type={markingType}
+            targetId={markingTargetId}
+            targetName={markingTargetName}
+            onMarked={handleMarked}
+          />
         </div>
       </div>
     </div>
