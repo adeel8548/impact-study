@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { StudentsClientComponent } from "@/components/students-client";
+import { StudentsCountCard } from "@/components/students-count-card";
 import { getFeeSummary } from "@/lib/actions/fees";
 
 export default async function StudentManagement() {
@@ -62,7 +63,7 @@ export default async function StudentManagement() {
       <AdminSidebar />
 
       <div className="md:pl-64">
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-8 space-y-6">
           <div className="flex justify-between items-start mb-8">
             <div>
               <h1 className="text-4xl font-bold text-foreground mb-2">
@@ -73,6 +74,8 @@ export default async function StudentManagement() {
               </p>
             </div>
           </div>
+
+          <StudentsCountCard />
 
           <StudentsClientComponent
             initialStudents={studentsWithFees || []}

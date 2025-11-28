@@ -13,11 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  createTeacher,
-  updateTeacher,
-  assignTeacherToClass,
-} from "@/lib/actions/teacher";
+import { createTeacher, updateTeacher } from "@/lib/actions/teacher";
 
 interface TeacherModalProps {
   open: boolean;
@@ -27,10 +23,11 @@ interface TeacherModalProps {
     name: string;
     email: string;
     phone?: string;
-    class_ids?: string[];
+    class_ids?: string[] | null;
   } | null;
   classes: { id: string; name: string }[];
   onSuccess?: () => void;
+  initialSalary?: number;
 }
 
 export function TeacherModal({
@@ -39,6 +36,7 @@ export function TeacherModal({
   teacher,
   classes,
   onSuccess,
+  initialSalary,
 }: TeacherModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,18 +46,28 @@ export function TeacherModal({
     phone: "",
     password: "",
     class_ids: [] as string[],
+    salary: "",
   });
 
   const isEditing = !!teacher;
 
   useEffect(() => {
     if (teacher) {
+      const resolvedSalary =
+        typeof initialSalary === "number"
+          ? String(initialSalary)
+          : typeof (teacher as any)?.salary?.amount === "number"
+            ? String((teacher as any).salary.amount)
+            : "";
       setFormData({
         name: teacher.name,
         email: teacher.email,
         phone: teacher.phone || "",
         password: "",
-        class_ids: (teacher as any).class_ids || [],
+        class_ids: Array.isArray((teacher as any).class_ids)
+          ? ((teacher as any).class_ids as string[])
+          : [],
+        salary: resolvedSalary,
       });
     } else {
       setFormData({
@@ -68,13 +76,22 @@ export function TeacherModal({
         phone: "",
         password: "",
         class_ids: [],
+        salary: "",
       });
     }
-  }, [teacher, open]);
+  }, [teacher, open, initialSalary]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
+
+    const salaryValue = Number(formData.salary);
+    if (!salaryValue || Number.isNaN(salaryValue) || salaryValue <= 0) {
+      setLoading(false);
+      setError("Salary must be greater than 0");
+      return toast.error("Salary must be greater than 0");
+    }
 
     try {
       if (isEditing) {
@@ -82,15 +99,12 @@ export function TeacherModal({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
+          class_ids: formData.class_ids,
+          salary: salaryValue,
         });
         if (error) {
           setError(error);
           return toast.error(error);
-        }
-
-        // Update classes
-        for (const cls of formData.class_ids) {
-          await assignTeacherToClass(teacher.id, cls);
         }
 
         toast.success("Teacher updated successfully");
@@ -106,6 +120,7 @@ export function TeacherModal({
           phone: formData.phone,
           password: formData.password,
           class_ids: formData.class_ids,
+          salary: salaryValue,
         });
 
         if (error) {
@@ -237,6 +252,23 @@ export function TeacherModal({
               />
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="salary">Monthly Salary *</Label>
+            <Input
+              id="salary"
+              type="number"
+              placeholder="Enter salary amount"
+              value={formData.salary}
+              onChange={(e) =>
+                setFormData({ ...formData, salary: e.target.value })
+              }
+              required
+              disabled={loading}
+              min="0"
+              step="0.01"
+            />
+          </div>
 
           {/* Classes multi-select */}
           <div className="space-y-2">

@@ -6,12 +6,22 @@ import { AdminSidebar } from "@/components/admin-sidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Edit2, Trash2, Briefcase, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Briefcase,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { TeacherModal } from "@/components/modals/teacher-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { deleteTeacher } from "@/lib/actions/teacher";
 import { toast } from "sonner";
 import { sortByNewest } from "@/lib/utils";
+import { TeacherSalaryCard } from "@/components/teacher-salary-card";
 interface Teacher {
   id: string;
   name: string;
@@ -19,17 +29,60 @@ interface Teacher {
   phone?: string;
   school_id: string;
   created_at: string;
+  class_ids?: string[] | null;
+  salary?: {
+    amount: number;
+    status: "paid" | "unpaid";
+  } | null;
 }
+
+interface TeacherSalary {
+  id: string;
+  teacher_id: string;
+  amount: number;
+  status: "paid" | "unpaid";
+  month: number;
+  year: number;
+  paid_date?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+type TeacherSalarySnapshot = Partial<TeacherSalary> & {
+  teacher_id: string;
+  amount: number;
+  status: "paid" | "unpaid";
+  month: number;
+  year: number;
+};
+
+interface SalarySummary {
+  paidAmount: number;
+  unpaidAmount: number;
+  paidCount: number;
+  unpaidCount: number;
+  totalAmount: number;
+}
+
+const CURRENT_MONTH = new Date().getMonth() + 1;
+const CURRENT_YEAR = new Date().getFullYear();
 
 export default function TeacherManagement() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [teacherClasses, setTeacherClasses] = useState<Record<string, any[]>>(
-    {},
-  );
   const [classes, setClasses] = useState<any[]>([]);
+  const [teacherSalaryMap, setTeacherSalaryMap] = useState<
+    Record<string, TeacherSalarySnapshot>
+  >({});
+  const [salarySummary, setSalarySummary] = useState<SalarySummary>({
+    paidAmount: 0,
+    unpaidAmount: 0,
+    paidCount: 0,
+    unpaidCount: 0,
+    totalAmount: 0,
+  });
 
   // Modal states
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
@@ -43,6 +96,7 @@ export default function TeacherManagement() {
     } else {
       loadTeachers();
       loadClasses();
+      loadSalaryData();
     }
   }, [router]);
 
@@ -62,36 +116,89 @@ export default function TeacherManagement() {
     try {
       const res = await fetch(`/api/teachers`);
       const json = await res.json();
-      console.log("Teachers API response:", json);
       const data = json.teachers || [];
-      setTeachers(sortByNewest(data));
-      console.log("Loaded teachers:", data);
-      // Load classes for each teacher using API route
-      const classesData: Record<string, any[]> = {};
-      await Promise.all(
-        data.map(async (teacher: any) => {
-          try {
-            const res2 = await fetch(
-              `/api/teachers/classes?teacherId=${teacher.id}`,
-            );
-            const json2 = await res2.json();
-            classesData[teacher.id] = json2.classes || [];
-          } catch (err) {
-            console.error(
-              "Failed to load classes for teacher",
-              teacher.id,
-              err,
-            );
-            classesData[teacher.id] = [];
-          }
-        }),
-      );
-      setTeacherClasses(classesData);
+      const normalized = sortByNewest(data);
+      setTeachers(normalized as Teacher[]);
+      const salaryMap: Record<string, TeacherSalary> = {};
+      normalized.forEach((teacher: any) => {
+        if (teacher.salary) {
+          salaryMap[teacher.id] = {
+            teacher_id: teacher.id,
+            amount: Number(teacher.salary.amount) || 0,
+            status: teacher.salary.status,
+            month: new Date().getMonth() + 1,
+            year: new Date().getFullYear(),
+          } as TeacherSalary;
+        }
+      });
+      setTeacherSalaryMap(salaryMap);
+      
+      // class_ids are already loaded from the teacher profiles
     } catch (error) {
       console.error("Failed to load teachers:", error);
       toast.error("Failed to load teachers");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadSalaryData = async () => {
+    try {
+      const res = await fetch(`/api/salaries`);
+      const json = await res.json();
+      const salaries: TeacherSalary[] = Array.isArray(json.salaries)
+        ? json.salaries
+        : [];
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const current = salaries.filter(
+        (salary) =>
+          Number(salary.month) === currentMonth &&
+          Number(salary.year) === currentYear,
+      );
+
+      const summary = current.reduce<SalarySummary>(
+        (acc, salary) => {
+          const amount = Number(salary.amount) || 0;
+          acc.totalAmount += amount;
+          if (salary.status === "paid") {
+            acc.paidAmount += amount;
+            acc.paidCount += 1;
+          } else {
+            acc.unpaidAmount += amount;
+            acc.unpaidCount += 1;
+          }
+          return acc;
+        },
+        {
+          paidAmount: 0,
+          unpaidAmount: 0,
+          paidCount: 0,
+          unpaidCount: 0,
+          totalAmount: 0,
+        },
+      );
+
+      const latestMap: Record<string, TeacherSalary> = {};
+      current.forEach((salary) => {
+        const existing = latestMap[salary.teacher_id];
+        const existingTs = existing
+          ? new Date(existing.updated_at || existing.created_at || 0).getTime()
+          : 0;
+        const salaryTs = new Date(
+          salary.updated_at || salary.created_at || 0,
+        ).getTime();
+        if (!existing || salaryTs >= existingTs) {
+          latestMap[salary.teacher_id] = salary;
+        }
+      });
+
+      setTeacherSalaryMap((prev) => ({ ...prev, ...latestMap }));
+      setSalarySummary(summary);
+    } catch (error) {
+      console.error("Failed to load salary data:", error);
+      toast.error("Failed to load salary data");
     }
   };
 
@@ -121,11 +228,65 @@ export default function TeacherManagement() {
     }
 
     toast.success("Teacher deleted successfully");
-    loadTeachers();
+    await loadTeachers();
+    await loadSalaryData();
   };
 
-  const handleModalSuccess = () => {
-    loadTeachers();
+  const handleCardStatusChange = (
+    teacherId: string,
+    amount: number,
+    status: "paid" | "unpaid",
+  ) => {
+    const previousStatus = teacherSalaryMap[teacherId]?.status ?? "unpaid";
+    if (previousStatus === status) return;
+
+    const amountValue = Number(amount) || 0;
+
+    setTeacherSalaryMap((prev) => ({
+      ...prev,
+      [teacherId]: {
+        teacher_id: teacherId,
+        amount: amountValue,
+        status,
+        month: CURRENT_MONTH,
+        year: CURRENT_YEAR,
+      },
+    }));
+
+    setTeachers((prev) =>
+      prev.map((teacher) =>
+        teacher.id === teacherId
+          ? { ...teacher, salary: { amount: amountValue, status } }
+          : teacher,
+      ),
+    );
+
+    setSalarySummary((prev) => {
+      if (previousStatus === status) {
+        return prev;
+      }
+
+      const summary = { ...prev };
+
+      if (previousStatus === "unpaid" && status === "paid") {
+        summary.paidAmount += amountValue;
+        summary.unpaidAmount = Math.max(summary.unpaidAmount - amountValue, 0);
+        summary.paidCount += 1;
+        summary.unpaidCount = Math.max(summary.unpaidCount - 1, 0);
+      } else if (previousStatus === "paid" && status === "unpaid") {
+        summary.unpaidAmount += amountValue;
+        summary.paidAmount = Math.max(summary.paidAmount - amountValue, 0);
+        summary.unpaidCount += 1;
+        summary.paidCount = Math.max(summary.paidCount - 1, 0);
+      }
+
+      return summary;
+    });
+  };
+
+  const handleModalSuccess = async () => {
+    await loadTeachers();
+    await loadSalaryData();
   };
 
   const filteredTeachers = teachers.filter(
@@ -133,6 +294,14 @@ export default function TeacherManagement() {
       teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       teacher.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const getAssignedClasses = (teacher: Teacher) => {
+    const classIds = teacher.class_ids as string[] | null;
+    if (!classIds || classIds.length === 0) {
+      return [];
+    }
+    return classes.filter((cls) => classIds.includes(cls.id));
+  };
 
   // if (isLoading) {
   //   return (
@@ -166,6 +335,66 @@ export default function TeacherManagement() {
             </Button>
           </div>
 
+          {/* Salary Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card className="p-6 border-l-4 border-l-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm font-medium mb-1">
+                    Total Salary Budget
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
+                    PKR {salarySummary.totalAmount.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Combined salaries for all teachers
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                  <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+              </div>
+            </Card>
+            <Card className="p-6 border-l-4 border-l-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm font-medium mb-1">
+                    Total Paid (Current Month)
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
+                    PKR {salarySummary.paidAmount.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {salarySummary.paidCount} {salarySummary.paidCount === 1 ? "teacher" : "teachers"} paid
+                  </p>
+                </div>
+                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-l-4 border-l-red-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm font-medium mb-1">
+                    Total Unpaid (Current Month)
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
+                    PKR {salarySummary.unpaidAmount.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {salarySummary.unpaidCount}{" "}
+                    {salarySummary.unpaidCount === 1 ? "teacher" : "teachers"} pending
+                  </p>
+                </div>
+                <div className="p-3 bg-red-100 dark:bg-red-900 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+              </div>
+            </Card>
+          </div>
+
           {/* Search */}
           <Card className="p-4 mb-6">
             <div className="relative">
@@ -192,73 +421,18 @@ export default function TeacherManagement() {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredTeachers?.map((teacher) => {
-                    const assignedClasses = teacherClasses[teacher.id] || [];
-                    return (
-                      <Card
-                        key={teacher.id}
-                        className="p-6 hover:shadow-lg transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
-                            <Briefcase className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                          </div>
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditTeacher(teacher)}
-                              className="gap-1 bg-transparent"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteClick(teacher)}
-                              className="gap-1 text-red-600 hover:text-red-700 bg-transparent"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        <h3 className="font-bold text-foreground mb-1 capitalize">
-                          {teacher.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {teacher.email}
-                        </p>
-                        {teacher.phone && (
-                          <p className="text-xs text-muted-foreground mb-4">
-                            {teacher.phone}
-                          </p>
-                        )}
-
-                        <div className="mt-4">
-                          <p className="text-xs font-semibold text-muted-foreground mb-2">
-                            Assigned Classes:
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {assignedClasses.length > 0 ? (
-                              assignedClasses.map((cls) => (
-                                <span
-                                  key={cls.id}
-                                  className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded"
-                                >
-                                  {cls.name}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                No classes assigned
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                  {filteredTeachers?.map((teacher) => (
+                    <TeacherSalaryCard
+                      key={teacher.id}
+                      teacher={teacher}
+                      assignedClasses={getAssignedClasses(teacher)}
+                      onStatusChange={({ status, amount }) =>
+                        handleCardStatusChange(teacher.id, amount, status)
+                      }
+                      onEdit={() => handleEditTeacher(teacher)}
+                      onDelete={() => handleDeleteClick(teacher)}
+                    />
+                  ))}
                 </div>
 
                 {filteredTeachers.length === 0 && (
@@ -280,16 +454,38 @@ export default function TeacherManagement() {
       {/* Teacher Modal */}
       <TeacherModal
         open={teacherModalOpen}
-        onOpenChange={setTeacherModalOpen}
-        teacher={selectedTeacher}
+        onOpenChange={(open) => {
+          setTeacherModalOpen(open);
+          if (!open) {
+            setSelectedTeacher(null);
+          }
+        }}
+        teacher={
+          selectedTeacher
+            ? {
+                ...selectedTeacher,
+                class_ids: selectedTeacher.class_ids ?? undefined,
+              }
+            : null
+        }
         classes={classes}
         onSuccess={handleModalSuccess}
+        initialSalary={
+          selectedTeacher
+            ? teacherSalaryMap[selectedTeacher.id]?.amount
+            : undefined
+        }
       />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
+        onOpenChange={(open) => {
+          setDeleteModalOpen(open);
+          if (!open) {
+            setSelectedTeacher(null);
+          }
+        }}
         title="Delete Teacher"
         description={`Are you sure you want to delete ${selectedTeacher?.name}? This will remove their account and they will no longer be able to log in. This action cannot be undone.`}
         onConfirm={handleDeleteConfirm}

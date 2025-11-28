@@ -1,7 +1,9 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { upsertTeacherSalary } from "@/lib/server/teacher-salary";
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function getTeachers() {
   const supabase = await createClient();
@@ -26,6 +28,7 @@ export async function createTeacher(teacherData: {
   phone?: string;
   password: string;
   class_ids: string[];
+  salary?: number;
 }) {
   const adminClient = await createAdminClient();
   const supabase = await createClient();
@@ -71,18 +74,14 @@ export async function createTeacher(teacherData: {
   }
   console.log("Profile created:", data);
   console.log("Profile.class_ids after insert:", (data as any)?.class_ids);
-  // Also keep teacher_classes in sync (if the junction table exists)
-  if (teacherData.class_ids && teacherData.class_ids.length > 0) {
-    for (const classId of teacherData.class_ids) {
-      const insertResult = await adminClient.from("teacher_classes").insert({
-        teacher_id: teacherId,
-        class_id: classId,
-      });
-      if (insertResult.error) {
-        // Log but continue; profile already has class_ids
-        console.error("Class assignment error:", insertResult.error);
-      }
-    }
+  await persistTeacherClasses(adminClient, teacherId!, teacherData.class_ids);
+
+  if (teacherData.salary && Number(teacherData.salary) > 0 && teacherId) {
+    await upsertTeacherSalary({
+      teacherId,
+      amount: Number(teacherData.salary),
+      status: "unpaid",
+    });
   }
 
   revalidatePath("/admin/teachers");
@@ -97,6 +96,7 @@ export async function updateTeacher(
     email: string;
     phone: string;
     class_ids: string[]; // new field for class assignment
+    salary: number;
   }>,
 ) {
   const supabase = await createClient();
@@ -127,7 +127,6 @@ export async function updateTeacher(
 
   // Update classes if provided
   if (updates.class_ids) {
-    // Update the class_ids array on the profile
     const { error: profileUpdateError } = await adminClient
       .from("profiles")
       .update({ class_ids: updates.class_ids })
@@ -137,14 +136,14 @@ export async function updateTeacher(
       console.error("Failed to update profile.class_ids:", profileUpdateError);
     }
 
-    // Also update teacher_classes junction table for backward compatibility
-    await supabase.from("teacher_classes").delete().eq("teacher_id", teacherId);
-    for (const classId of updates.class_ids) {
-      await supabase.from("teacher_classes").insert({
-        teacher_id: teacherId,
-        class_id: classId,
-      });
-    }
+    await persistTeacherClasses(adminClient, teacherId, updates.class_ids);
+  }
+
+  if (typeof updates.salary === "number" && updates.salary > 0) {
+    await upsertTeacherSalary({
+      teacherId,
+      amount: updates.salary,
+    });
   }
 
   revalidatePath("/admin/teachers");
@@ -178,7 +177,6 @@ export async function updateTeacher(
 // }
 
 export async function deleteTeacher(teacherId: string) {
-  const supabase = await createClient();
   const adminClient = await createAdminClient();
 
   try {
@@ -193,7 +191,25 @@ export async function deleteTeacher(teacherId: string) {
       return { error: classError.message };
     }
 
-    // 2. Delete Auth user (this will cascade delete from profiles due to FK constraint)
+    const { error: salaryError } = await adminClient
+      .from("teacher_salary")
+      .delete()
+      .eq("teacher_id", teacherId);
+    if (salaryError) {
+      console.error("Error deleting teacher salary records:", salaryError);
+      return { error: salaryError.message };
+    }
+
+    const { error: profileError } = await adminClient
+      .from("profiles")
+      .delete()
+      .eq("id", teacherId);
+    if (profileError) {
+      console.error("Error deleting teacher profile:", profileError);
+      return { error: profileError.message };
+    }
+
+    // 2. Delete Auth user to remove login access
     const { error: authError } =
       await adminClient.auth.admin.deleteUser(teacherId);
     if (authError) {
@@ -253,34 +269,21 @@ export async function removeTeacherFromClass(
 export async function getTeacherClasses(teacherId: string) {
   const supabase = await createClient();
 
-  // Try to read class_ids from profiles first (stored as an array)
-  const { data: profileData, error: profileErr } = await supabase
-    .from("profiles")
+  const { data: classRow, error } = await supabase
+    .from("teacher_classes")
     .select("class_ids")
-    .eq("id", teacherId)
-    .single();
+    .eq("teacher_id", teacherId)
+    .maybeSingle();
 
-  if (profileErr) {
-    // Fallback to teacher_classes junction table
-    const { data, error } = await supabase
-      .from("teacher_classes")
-      .select("class_id, classes(id, name)")
-      .eq("teacher_id", teacherId);
-
-    if (error) {
-      return { classes: [], error: error.message };
-    }
-
-    return { classes: data || [], error: null };
+  if (error) {
+    return { classes: [], error: error.message };
   }
 
-  const classIds: string[] = profileData?.class_ids || [];
-
-  if (!classIds || classIds.length === 0) {
+  const classIds: string[] = (classRow?.class_ids as string[]) || [];
+  if (classIds.length === 0) {
     return { classes: [], error: null };
   }
 
-  // Fetch class records by ids
   const { data: classesData, error: classesErr } = await supabase
     .from("classes")
     .select("id, name")
@@ -291,4 +294,25 @@ export async function getTeacherClasses(teacherId: string) {
   }
 
   return { classes: classesData || [], error: null };
+}
+
+async function persistTeacherClasses(
+  adminClient: SupabaseClient,
+  teacherId: string,
+  classIds: string[] = [],
+) {
+  const uniqueClassIds = Array.from(new Set(classIds || []));
+  const { error } = await adminClient
+    .from("teacher_classes")
+    .upsert(
+      {
+        teacher_id: teacherId,
+        class_ids: uniqueClassIds,
+      },
+      { onConflict: "teacher_id" },
+    );
+
+  if (error) {
+    console.error("Failed to persist teacher_classes:", error);
+  }
 }
