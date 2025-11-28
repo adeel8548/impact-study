@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Edit2, Trash2, User } from "lucide-react";
 import { StudentModal } from "@/components/modals/student-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
+import { StudentFeesListModal } from "@/components/modals/student-fees-list-modal";
 import { FeeStatusButton } from "@/components/fee-status-button";
 import { deleteStudent } from "@/lib/actions/students";
 import type { Student, Class as SchoolClass } from "@/lib/types";
@@ -91,6 +92,10 @@ export function StudentsClientComponent({
   const [selectedStudent, setSelectedStudent] = useState<Student | undefined>();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
+  const [feesListModalOpen, setFeesListModalOpen] = useState(false);
+  const [feesListStatus, setFeesListStatus] = useState<"paid" | "unpaid">(
+    "paid",
+  );
 
   const filteredStudents = students?.filter((student) => {
     const matchesSearch =
@@ -182,7 +187,13 @@ export function StudentsClientComponent({
           </div>
         </Card>
 
-        <Card className="p-6 p-6  bg-white border-2 border-gray-100 ">
+        <Card
+          className="p-6 bg-white border-2 border-gray-100 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            setFeesListStatus("paid");
+            setFeesListModalOpen(true);
+          }}
+        >
           <div className="flex flex-col">
             <span className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
               Paid
@@ -197,7 +208,13 @@ export function StudentsClientComponent({
           </div>
         </Card>
 
-        <Card className="p-6  bg-white border-2 border-gray-100 ">
+        <Card
+          className="p-6  bg-white border-2 border-gray-100 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            setFeesListStatus("unpaid");
+            setFeesListModalOpen(true);
+          }}
+        >
           <div className="flex flex-col">
             <span className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
               Unpaid
@@ -367,6 +384,14 @@ export function StudentsClientComponent({
         title="Delete Student"
         description="Are you sure you want to delete this student? This action cannot be undone."
         onConfirm={handleConfirmDelete}
+      />
+
+      <StudentFeesListModal
+        open={feesListModalOpen}
+        onOpenChange={setFeesListModalOpen}
+        status={feesListStatus}
+        students={students}
+        classes={classes}
       />
     </>
   );

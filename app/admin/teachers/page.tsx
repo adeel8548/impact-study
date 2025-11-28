@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { TeacherModal } from "@/components/modals/teacher-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
+import { TeacherSalaryListModal } from "@/components/modals/teacher-salary-list-modal";
 import { deleteTeacher } from "@/lib/actions/teacher";
 import { toast } from "sonner";
 import { sortByNewest } from "@/lib/utils";
@@ -100,6 +101,10 @@ export default function TeacherManagement() {
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [salaryListModalOpen, setSalaryListModalOpen] = useState(false);
+  const [salaryListStatus, setSalaryListStatus] = useState<"paid" | "unpaid">(
+    "paid",
+  );
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -413,7 +418,13 @@ export default function TeacherManagement() {
                 </div>
               </div>
             </Card>
-            <Card className="p-6 border-l-4 border-l-green-500">
+            <Card
+              className="p-6 border-l-4 border-l-green-500 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => {
+                setSalaryListStatus("paid");
+                setSalaryListModalOpen(true);
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm font-medium mb-1">
@@ -432,7 +443,13 @@ export default function TeacherManagement() {
               </div>
             </Card>
 
-            <Card className="p-6 border-l-4 border-l-red-500">
+            <Card
+              className="p-6 border-l-4 border-l-red-500 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => {
+                setSalaryListStatus("unpaid");
+                setSalaryListModalOpen(true);
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm font-medium mb-1">
@@ -557,6 +574,14 @@ export default function TeacherManagement() {
         title="Delete Teacher"
         description={`Are you sure you want to delete ${selectedTeacher?.name}? This will remove their account and they will no longer be able to log in. This action cannot be undone.`}
         onConfirm={handleDeleteConfirm}
+      />
+
+      {/* Salary List Modal */}
+      <TeacherSalaryListModal
+        open={salaryListModalOpen}
+        onOpenChange={setSalaryListModalOpen}
+        status={salaryListStatus}
+        teachers={teachers}
       />
     </div>
   );
