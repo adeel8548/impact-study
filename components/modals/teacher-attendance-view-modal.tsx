@@ -164,11 +164,11 @@ export function TeacherAttendanceViewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[100vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            <span>Attendance: {teacherName}</span>
+           
+            <span className="font-semibold text-gray-800 flex gap-2 items-center">Teacher Name: <span className="text-blue-800">{teacherName}</span></span>
           </DialogTitle>
         </DialogHeader>
 

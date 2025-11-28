@@ -30,7 +30,7 @@ export function StudentsCountCard() {
       <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
         <Users className="w-6 h-6 text-indigo-600" />
       </div>
-      <div>
+      <div className="text-center">
         <p className="text-sm text-muted-foreground">Total Students</p>
         {content}
       </div>
