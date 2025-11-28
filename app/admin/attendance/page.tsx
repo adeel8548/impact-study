@@ -9,7 +9,9 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { sortByNewest } from "@/lib/utils";
+import { AttendanceRangeModal } from "@/components/modals/attendance-range-modal";
 
 interface Class {
   id: string;
@@ -78,19 +80,26 @@ export default function AttendanceManagement() {
     return `${y}-${m}-${day}`;
   };
 
-  // Date range helper: accepts option keys and returns local start/end strings and day count
-  const computeRange = (option: string) => {
+  // Date range helper: accepts option keys and optional custom dates, returns local start/end strings, day count and label
+  const computeRange = (
+    option: string,
+    custom?: { start?: string; end?: string }
+  ) => {
     const today = new Date();
-    let start: Date;
-    let end: Date = today;
+    let start: Date | null = null;
+    let end: Date | null = null;
 
     switch (option) {
       case "last7": {
-        start = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+        // include today + previous 6 days (total 7 days)
+        end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        start = new Date(end.getTime() - (7 - 1) * 24 * 60 * 60 * 1000);
         break;
       }
       case "last15": {
-        start = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
+        // include today + previous 14 days (total 15 days)
+        end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        start = new Date(end.getTime() - (15 - 1) * 24 * 60 * 60 * 1000);
         break;
       }
       case "lastMonth": {
@@ -98,7 +107,7 @@ export default function AttendanceManagement() {
         const firstOfThisMonth = new Date(
           today.getFullYear(),
           today.getMonth(),
-          1,
+          1
         );
         end = new Date(firstOfThisMonth.getTime() - 1 * 24 * 60 * 60 * 1000); // last day of previous month
         start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -110,33 +119,46 @@ export default function AttendanceManagement() {
         break;
       }
       case "last3Months": {
-        start = new Date(
-          today.getFullYear(),
-          today.getMonth() - 3,
-          today.getDate(),
-        );
+        // previous three full calendar months (exclude current month)
+        end = new Date(today.getFullYear(), today.getMonth(), 0); // last day of previous month
+        start = new Date(today.getFullYear(), today.getMonth() - 3, 1); // first day three months ago
         break;
       }
       case "last6Months": {
-        start = new Date(
-          today.getFullYear(),
-          today.getMonth() - 6,
-          today.getDate(),
-        );
+        end = new Date(today.getFullYear(), today.getMonth(), 0);
+        start = new Date(today.getFullYear(), today.getMonth() - 6, 1);
         break;
       }
       case "lastYear": {
-        start = new Date(
-          today.getFullYear() - 1,
-          today.getMonth(),
-          today.getDate(),
-        );
+        // previous 12 full months excluding current month
+        end = new Date(today.getFullYear(), today.getMonth(), 0); // last day of previous month
+        // start at first day 11 months before end (to include 12 months total)
+        start = new Date(end.getFullYear(), end.getMonth() - 11, 1);
+        break;
+      }
+      case "custom": {
+        if (custom && custom.start && custom.end) {
+          // parse ISO date strings
+          const [sy, sm, sd] = custom.start.split("-").map(Number);
+          const [ey, em, ed] = custom.end.split("-").map(Number);
+          start = new Date(sy, sm - 1, sd);
+          end = new Date(ey, em - 1, ed);
+        }
         break;
       }
       default: {
         // default to last7
-        start = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+        end = yesterday;
+        start = new Date(end.getTime() - (7 - 1) * 24 * 60 * 60 * 1000);
       }
+    }
+
+    if (!start || !end) {
+      // fallback to last7 previous days
+      const e = yesterday;
+      const s = new Date(e.getTime() - (7 - 1) * 24 * 60 * 60 * 1000);
+      start = s;
+      end = e;
     }
 
     // Normalize midday boundaries
@@ -149,7 +171,18 @@ export default function AttendanceManagement() {
     const diffMs = e.getTime() - s.getTime();
     const days = Math.max(1, Math.round(diffMs / (24 * 60 * 60 * 1000)) + 1);
 
-    return { start: startStr, end: endStr, days };
+    // Label: prefer human friendly for month ranges
+    let label = `${startStr} — ${endStr}`;
+    if (option === "lastMonth") {
+      const monthName = s.toLocaleString(undefined, { month: "long" });
+      label = `${monthName} ${s.getFullYear()}`;
+    } else if (option === "last3Months" || option === "last6Months") {
+      const startLabel = s.toLocaleString(undefined, { month: "short" });
+      const endLabel = e.toLocaleString(undefined, { month: "short" });
+      label = `${startLabel} ${s.getFullYear()} — ${endLabel} ${e.getFullYear()}`;
+    }
+
+    return { start: startStr, end: endStr, days, label };
   };
 
   // Auth check and initial load
@@ -173,6 +206,13 @@ export default function AttendanceManagement() {
   // Range selection for admin filters
   const [studentRange, setStudentRange] = useState<string>("last7");
   const [teacherRange, setTeacherRange] = useState<string>("last7");
+  // Custom date range state (ISO YYYY-MM-DD)
+  const [studentCustomStart, setStudentCustomStart] = useState<string>("");
+  const [studentCustomEnd, setStudentCustomEnd] = useState<string>("");
+  const [teacherCustomStart, setTeacherCustomStart] = useState<string>("");
+  const [teacherCustomEnd, setTeacherCustomEnd] = useState<string>("");
+  const [studentRangeModalOpen, setStudentRangeModalOpen] = useState(false);
+  const [teacherRangeModalOpen, setTeacherRangeModalOpen] = useState(false);
 
   // Load students when class changes
   useEffect(() => {
@@ -207,10 +247,7 @@ export default function AttendanceManagement() {
         ? sortByNewest(classesData)
         : [];
       setClasses(normalized);
-      if (
-        normalized.length > 0 &&
-        !selectedClass
-      ) {
+      if (normalized.length > 0 && !selectedClass) {
         setSelectedClass(normalized[0].id);
       }
     } catch (error) {
@@ -239,12 +276,18 @@ export default function AttendanceManagement() {
     }
   };
 
-  // Fetch attendance for students for a computed range option
-  const fetchStudentAttendance = async (rangeOption = "last7") => {
+  // Fetch attendance for students for a computed range option or explicit custom dates
+  const fetchStudentAttendance = async (
+    rangeOption = "last7",
+    customDates?: { start?: string; end?: string }
+  ) => {
     if (!selectedClass) return;
     try {
       setIsFetching(true);
-      const { start, end } = computeRange(rangeOption);
+      const { start, end } =
+        rangeOption === "custom" && customDates
+          ? computeRange("custom", customDates)
+          : computeRange(rangeOption, customDates);
 
       const params = new URLSearchParams({
         classId: selectedClass,
@@ -263,7 +306,7 @@ export default function AttendanceManagement() {
       ).map((a: any) => {
         const d = new Date(a.date);
         const localDate = toLocalDate(
-          new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+          new Date(d.getFullYear(), d.getMonth(), d.getDate())
         );
         return { ...a, date: localDate };
       });
@@ -295,10 +338,16 @@ export default function AttendanceManagement() {
     }
   };
 
-  const fetchTeacherAttendance = async (rangeOption = "last7") => {
+  const fetchTeacherAttendance = async (
+    rangeOption = "last7",
+    customDates?: { start?: string; end?: string }
+  ) => {
     try {
       setIsFetching(true);
-      const { start, end } = computeRange(rangeOption);
+      const { start, end } =
+        rangeOption === "custom" && customDates
+          ? computeRange("custom", customDates)
+          : computeRange(rangeOption, customDates);
 
       const params = new URLSearchParams({
         startDate: start,
@@ -315,7 +364,7 @@ export default function AttendanceManagement() {
       ).map((a: any) => {
         const d = new Date(a.date);
         const localDate = toLocalDate(
-          new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+          new Date(d.getFullYear(), d.getMonth(), d.getDate())
         );
         return { ...a, date: localDate };
       });
@@ -334,19 +383,19 @@ export default function AttendanceManagement() {
   const handleStudentAttendanceChange = async (
     studentId: string,
     date: string,
-    status: "present" | "absent" | "leave" | null,
+    status: "present" | "absent" | "leave" | null
   ) => {
     try {
       if (!status) {
         // Delete attendance locally for now
         const recordToDelete = studentAttendance.find(
-          (a) => a.student_id === studentId && a.date === date,
+          (a) => a.student_id === studentId && a.date === date
         );
         if (recordToDelete) {
           setStudentAttendance((prev) =>
             (prev || []).filter(
-              (a) => !(a.student_id === studentId && a.date === date),
-            ),
+              (a) => !(a.student_id === studentId && a.date === date)
+            )
           );
         }
         return;
@@ -356,7 +405,7 @@ export default function AttendanceManagement() {
 
       // Check if we already have a record for this student & date
       const existing = (studentAttendance || []).find(
-        (a) => a.student_id === studentId && a.date === date,
+        (a) => a.student_id === studentId && a.date === date
       );
 
       let response: Response | null = null;
@@ -392,7 +441,7 @@ export default function AttendanceManagement() {
 
       setStudentAttendance((prev) => {
         const filtered = (prev || []).filter(
-          (a) => !(a.student_id === studentId && a.date === date),
+          (a) => !(a.student_id === studentId && a.date === date)
         );
         if (Array.isArray(returned)) return [...filtered, ...returned];
         return [...filtered, returned];
@@ -408,16 +457,16 @@ export default function AttendanceManagement() {
   const handleTeacherAttendanceChange = async (
     teacherId: string,
     date: string,
-    status: "present" | "absent" | "leave" | null,
+    status: "present" | "absent" | "leave" | null
   ) => {
     try {
       if (!status) {
         setTeacherAttendance((prev) =>
           Array.isArray(prev)
             ? prev.filter(
-                (a) => !(a.teacher_id === teacherId && a.date === date),
+                (a) => !(a.teacher_id === teacherId && a.date === date)
               )
-            : [],
+            : []
         );
         return;
       }
@@ -444,7 +493,7 @@ export default function AttendanceManagement() {
 
       setTeacherAttendance((prev) => {
         const filtered = (prev || []).filter(
-          (a) => !(a.teacher_id === teacherId && a.date === date),
+          (a) => !(a.teacher_id === teacherId && a.date === date)
         );
         if (Array.isArray(returned)) return [...filtered, ...returned];
         return [...filtered, returned];
@@ -468,7 +517,10 @@ export default function AttendanceManagement() {
     setMarkingModalOpen(true);
   };
 
-  const handleMarked = (date: string, status: "present" | "absent" | "leave") => {
+  const handleMarked = (
+    date: string,
+    status: "present" | "absent" | "leave"
+  ) => {
     // Refresh attendance after marking
     if (markingType === "teacher") {
       fetchTeacherAttendance(teacherRange);
@@ -508,21 +560,98 @@ export default function AttendanceManagement() {
 
             {/* Students Tab */}
             <TabsContent value="students" className="space-y-6">
-              <Card className="p-4">
-                <label className="text-sm font-medium text-foreground mb-2 block">
-                  Select Class
-                </label>
-                <select
-                  value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="px-4 py-2 border border-border rounded-lg bg-background text-foreground w-full max-w-xs"
-                >
-                  {classes?.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </option>
-                  ))}
-                </select>
+              <Card className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Select Class
+                  </label>
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="px-4 py-2 border border-border rounded-lg bg-background text-foreground w-full max-w-xs"
+                  >
+                    {classes?.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-1 md:gap-2">
+                  <button
+                    className="px-2 py-1 flex items-center gap-2 border border-border rounded text-sm bg-background text-foreground"
+                    onClick={() => setStudentRangeModalOpen(true)}
+                    title="Open custom range picker"
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </button>
+                  <select
+                    value={studentRange}
+                    onChange={(e) => setStudentRange(e.target.value)}
+                    className="px-3 py-1 border border-border rounded text-sm bg-background text-foreground"
+                  >
+                    <option value="last7">Last 7 days</option>
+                    <option value="last15">Last 15 days</option>
+                    <option value="lastMonth">Last month (calendar)</option>
+                    <option value="currentMonth">Current month</option>
+                    <option value="last3Months">Last 3 months</option>
+                    <option value="last6Months">Last 6 months</option>
+                    <option value="lastYear">Last year</option>
+                    {/* <option value="custom">Custom range</option> */}
+                  </select>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                        isFetching
+                          ? "bg-secondary text-muted-foreground cursor-not-allowed"
+                          : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      }`}
+                      onClick={() =>
+                        fetchStudentAttendance(
+                          studentRange,
+                          studentRange === "custom"
+                            ? {
+                                start: studentCustomStart,
+                                end: studentCustomEnd,
+                              }
+                            : undefined
+                        )
+                      }
+                      disabled={
+                        isFetching ||
+                        (studentRange === "custom" &&
+                          (!studentCustomStart || !studentCustomEnd))
+                      }
+                    >
+                      {isFetching ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading...
+                        </span>
+                      ) : (
+                        "Load"
+                      )}
+                    </button>
+
+                    {/* <div className="text-sm text-muted-foreground ml-2">
+                            {(() => computeRange(studentRange, studentRange === "custom" ? { start: studentCustomStart, end: studentCustomEnd } : undefined).label)()}
+                          </div> */}
+                  </div>
+
+                  {studentsPastLoaded && (
+                    <button
+                      className="px-3 py-1 border border-border rounded text-sm"
+                      onClick={() => {
+                        setStudentAttendance((prev) =>
+                          prev.filter((a) => a.date === toLocalDate(new Date()))
+                        );
+                        setStudentsPastLoaded(false);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </Card>
 
               {selectedClassObj && (
@@ -543,14 +672,14 @@ export default function AttendanceManagement() {
                               : []
                           ).filter((a) => a.date === today);
                           const presentCount = todayRecords.filter(
-                            (r) => r.status === "present",
+                            (r) => r.status === "present"
                           ).length;
                           const absentCount = todayRecords.filter(
-                            (r) => r.status === "absent",
+                            (r) => r.status === "absent"
                           ).length;
                           const notMarked = Math.max(
                             0,
-                            students.length - (presentCount + absentCount),
+                            students.length - (presentCount + absentCount)
                           );
 
                           return (
@@ -568,59 +697,6 @@ export default function AttendanceManagement() {
                           );
                         })()}
                       </div>
-
-                      <div className="flex items-center gap-1 md:gap-2">
-                        <select
-                          value={studentRange}
-                          onChange={(e) => setStudentRange(e.target.value)}
-                          className="px-3 py-1 border border-border rounded text-sm bg-background text-foreground"
-                        >
-                          <option value="last7">Last 7 days</option>
-                          <option value="last15">Last 15 days</option>
-                          <option value="lastMonth">
-                            Last month (calendar)
-                          </option>
-                          <option value="currentMonth">Current month</option>
-                          <option value="last3Months">Last 3 months</option>
-                          <option value="last6Months">Last 6 months</option>
-                          <option value="lastYear">Last year</option>
-                        </select>
-
-                        <button
-                          className={`px-3 py-1 rounded text-sm font-medium transition-all ${
-                            isFetching
-                              ? "bg-secondary text-muted-foreground cursor-not-allowed"
-                              : "bg-primary text-primary-foreground hover:bg-primary/90"
-                          }`}
-                          onClick={() => fetchStudentAttendance(studentRange)}
-                          disabled={isFetching}
-                        >
-                          {isFetching ? (
-                            <span className="flex items-center gap-2">
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Loading...
-                            </span>
-                          ) : (
-                            "Load"
-                          )}
-                        </button>
-
-                        {studentsPastLoaded && (
-                          <button
-                            className="px-3 py-1 border border-border rounded text-sm"
-                            onClick={() => {
-                              setStudentAttendance((prev) =>
-                                prev.filter(
-                                  (a) => a.date === toLocalDate(new Date()),
-                                ),
-                              );
-                              setStudentsPastLoaded(false);
-                            }}
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
                     </div>
                   </div>
 
@@ -636,7 +712,7 @@ export default function AttendanceManagement() {
                     <div className="space-y-4">
                       {students?.map((student) => {
                         const studentRecords = studentAttendance.filter(
-                          (a) => a.student_id === student.id,
+                          (a) => a.student_id === student.id
                         );
                         return (
                           <div
@@ -654,7 +730,11 @@ export default function AttendanceManagement() {
                               </div>
                               <button
                                 onClick={() =>
-                                  openMarkingModal("student", student.id, student.name)
+                                  openMarkingModal(
+                                    "student",
+                                    student.id,
+                                    student.name
+                                  )
                                 }
                                 className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
                               >
@@ -668,10 +748,20 @@ export default function AttendanceManagement() {
                                 handleStudentAttendanceChange(
                                   student.id,
                                   date,
-                                  status,
+                                  status
                                 )
                               }
-                              daysToShow={computeRange(studentRange).days}
+                              daysToShow={
+                                computeRange(
+                                  studentRange,
+                                  studentRange === "custom"
+                                    ? {
+                                        start: studentCustomStart,
+                                        end: studentCustomEnd,
+                                      }
+                                    : undefined
+                                ).days
+                              }
                             />
                           </div>
                         );
@@ -699,14 +789,14 @@ export default function AttendanceManagement() {
                           : []
                       ).filter((a) => a.date === today);
                       const presentCount = todayRecords.filter(
-                        (r) => r.status === "present",
+                        (r) => r.status === "present"
                       ).length;
                       const absentCount = todayRecords.filter(
-                        (r) => r.status === "absent",
+                        (r) => r.status === "absent"
                       ).length;
                       const notMarked = Math.max(
                         0,
-                        teachers.length - (presentCount + absentCount),
+                        teachers.length - (presentCount + absentCount)
                       );
 
                       return (
@@ -723,6 +813,13 @@ export default function AttendanceManagement() {
                     })()}
 
                     <div className="flex items-center gap-2">
+                      <button
+                        className="px-2 py-1 flex items-center gap-2 border border-border rounded text-sm bg-background text-foreground"
+                        onClick={() => setTeacherRangeModalOpen(true)}
+                        title="Open custom range picker"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
                       <select
                         value={teacherRange}
                         onChange={(e) => setTeacherRange(e.target.value)}
@@ -735,26 +832,56 @@ export default function AttendanceManagement() {
                         <option value="last3Months">Last 3 months</option>
                         <option value="last6Months">Last 6 months</option>
                         <option value="lastYear">Last year</option>
+                        {/* <option value="custom">Custom range</option> */}
                       </select>
 
-                      <button
-                        className={`px-3 py-1 rounded text-sm font-medium transition-all ${
-                          isFetching
-                            ? "bg-secondary text-muted-foreground cursor-not-allowed"
-                            : "bg-primary text-primary-foreground hover:bg-primary/90"
-                        }`}
-                        onClick={() => fetchTeacherAttendance(teacherRange)}
-                        disabled={isFetching}
-                      >
-                        {isFetching ? (
-                          <span className="flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading...
-                          </span>
-                        ) : (
-                          "Load"
-                        )}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                            isFetching
+                              ? "bg-secondary text-muted-foreground cursor-not-allowed"
+                              : "bg-primary text-primary-foreground hover:bg-primary/90"
+                          }`}
+                          onClick={() =>
+                            fetchTeacherAttendance(
+                              teacherRange,
+                              teacherRange === "custom"
+                                ? {
+                                    start: teacherCustomStart,
+                                    end: teacherCustomEnd,
+                                  }
+                                : undefined
+                            )
+                          }
+                          disabled={
+                            isFetching ||
+                            (teacherRange === "custom" &&
+                              (!teacherCustomStart || !teacherCustomEnd))
+                          }
+                        >
+                          {isFetching ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading...
+                            </span>
+                          ) : (
+                            "Load"
+                          )}
+                        </button>
+
+                        {/* <div className="text-sm text-muted-foreground ml-2">
+                          {(() =>
+                            computeRange(
+                              teacherRange,
+                              teacherRange === "custom"
+                                ? {
+                                    start: teacherCustomStart,
+                                    end: teacherCustomEnd,
+                                  }
+                                : undefined
+                            ).label)()}
+                        </div> */}
+                      </div>
 
                       {teachersPastLoaded && (
                         <button
@@ -762,8 +889,8 @@ export default function AttendanceManagement() {
                           onClick={() => {
                             setTeacherAttendance((prev) =>
                               prev.filter(
-                                (a) => a.date === toLocalDate(new Date()),
-                              ),
+                                (a) => a.date === toLocalDate(new Date())
+                              )
                             );
                             setTeachersPastLoaded(false);
                           }}
@@ -800,7 +927,11 @@ export default function AttendanceManagement() {
                             </div>
                             <button
                               onClick={() =>
-                                openMarkingModal("teacher", teacher.id, teacher.name)
+                                openMarkingModal(
+                                  "teacher",
+                                  teacher.id,
+                                  teacher.name
+                                )
                               }
                               className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
                             >
@@ -814,10 +945,20 @@ export default function AttendanceManagement() {
                               handleTeacherAttendanceChange(
                                 teacher.id,
                                 date,
-                                status,
+                                status
                               )
                             }
-                            daysToShow={computeRange(teacherRange).days}
+                            daysToShow={
+                              computeRange(
+                                teacherRange,
+                                teacherRange === "custom"
+                                  ? {
+                                      start: teacherCustomStart,
+                                      end: teacherCustomEnd,
+                                    }
+                                  : undefined
+                              ).days
+                            }
                             showTimestamps={true}
                           />
                         </div>
@@ -828,6 +969,35 @@ export default function AttendanceManagement() {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Attendance Range Modals */}
+          <AttendanceRangeModal
+            open={studentRangeModalOpen}
+            onOpenChange={setStudentRangeModalOpen}
+            initialStart={studentCustomStart}
+            initialEnd={studentCustomEnd}
+            title="Student: Custom Range"
+            onApply={(s, e) => {
+              setStudentCustomStart(s);
+              setStudentCustomEnd(e);
+              setStudentRange("custom");
+              fetchStudentAttendance("custom", { start: s, end: e });
+            }}
+          />
+
+          <AttendanceRangeModal
+            open={teacherRangeModalOpen}
+            onOpenChange={setTeacherRangeModalOpen}
+            initialStart={teacherCustomStart}
+            initialEnd={teacherCustomEnd}
+            title="Teacher: Custom Range"
+            onApply={(s, e) => {
+              setTeacherCustomStart(s);
+              setTeacherCustomEnd(e);
+              setTeacherRange("custom");
+              fetchTeacherAttendance("custom", { start: s, end: e });
+            }}
+          />
 
           {/* Marking Modal */}
           <AdminAttendanceMarkingModal
