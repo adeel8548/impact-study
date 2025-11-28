@@ -78,7 +78,7 @@ export function TeacherAttendanceViewModal({
         try {
           const d = new Date(a.date);
           const localDate = `${d.getFullYear()}-${String(
-            d.getMonth() + 1,
+            d.getMonth() + 1
           ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           return { ...a, date: localDate };
         } catch (e) {
@@ -124,14 +124,14 @@ export function TeacherAttendanceViewModal({
   // Calculate stats - only for current selected month
   let presentCount = 0;
   let absentCount = 0;
-  
+
   attendance.forEach((record) => {
     // Filter records to only current month
     try {
       const recordDate = new Date(record.date);
       const recordYear = recordDate.getFullYear();
       const recordMonth = recordDate.getMonth();
-      
+
       if (recordYear === year && recordMonth === month) {
         if (record.status === "present") presentCount++;
         if (record.status === "absent") absentCount++;
@@ -143,7 +143,7 @@ export function TeacherAttendanceViewModal({
 
   const getAttendanceRecord = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-      day,
+      day
     ).padStart(2, "0")}`;
     return attendance.find((a) => a.date === dateStr);
   };
@@ -162,13 +162,28 @@ export function TeacherAttendanceViewModal({
     return "—";
   };
 
+  const formatTime = (iso?: string) => {
+    if (!iso) return "—";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (e) {
+      return "—";
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[100vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-           
-            <span className="font-semibold text-gray-800 flex gap-2 items-center">Teacher Name: <span className="text-blue-800">{teacherName}</span></span>
+            <span className="font-semibold text-gray-800 flex gap-2 items-center">
+              Teacher Name: <span className="text-blue-800">{teacherName}</span>
+            </span>
           </DialogTitle>
         </DialogHeader>
 
@@ -250,12 +265,12 @@ export function TeacherAttendanceViewModal({
                       >
                         {day}
                       </div>
-                    ),
+                    )
                   )}
                 </div>
 
                 {/* Calendar days */}
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {days.map((day, index) => {
                     if (day === null) {
                       return (
@@ -272,20 +287,29 @@ export function TeacherAttendanceViewModal({
                     return (
                       <div
                         key={day}
-                        className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all ${
+                        className={`rounded-lg font-semibold text-sm flex flex-col justify-between transition-all min-h-28 p-2 ${
                           !record
                             ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                             : record.status === "present"
-                              ? "bg-green-500 text-white"
-                              : record.status === "absent"
-                                ? "bg-red-500 text-white"
-                                : "bg-gray-400 text-white dark:bg-gray-600"
+                            ? "bg-green-500 text-white"
+                            : record.status === "absent"
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-400 text-white dark:bg-gray-600"
                         }`}
                       >
+                        {/* Top: Day number and Status */}
                         <div className="text-center">
                           <div className="text-xs opacity-70">{day}</div>
                           <div className="text-base">{getStatusText(day)}</div>
                         </div>
+
+                        {/* Bottom: Time In / Out */}
+                        {record && record.status === "present" && (
+                          <div className="text-xs text-center mt-2 pt-1 border-t border-current/30 w-full">
+                            <div>In: {formatTime(record.created_at)}</div>
+                            <div>Out: {formatTime(record.out_time)}</div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
