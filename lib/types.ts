@@ -116,3 +116,38 @@ export interface DashboardStats {
   monthlySalaryPaid: number;
   remainingBalance: number;
 }
+
+// Schedules
+export interface RevisionSchedule {
+  id: string;
+  class_id: string;
+  subject: string;
+  topic: string;
+  revision_date: string;
+  teacher_id?: string | null;
+  created_at?: string;
+}
+
+export interface SeriesExam {
+  id: string;
+  class_id: string;
+  subject: string;
+  start_date: string;
+  end_date: string;
+  duration_minutes?: number | null;
+  paper_given_date?: string | null;
+  notes?: string | null;
+  teacher_id?: string | null;
+  created_at?: string;
+}
+
+export interface DailyQuiz {
+  id: string;
+  class_id: string;
+  subject: string;
+  topic: string;
+  quiz_date: string;
+  duration_minutes?: number | null;
+  teacher_id?: string | null;
+  created_at?: string;
+}

@@ -7,7 +7,8 @@ export async function markStudentAttendance(
   studentId: string,
   classId: string,
   date: string,
-  status: "present" | "absent" | "leave",
+  status: "present" | "absent" | "leave" | null,
+  remarks?: string,
 ) {
   const supabase = await createClient();
   const {
@@ -18,22 +19,36 @@ export async function markStudentAttendance(
     return { error: "Not authenticated" };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("school_id")
-    .eq("id", user.id)
-    .single();
+  // If status is null, delete the record instead of upserting
+  if (status === null) {
+    const { error } = await supabase
+      .from("student_attendance")
+      .delete()
+      .eq("student_id", studentId)
+      .eq("date", date);
 
-  const { error } = await supabase.from("student_attendance").upsert({
-    student_id: studentId,
-    class_id: classId,
-    date,
-    status,
-    school_id: profile?.school_id,
-  });
+    if (error) {
+      return { error: error.message };
+    }
+  } else {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("school_id")
+      .eq("id", user.id)
+      .single();
 
-  if (error) {
-    return { error: error.message };
+    const { error } = await supabase.from("student_attendance").upsert({
+      student_id: studentId,
+      class_id: classId,
+      date,
+      status,
+      remarks: remarks || null,
+      school_id: profile?.school_id,
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
   }
 
   revalidatePath("/teacher");
@@ -54,4 +69,106 @@ export async function getStudentAttendance(studentId: string) {
   }
 
   return { attendance: data || [], error: null };
+}
+
+export async function markTeacherAttendance(
+  teacherId: string,
+  date: string,
+  status: "present" | "absent" | "leave" | null,
+  remarks?: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  // If status is null, delete the record instead of upserting
+  if (status === null) {
+    const { error } = await supabase
+      .from("teacher_attendance")
+      .delete()
+      .eq("teacher_id", teacherId)
+      .eq("date", date);
+
+    if (error) {
+      return { error: error.message };
+    }
+  } else {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("school_id")
+      .eq("id", user.id)
+      .single();
+
+    const { error } = await supabase.from("teacher_attendance").upsert({
+      teacher_id: teacherId,
+      date,
+      status,
+      remarks: remarks || null,
+      school_id: profile?.school_id,
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+  }
+
+  revalidatePath("/teacher");
+  revalidatePath("/admin/attendance");
+  revalidatePath("/teacher/my-attendance");
+  return { error: null };
+}
+
+export async function updateAttendanceRemarks(
+  recordId: string,
+  table: "student_attendance" | "teacher_attendance",
+  remarks: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  // Fetch role and existing record for teacher_attendance to enforce lock
+  let role: string | null = null;
+  if (table === "teacher_attendance") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    role = profile?.role || null;
+
+    const { data: existing } = await supabase
+      .from("teacher_attendance")
+      .select("reason_locked")
+      .eq("id", recordId)
+      .single();
+
+    if (existing?.reason_locked && role === "teacher") {
+      return { error: "Reason is locked after admin approval" };
+    }
+  }
+
+  const { error } = await supabase
+    .from(table)
+    .update({ remarks })
+    .eq("id", recordId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/teacher");
+  revalidatePath("/admin/attendance");
+  revalidatePath("/teacher/my-attendance");
+  return { error: null };
 }

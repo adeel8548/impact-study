@@ -47,11 +47,12 @@ export function StudentModal({
     email: student?.email || "",
     phone: student?.phone || "",
     guardian_name: student?.guardian_name || "",
-    fees: student?.fees || "",
+    current_fees: "",
   });
 
   // <-- Add this useEffect here
   useEffect(() => {
+    const feesAmount = student?.currentFee?.amount ? student.currentFee.amount.toString() : "";
     setFormData({
       name: student?.name || "",
       roll_number: student?.roll_number || "",
@@ -59,9 +60,9 @@ export function StudentModal({
       email: student?.email || "",
       phone: student?.phone || "",
       guardian_name: student?.guardian_name || "",
-      fees: student?.fees || "",
+      current_fees: feesAmount,
     });
-  }, [student]);
+  }, [open, student?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +71,15 @@ export function StudentModal({
 
     try {
       if (student) {
-        const result = await updateStudent(student.id, formData);
+        const result = await updateStudent(student.id, {
+          name: formData.name,
+          roll_number: formData.roll_number,
+          class_id: formData.class_id,
+          email: formData.email,
+          phone: formData.phone,
+          guardian_name: formData.guardian_name,
+          fees: formData.current_fees,
+        });
         if (result.error) {
           setError(result.error);
         } else {
@@ -80,6 +89,7 @@ export function StudentModal({
       } else {
         const result = await createStudent({
           ...formData,
+          fees: formData.current_fees,
         });
         if (result.error) {
           setError(result.error);
@@ -97,7 +107,7 @@ export function StudentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {student ? "Edit Student" : "Add New Student"}
@@ -208,18 +218,23 @@ export function StudentModal({
 
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
-              Monthly Fees Amount
+              Current Monthly Fees
             </label>
             <Input
               type="number"
               placeholder="Enter monthly fees amount"
-              value={formData.fees}
+              value={formData.current_fees}
               onChange={(e) =>
-                setFormData({ ...formData, fees: e.target.value })
+                setFormData({ ...formData, current_fees: e.target.value })
               }
               min="0"
               step="0.01"
             />
+            {formData.current_fees && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                PKR {Number(formData.current_fees).toLocaleString()}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">

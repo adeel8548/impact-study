@@ -4,11 +4,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Edit2, Trash2, User, Calendar } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  User,
+  Calendar,
+  DollarSign,
+} from "lucide-react";
 import { StudentModal } from "@/components/modals/student-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { StudentFeesListModal } from "@/components/modals/student-fees-list-modal";
 import { StudentAttendanceViewModal } from "@/components/modals/student-attendance-view-modal";
+import { StudentUnpaidFeesModal } from "@/components/modals/student-unpaid-fees-modal";
 import { FeeStatusButton } from "@/components/fee-status-button";
 import { deleteStudent } from "@/lib/actions/students";
 import type { Student, Class as SchoolClass } from "@/lib/types";
@@ -19,16 +28,10 @@ interface StudentsClientComponentProps {
   feeSummary?: { totalFees: number; paidFees: number; unpaidFees: number };
 }
 
-const normalizeClassName = (value?: string) => value?.trim().toLowerCase() ?? "";
+const normalizeClassName = (value?: string) =>
+  value?.trim().toLowerCase() ?? "";
 const CLASS_FILTER_STORAGE_KEY = "studentsClassFilter";
-const preferredClassOrder = [
-  "10th",
-  "9th",
-  "pre 9th",
-  "8th",
-  "pre 8th",
-  "7th",
-];
+const preferredClassOrder = ["10th", "9th", "pre 9th", "8th", "pre 8th", "7th"];
 
 export function StudentsClientComponent({
   initialStudents,
@@ -41,7 +44,7 @@ export function StudentsClientComponent({
   const classOrderMap = useMemo(() => {
     const map = new Map<string, number>();
     preferredClassOrder.forEach((name, index) =>
-      map.set(normalizeClassName(name), index),
+      map.set(normalizeClassName(name), index)
     );
     return map;
   }, []);
@@ -64,7 +67,7 @@ export function StudentsClientComponent({
 
   const defaultClassId = useMemo(() => {
     const ten = sortedClasses.find(
-      (cls) => normalizeClassName(cls?.name) === normalizeClassName("10th"),
+      (cls) => normalizeClassName(cls?.name) === normalizeClassName("10th")
     )?.id;
     return ten ? String(ten) : "";
   }, [sortedClasses]);
@@ -95,8 +98,11 @@ export function StudentsClientComponent({
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
   const [feesListModalOpen, setFeesListModalOpen] = useState(false);
   const [feesListStatus, setFeesListStatus] = useState<"paid" | "unpaid">(
-    "paid",
+    "paid"
   );
+  const [unpaidFeesModalOpen, setUnpaidFeesModalOpen] = useState(false);
+  const [selectedStudentForUnpaidFees, setSelectedStudentForUnpaidFees] =
+    useState<Student | null>(null);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [selectedStudentForAttendance, setSelectedStudentForAttendance] =
     useState<Student | null>(null);
@@ -143,7 +149,7 @@ export function StudentsClientComponent({
     if (payload?.classId) {
       persistClassFilter(String(payload.classId));
     }
-    window.location.reload();
+    setModalOpen(false);
   };
 
   const handleDeleteClick = (studentId: string) => {
@@ -263,12 +269,15 @@ export function StudentsClientComponent({
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto h-[70vh]">
           <table className="w-full">
-            <thead className="bg-secondary border-b border-border">
+            <thead className="bg-secondary border-b border-border sticky top-0">
               <tr>
                 <th className="text-left p-4 font-semibold text-foreground">
                   Name
+                </th>
+                <th className="text-left p-4 font-semibold text-foreground">
+                  Father Name
                 </th>
                 <th className="text-left p-4 font-semibold text-foreground">
                   Roll No.
@@ -276,12 +285,18 @@ export function StudentsClientComponent({
                 <th className="text-left p-4 font-semibold text-foreground">
                   Class
                 </th>
-                <th className="text-left p-4 font-semibold text-foreground">
-                  Email
-                </th>
 
+                <th className="text-left p-4 font-semibold text-foreground">
+                  Phone
+                </th>
                 <th className="text-center p-4 font-semibold text-foreground">
-                  Fees Status
+                  Current Fees Status
+                </th>
+                <th className="text-center p-4 font-semibold text-foreground">
+                  All Month Fees
+                </th>
+                 <th className="text-center p-4 font-semibold text-foreground">
+                  Attendance
                 </th>
                 <th className="text-center p-4 font-semibold text-foreground">
                   Actions
@@ -291,7 +306,7 @@ export function StudentsClientComponent({
             <tbody>
               {orderedStudents?.map((student) => {
                 const studentClass = classes?.find(
-                  (c) => c.id === student?.class_id,
+                  (c) => c.id === student?.class_id
                 );
                 return (
                   <tr
@@ -309,15 +324,18 @@ export function StudentsClientComponent({
                       </div>
                     </td>
                     <td className="p-4 text-foreground">
+                      {student?.guardian_name || "—"}
+                    </td>
+                    <td className="p-4 text-foreground">
                       {student?.roll_number}
                     </td>
                     <td className="p-4 text-foreground">
                       {studentClass?.name}
                     </td>
-                    <td className="p-4 text-muted-foreground text-sm">
-                      {student.email || "—"}
-                    </td>
 
+                    <td className="p-4 text-foreground">
+                      {student?.phone || "—"}
+                    </td>
                     <td className="p-4">
                       {student.currentFee ? (
                         <div className="flex flex-col ">
@@ -328,7 +346,25 @@ export function StudentsClientComponent({
                             feeId={student.currentFee.id}
                             studentId={student.id}
                             initialStatus={student.currentFee.status}
-                            onStatusChange={() => window.location.reload()}
+                            onStatusChange={() => {
+                              // Refresh the specific student's data
+                              setStudents(
+                                students.map((s) =>
+                                  s.id === student.id
+                                    ? {
+                                        ...s,
+                                        currentFee: {
+                                          ...s.currentFee,
+                                          status:
+                                            student.currentFee.status === "paid"
+                                              ? "unpaid"
+                                              : "paid",
+                                        },
+                                      }
+                                    : s
+                                )
+                              );
+                            }}
                           />
                         </div>
                       ) : (
@@ -337,20 +373,36 @@ export function StudentsClientComponent({
                         </span>
                       )}
                     </td>
+                    <td className="p-4 text-center">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedStudentForUnpaidFees(student);
+                          setUnpaidFeesModalOpen(true);
+                        }}
+                        className="gap-1 bg-background"
+                        title="View unpaid fees"
+                      >
+                        View Fees
+                      </Button>
+                    </td>
+                    <td className="p-4 text-center">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedStudentForAttendance(student);
+                          setAttendanceModalOpen(true);
+                        }}
+                        className="gap-1 bg-transparent"
+                        title="View attendance"
+                      >
+                        View Attendance
+                      </Button>
+                    </td>
                     <td className="p-4">
                       <div className="flex justify-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedStudentForAttendance(student);
-                            setAttendanceModalOpen(true);
-                          }}
-                          className="gap-1 bg-transparent"
-                          title="View attendance"
-                        >
-                          <Calendar className="w-3 h-3" />
-                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -416,7 +468,18 @@ export function StudentsClientComponent({
           onOpenChange={setAttendanceModalOpen}
           studentId={selectedStudentForAttendance.id}
           studentName={selectedStudentForAttendance.name}
-          studentClass={classes.find((c) => c.id === (selectedStudentForAttendance as any).class_id)}
+          studentClass={classes.find(
+            (c) => c.id === (selectedStudentForAttendance as any).class_id
+          )}
+        />
+      )}
+
+      {selectedStudentForUnpaidFees && (
+        <StudentUnpaidFeesModal
+          open={unpaidFeesModalOpen}
+          onOpenChange={setUnpaidFeesModalOpen}
+          studentId={selectedStudentForUnpaidFees.id}
+          studentName={selectedStudentForUnpaidFees.name}
         />
       )}
     </>

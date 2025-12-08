@@ -23,6 +23,9 @@ const menuItems = [
   { href: "/admin/teachers", label: "Teachers", icon: Briefcase },
   { href: "/admin/classes", label: "Classes", icon: BookOpen },
   { href: "/admin/attendance", label: "Attendance", icon: Clock },
+  { href: "/admin/revisions", label: "Revisions", icon: BookOpen },
+  { href: "/admin/series-exams", label: "Series Exams", icon: BarChart3 },
+  { href: "/admin/quizzes", label: "Quizzes", icon: Home },
   // { href: "/admin/fees", label: "Fees", icon: DollarSign },
   // { href: "/admin/salaries", label: "Salaries", icon: BarChart3 },
 ];

@@ -232,6 +232,7 @@ export function TeacherOwnAttendanceViewModal({
   // Calculate stats - only for current selected month
   let presentCount = 0;
   let absentCount = 0;
+  let leaveCount = 0;
 
   attendance.forEach((record) => {
     try {
@@ -242,6 +243,7 @@ export function TeacherOwnAttendanceViewModal({
       if (recordYear === year && recordMonth === month) {
         if (record.status === "present") presentCount++;
         if (record.status === "absent") absentCount++;
+        if (record.status === "leave") leaveCount++;
       }
     } catch (e) {
       // ignore
@@ -266,6 +268,7 @@ export function TeacherOwnAttendanceViewModal({
     if (!record) return "—";
     if (record.status === "present") return "✓";
     if (record.status === "absent") return "✗";
+    if (record.status === "leave") return "🏥";
     return "—";
   };
 
@@ -297,7 +300,7 @@ export function TeacherOwnAttendanceViewModal({
         ) : (
           <div className="space-y-6">
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <Card className="p-4 border-l-4 border-l-green-500">
                 <p className="text-muted-foreground text-xs font-medium mb-1">
                   Present
@@ -313,6 +316,15 @@ export function TeacherOwnAttendanceViewModal({
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {absentCount}
+                </p>
+              </Card>
+
+              <Card className="p-4 border-l-4 border-l-blue-500">
+                <p className="text-muted-foreground text-xs font-medium mb-1">
+                  Leave
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {leaveCount}
                 </p>
               </Card>
             </div>
@@ -380,6 +392,10 @@ export function TeacherOwnAttendanceViewModal({
                 <span className="text-sm text-foreground">Absent</span>
               </div>
               <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-blue-500"></div>
+                <span className="text-sm text-foreground">Leave</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded bg-gray-400 dark:bg-gray-600"></div>
                 <span className="text-sm text-foreground">Off / No Record</span>
               </div>
@@ -427,6 +443,8 @@ export function TeacherOwnAttendanceViewModal({
                             ? "bg-green-500 text-white"
                             : record.status === "absent"
                             ? "bg-red-500 text-white"
+                            : record.status === "leave"
+                            ? "bg-blue-500 text-white"
                             : "bg-gray-400 text-white dark:bg-gray-600"
                         }`}
                       >

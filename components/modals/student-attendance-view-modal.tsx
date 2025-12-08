@@ -15,6 +15,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 
 interface AttendanceRecord {
   id: string;
@@ -52,6 +53,12 @@ export function StudentAttendanceViewModal({
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [rangeOption, setRangeOption] = useState<string>("currentMonth");
   const [isFetching, setIsFetching] = useState(false);
+  const [reasonModalOpen, setReasonModalOpen] = useState(false);
+  const [selectedReasonRecord, setSelectedReasonRecord] = useState<{
+    id: string;
+    date: string;
+    remarks?: string | null;
+  } | null>(null);
 
   // Helper to produce local YYYY-MM-DD strings
   const toLocalDate = (d: Date) => {
@@ -279,6 +286,7 @@ export function StudentAttendanceViewModal({
     if (!record) return "—";
     if (record.status === "present") return "✓";
     if (record.status === "absent") return "✗";
+    if (record.status === "leave") return "🏥";
     return "—";
   };
 
@@ -305,7 +313,7 @@ export function StudentAttendanceViewModal({
         ) : (
           <div className="space-y-6">
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <Card className="p-4 border-l-4 border-l-green-500">
                 <p className="text-muted-foreground text-xs font-medium mb-1">
                   Present
@@ -321,6 +329,15 @@ export function StudentAttendanceViewModal({
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {attendance.filter(a => a.status === "absent").length}
+                </p>
+              </Card>
+
+              <Card className="p-4 border-l-4 border-l-blue-500">
+                <p className="text-muted-foreground text-xs font-medium mb-1">
+                  Leave
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {attendance.filter(a => a.status === "leave").length}
                 </p>
               </Card>
             </div>
@@ -388,6 +405,10 @@ export function StudentAttendanceViewModal({
                 <span className="text-sm text-foreground">Absent</span>
               </div>
               <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-blue-500"></div>
+                <span className="text-sm text-foreground">Leave</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded bg-gray-400 dark:bg-gray-600"></div>
                 <span className="text-sm text-foreground">Off / No Record</span>
               </div>
@@ -442,13 +463,32 @@ export function StudentAttendanceViewModal({
                               ? "bg-green-500 text-white"
                               : record.status === "absent"
                                 ? "bg-red-500 text-white"
-                                : "bg-gray-400 text-white dark:bg-gray-600"
-                        }`}
+                                : record.status === "leave"
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-400 text-white dark:bg-gray-600"
+                        } relative`}
                       >
                         <div className="text-center">
                           <div className="text-xs opacity-70">{day}</div>
                           <div className="text-base">{getStatusText(day)}</div>
                         </div>
+
+                        {record && record.status === "leave" && (
+                          <button
+                            onClick={() => {
+                              setSelectedReasonRecord({
+                                id: record.id,
+                                date: record.date,
+                                remarks: (record as any).remarks || null,
+                              });
+                              setReasonModalOpen(true);
+                            }}
+                            title={(record as any).remarks || "View / add leave reason"}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
+                          >
+                            🛈
+                          </button>
+                        )}
                       </div>
                     );
                   })}

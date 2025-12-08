@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Calendar, Clock, Save, Loader2 } from "lucide-react";
+import { Calendar, Clock, Save, Loader2, Info } from "lucide-react";
+import { markStudentAttendance } from "@/lib/actions/attendance";
+import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 
 export default function TeacherAttendance() {
   const router = useRouter();
@@ -28,7 +30,20 @@ export default function TeacherAttendance() {
   const [attendance, setAttendance] = useState<
     Record<string, "present" | "absent" | "leave">
   >({});
+  const [leaveReasons, setLeaveReasons] = useState<
+    Record<string, string>
+  >({});
+  const [attendanceRecords, setAttendanceRecords] = useState<
+    Record<string, { id?: string; remarks?: string }>
+  >({});
   const [teacherId, setTeacherId] = useState<string>("");
+  const [teacherName, setTeacherName] = useState<string>("");
+
+  // Leave reason modal state
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [selectedStudentForReason, setSelectedStudentForReason] = useState<
+    { id: string; name: string; recordId?: string } | null
+  >(null);
 
   // Range filter for history
   const [historyRange, setHistoryRange] = useState<string>("last7");
@@ -101,6 +116,7 @@ export default function TeacherAttendance() {
       router.push("/");
     } else {
       setTeacherId(user.id);
+      setTeacherName(user.name || "Teacher");
       loadTeacherClasses(user.id);
     }
   }, [router]);
@@ -186,6 +202,8 @@ export default function TeacherAttendance() {
       );
       const data = await response.json();
       const attendanceMap: Record<string, "present" | "absent" | "leave"> = {};
+      const leaveMap: Record<string, string> = {};
+      const meta: Record<string, { id?: string; remarks?: string }> = {};
       if (data.attendance) {
         // Normalize incoming record dates to local YYYY-MM-DD and only apply records for the selected date
         data.attendance.forEach((record: any) => {
@@ -195,10 +213,19 @@ export default function TeacherAttendance() {
           );
           if (localDate === selectedDate) {
             attendanceMap[record.student_id] = record.status;
+            meta[record.student_id] = {
+              id: record.id,
+              remarks: record.remarks || "",
+            };
+            if (record.status === "leave" && record.remarks) {
+              leaveMap[record.student_id] = record.remarks;
+            }
           }
         });
       }
       setAttendance(attendanceMap);
+      setLeaveReasons(leaveMap);
+      setAttendanceRecords(meta);
     } catch (error) {
       console.error("Error loading attendance:", error);
     }
@@ -262,6 +289,13 @@ export default function TeacherAttendance() {
       ...prev,
       [studentId]: status,
     }));
+
+    if (status !== "leave") {
+      setLeaveReasons((prev) => {
+        const { [studentId]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleSaveAttendance = async () => {
@@ -277,27 +311,41 @@ export default function TeacherAttendance() {
 
     setSaving(true);
     try {
-      const attendanceRecords = students.map((student) => ({
-        student_id: student.id,
-        class_id: selectedClass,
-        date: selectedDate,
-        status: attendance[student.id] || "absent",
-        teacher_id: teacherId,
-        school_id: "00000000-0000-0000-0000-000000000000", // Default school ID
-      }));
+      // Only process students that were explicitly marked
+      const markedStudentIds = Object.keys(attendance);
 
-      const response = await fetch("/api/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: attendanceRecords }),
-      });
+      // Save each attendance record using server action
+      for (const studentId of markedStudentIds) {
+        const status = attendance[studentId];
+        const reason = leaveReasons[studentId] || undefined;
 
-      if (!response.ok) {
-        throw new Error("Failed to save attendance");
+        const result = await markStudentAttendance(
+          studentId,
+          selectedClass,
+          selectedDate,
+          status,
+          reason,
+        );
+
+        if (result.error) {
+          console.error(`Error marking attendance for student ${studentId}:`, result.error);
+        }
+
+        if (status === "leave") {
+          setAttendanceRecords((prev) => ({
+            ...prev,
+            [studentId]: {
+              id: prev[studentId]?.id,
+              remarks: reason,
+            },
+          }));
+        }
       }
 
       toast.success("Attendance saved successfully");
-      loadAttendance();
+      // Refresh state so colors/reasons reflect saved values
+      await loadAttendance();
+      await loadClassStudents();
     } catch (error) {
       console.error("Error saving attendance:", error);
       toast.error("Failed to save attendance");
@@ -429,6 +477,9 @@ export default function TeacherAttendance() {
                       <th className="text-center p-4 font-semibold text-foreground">
                         Leave
                       </th>
+                      <th className="text-center p-4 font-semibold text-foreground">
+                        Leave Reason
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -453,40 +504,79 @@ export default function TeacherAttendance() {
                         </td>
 
                         <td className="p-4 text-center">
-                          <input
-                            type="radio"
-                            name={`attendance-${student.id}`}
-                            value="present"
-                            checked={attendance[student.id] === "present"}
-                            onChange={() =>
+                          <button
+                            onClick={() =>
                               handleAttendanceChange(student.id, "present")
                             }
-                            className="w-4 h-4 cursor-pointer"
-                          />
+                            className={`w-full px-3 py-2 rounded font-semibold text-sm transition-colors ${
+                              attendance[student.id] === "present"
+                                ? "bg-green-500 hover:bg-green-600 text-white"
+                                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                            }`}
+                          >
+                            ✓ Present
+                          </button>
                         </td>
                         <td className="p-4 text-center">
-                          <input
-                            type="radio"
-                            name={`attendance-${student.id}`}
-                            value="absent"
-                            checked={attendance[student.id] === "absent"}
-                            onChange={() =>
+                          <button
+                            onClick={() =>
                               handleAttendanceChange(student.id, "absent")
                             }
-                            className="w-4 h-4 cursor-pointer"
-                          />
+                            className={`w-full px-3 py-2 rounded font-semibold text-sm transition-colors ${
+                              attendance[student.id] === "absent"
+                                ? "bg-red-500 hover:bg-red-600 text-white"
+                                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                            }`}
+                          >
+                            ✗ Absent
+                          </button>
                         </td>
                         <td className="p-4 text-center">
-                          <input
-                            type="radio"
-                            name={`attendance-${student.id}`}
-                            value="leave"
-                            checked={attendance[student.id] === "leave"}
-                            onChange={() =>
-                              handleAttendanceChange(student.id, "leave")
-                            }
-                            className="w-4 h-4 cursor-pointer"
-                          />
+                          <button
+                            onClick={() => {
+                              handleAttendanceChange(student.id, "leave");
+                              // Open leave reason modal
+                              setSelectedStudentForReason({
+                                id: student.id,
+                                name: student.name,
+                                recordId: attendanceRecords[student.id]?.id,
+                              });
+                              setLeaveModalOpen(true);
+                            }}
+                            className={`w-full px-3 py-2 rounded font-semibold text-sm transition-colors ${
+                              attendance[student.id] === "leave"
+                                ? "bg-blue-500 hover:bg-blue-600 text-white"
+                                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                            }`}
+                          >
+                            🏥 Leave
+                          </button>
+                        </td>
+                        <td className="p-4 text-center">
+                          <button
+                            onClick={() => {
+                              if (!attendance[student.id]) return;
+                              setSelectedStudentForReason({
+                                id: student.id,
+                                name: student.name,
+                                recordId:
+                                  attendanceRecords[student.id]?.id || undefined,
+                              });
+                              setLeaveModalOpen(true);
+                            }}
+                            className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded text-sm border border-border hover:bg-secondary transition-colors w-full"
+                          >
+                            <Info className="w-4 h-4" />
+                            {leaveReasons[student.id]?.length
+                              ? "View / Edit"
+                              : "Add Reason"}
+                          </button>
+                          {attendance[student.id] === "leave" &&
+                            leaveReasons[student.id] && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                               
+                              </p>
+                            )}
                         </td>
                       </tr>
                     ))}
@@ -520,6 +610,47 @@ export default function TeacherAttendance() {
               Save Attendance
             </Button>
           </div>
+        )}
+
+        {/* Leave Reason Modal */}
+        {selectedStudentForReason && (
+          <LeaveReasonModal
+            open={leaveModalOpen}
+            onOpenChange={(open) => {
+              setLeaveModalOpen(open);
+              if (!open) {
+                setSelectedStudentForReason(null);
+              }
+            }}
+            recordId={
+              selectedStudentForReason.recordId ||
+              attendanceRecords[selectedStudentForReason.id]?.id ||
+              `temp-${selectedStudentForReason.id}`
+            }
+            table="student_attendance"
+            type="student"
+            name={selectedStudentForReason.name}
+            date={selectedDate}
+            currentReason={leaveReasons[selectedStudentForReason.id]}
+            canEdit={true}
+            onReasonSaved={(recordId, reason) => {
+              // Store the reason in state for temporary records
+              const studentId = selectedStudentForReason.id;
+              setLeaveReasons((prev) => ({
+                ...prev,
+                [studentId]: reason,
+              }));
+              setAttendanceRecords((prev) => ({
+                ...prev,
+                [studentId]: {
+                  id: recordId.startsWith("temp-")
+                    ? prev[studentId]?.id
+                    : recordId,
+                  remarks: reason,
+                },
+              }));
+            }}
+          />
         )}
       </div>
     </div>

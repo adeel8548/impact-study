@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AttendanceGrid } from "@/components/attendance-grid";
 import { AdminAttendanceMarkingModal } from "@/components/modals/admin-attendance-marking-modal";
+import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -63,6 +64,14 @@ export default function AttendanceManagement() {
     AttendanceRecord[]
   >([]);
   const [teachersPastLoaded, setTeachersPastLoaded] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [leaveModalData, setLeaveModalData] = useState<{
+    recordId: string;
+    type: "student" | "teacher";
+    name: string;
+    date: string;
+    currentReason?: string;
+  } | null>(null);
 
   // Marking modal state
   const [markingModalOpen, setMarkingModalOpen] = useState(false);
@@ -235,6 +244,42 @@ export default function AttendanceManagement() {
   const loadInitialData = async () => {
     await fetchClasses();
     await fetchTeachers();
+  };
+
+  const openLeaveReason = (
+    record: AttendanceRecord | null | undefined,
+    type: "student" | "teacher",
+    name: string,
+  ) => {
+    if (!record || !record.id) return;
+    setLeaveModalData({
+      recordId: record.id,
+      type,
+      name,
+      date: record.date,
+      currentReason: record.remarks || "",
+    });
+    setLeaveModalOpen(true);
+  };
+
+  const updateLocalRemarks = (
+    recordId: string,
+    reason: string,
+    type: "student" | "teacher",
+  ) => {
+    if (type === "student") {
+      setStudentAttendance((prev) =>
+        (prev || []).map((r) =>
+          r.id === recordId ? { ...r, remarks: reason } : r,
+        ),
+      );
+    } else {
+      setTeacherAttendance((prev) =>
+        (prev || []).map((r) =>
+          r.id === recordId ? { ...r, remarks: reason } : r,
+        ),
+      );
+    }
   };
 
   const fetchClasses = async () => {
@@ -415,7 +460,11 @@ export default function AttendanceManagement() {
         response = await fetch("/api/attendance", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: existing.id, status, remarks: null }),
+          body: JSON.stringify({
+            id: existing.id,
+            status,
+            remarks: status === "leave" ? existing.remarks || null : null,
+          }),
         });
       } else {
         // Create a new attendance record (POST accepts batch)
@@ -448,6 +497,18 @@ export default function AttendanceManagement() {
       });
 
       toast.success("Attendance updated");
+
+      if (status === "leave") {
+        const studentName =
+          students.find((s) => s.id === studentId)?.name || "Student";
+        const savedRecord = Array.isArray(returned)
+          ? returned.find(
+              (a: AttendanceRecord) =>
+                a.student_id === studentId && a.date === date,
+            )
+          : returned;
+        openLeaveReason(savedRecord, "student", studentName);
+      }
     } catch (error) {
       console.error("Error updating attendance:", error);
       toast.error("Failed to update attendance");
@@ -500,6 +561,18 @@ export default function AttendanceManagement() {
       });
 
       toast.success("Attendance updated");
+
+      if (status === "leave") {
+        const teacherName =
+          teachers.find((t) => t.id === teacherId)?.name || "Teacher";
+        const savedRecord = Array.isArray(returned)
+          ? returned.find(
+              (a: AttendanceRecord) =>
+                a.teacher_id === teacherId && a.date === date,
+            )
+          : returned;
+        openLeaveReason(savedRecord, "teacher", teacherName);
+      }
     } catch (error) {
       console.error("Error updating attendance:", error);
       toast.error("Failed to update attendance");
@@ -751,6 +824,7 @@ export default function AttendanceManagement() {
                                   status
                                 )
                               }
+                              isAdmin={true}
                               daysToShow={
                                 computeRange(
                                   studentRange,
@@ -959,6 +1033,7 @@ export default function AttendanceManagement() {
                                 status
                               )
                             }
+                            isAdmin={true}
                             daysToShow={
                               computeRange(
                                 teacherRange,
@@ -1030,6 +1105,29 @@ export default function AttendanceManagement() {
             targetName={markingTargetName}
             onMarked={handleMarked}
           />
+
+          {leaveModalData && (
+            <LeaveReasonModal
+              open={leaveModalOpen}
+              onOpenChange={setLeaveModalOpen}
+              recordId={leaveModalData.recordId}
+              table={
+                leaveModalData.type === "student"
+                  ? "student_attendance"
+                  : "teacher_attendance"
+              }
+              type={leaveModalData.type}
+              name={leaveModalData.name}
+              date={leaveModalData.date}
+              currentReason={leaveModalData.currentReason}
+              canEdit={true}
+              onReasonSaved={(recordId, reason) => {
+                if (leaveModalData) {
+                  updateLocalRemarks(recordId, reason, leaveModalData.type);
+                }
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

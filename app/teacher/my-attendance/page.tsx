@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
 import { TeacherOwnAttendanceViewModal } from "@/components/modals/teacher-own-attendance-view-modal";
+import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
 
@@ -17,6 +18,7 @@ interface AttendanceRecord {
   created_at?: string;
   updated_at?: string;
   out_time?: string;
+  remarks?: string;
 }
 
 export default function TeacherMyAttendancePage() {
@@ -29,6 +31,9 @@ export default function TeacherMyAttendancePage() {
     null,
   );
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [selectedLeaveRecord, setSelectedLeaveRecord] =
+    useState<AttendanceRecord | null>(null);
 
   // OUT button state: disabled until midnight after marking out
   const [outDisabled, setOutDisabled] = useState(false);
@@ -639,10 +644,13 @@ export default function TeacherMyAttendancePage() {
                       <button
                         key={day}
                         onClick={() => {
+                          const record = getAttendanceRecord(day);
+                          if (record?.status === "leave") {
+                            setSelectedLeaveRecord(record);
+                            setLeaveModalOpen(true);
+                            return;
+                          }
                           if (!sunday && isToday(day)) {
-                            const record = getAttendanceRecord(day);
-
-                            // 🟦 STATUS normal mapping
                             let currentStatus: "present" | "absent" | null =
                               null;
                             if (record?.status === "present")
@@ -650,7 +658,6 @@ export default function TeacherMyAttendancePage() {
                             else if (record?.status === "absent")
                               currentStatus = "absent";
 
-                            // ✅ Ab jo bhi button click ho ga, ye 3 me se hi string jayegi
                             handleAttendanceToggle(
                               `${year}-${String(month + 1).padStart(
                                 2,
@@ -658,11 +665,10 @@ export default function TeacherMyAttendancePage() {
                               )}-${String(day).padStart(2, "0")}`,
                               currentStatus,
                             );
-
-                            window.location.reload(); // optional ✅
+                            window.location.reload();
                           }
                         }}
-                        disabled={sunday || !isToday(day)}
+                        disabled={sunday || (!isToday(day) && record?.status !== "leave")}
                         className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all ${
                           !record
                             ? "bg-gray-200 text-gray-700"
@@ -671,7 +677,7 @@ export default function TeacherMyAttendancePage() {
                               : record.status === "absent"
                                 ? "bg-red-500 text-white"
                                 : record.status === "leave"
-                                  ? "bg-gray-400 text-white"
+                                  ? "bg-blue-500 text-white"
                                   : "bg-gray-200 text-gray-700"
                         } ${(sunday || !isToday(day)) ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:shadow-md"}`}
                       >
@@ -736,6 +742,32 @@ export default function TeacherMyAttendancePage() {
             </div>
           </div>
         </Card>
+
+        {selectedLeaveRecord && teacher && (
+          <LeaveReasonModal
+            open={leaveModalOpen}
+            onOpenChange={(open) => {
+              setLeaveModalOpen(open);
+              if (!open) {
+                setSelectedLeaveRecord(null);
+              }
+            }}
+            recordId={selectedLeaveRecord.id}
+            table="teacher_attendance"
+            type="teacher"
+            name={teacher.name}
+            date={selectedLeaveRecord.date}
+            currentReason={selectedLeaveRecord.remarks}
+            canEdit={true}
+            onReasonSaved={(recordId, reason) => {
+              setAttendance((prev) =>
+                prev.map((r) =>
+                  r.id === recordId ? { ...r, remarks: reason } : r,
+                ),
+              );
+            }}
+          />
+        )}
 
         {/* Instructions */}
         <Card className="p-6 bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-500">

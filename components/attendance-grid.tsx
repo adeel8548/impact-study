@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { LeaveReasonModal } from "./modals/leave-reason-modal";
 
 interface AttendanceRecord {
   id?: string;
   student_id?: string;
   teacher_id?: string;
   date: string;
-  status: "present" | "absent";
+  status: "present" | "absent" | "leave";
+  remarks?: string; // Leave reason
   // optional timestamps from server (e.g. when record was created/updated)
   created_at?: string;
   updated_at?: string;
@@ -18,13 +20,21 @@ interface AttendanceRecord {
 interface AttendanceGridProps {
   records: AttendanceRecord[];
   title: string;
-  onStatusChange: (date: string, status: "present" | "absent") => void;
+  onStatusChange: (date: string, status: "present" | "absent" | "leave") => void;
   daysToShow?: number;
   // If provided, the grid will start from this ISO date (YYYY-MM-DD)
   startDateIso?: string;
   // When true the grid will show a small timestamp under each day's cell
   // useful for admin views to see when attendance was marked.
   showTimestamps?: boolean;
+  // Allow marking past dates (for admin)
+  isAdmin?: boolean;
+  // Type of attendance grid (student or teacher)
+  type?: "student" | "teacher";
+  // Name of person (for leave modal)
+  personName?: string;
+  // Whether user can edit leave reasons
+  canEditReasons?: boolean;
 }
 
 interface HolidayDate {
@@ -39,6 +49,10 @@ export function AttendanceGrid({
   daysToShow = 7,
   startDateIso,
   showTimestamps = false,
+  isAdmin = false,
+  type = "student",
+  personName = "Person",
+  canEditReasons = true,
 }: AttendanceGridProps) {
   const [startDate, setStartDate] = useState(() => {
     if (startDateIso) {
@@ -50,6 +64,12 @@ export function AttendanceGrid({
     date.setDate(date.getDate() - daysToShow + 1);
     return date;
   });
+
+  // Leave reason modal state
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [selectedLeaveRecord, setSelectedLeaveRecord] = useState<
+    AttendanceRecord | null
+  >(null);
 
   // When props change, update startDate accordingly
   useEffect(() => {
@@ -225,6 +245,10 @@ export function AttendanceGrid({
           <span>Absent</span>
         </div>
         <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-blue-500 rounded"></div>
+          <span>Leave</span>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-gray-300 rounded"></div>
           <span>Off / No Record</span>
         </div>
@@ -272,35 +296,68 @@ export function AttendanceGrid({
                     </span>
                   </div>
                 ) : (
-                  <Button
-                    variant={
-                      status === "present"
-                        ? "default"
+                  <div className="w-full flex flex-col gap-1">
+                    <Button
+                      variant={
+                        status === "present"
+                          ? "default"
+                          : status === "absent"
+                            ? "destructive"
+                            : status === "leave"
+                              ? "secondary"
+                              : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        let newStatus: "present" | "absent" | "leave";
+                        if (status === "present") {
+                          newStatus = "absent";
+                        } else if (status === "absent") {
+                          newStatus = "leave";
+                        } else {
+                          newStatus = "present";
+                        }
+                        onStatusChange(dateStr, newStatus);
+                      }}
+                      disabled={!isAdmin && isPast && !isCurrent}
+                      className={`w-full h-10 text-xs ${
+                        status === "present"
+                          ? "bg-green-500 hover:bg-green-600"
+                          : status === "absent"
+                            ? "bg-red-500 hover:bg-red-600"
+                            : status === "leave"
+                              ? "bg-blue-500 hover:bg-blue-600 text-white"
+                              : ""
+                      }`}
+                    >
+                      {status === "present"
+                        ? "✓ Present"
                         : status === "absent"
-                          ? "destructive"
-                          : "outline"
-                    }
-                    size="sm"
-                    onClick={() => {
-                      const newStatus =
-                        status === "present" ? "absent" : "present";
-                      onStatusChange(dateStr, newStatus);
-                    }}
-                    disabled={isPast && !isCurrent}
-                    className={`w-full h-10 text-xs ${
-                      status === "present"
-                        ? "bg-green-500 hover:bg-green-600"
-                        : status === "absent"
-                          ? "bg-red-500 hover:bg-red-600"
-                          : ""
-                    }`}
-                  >
-                    {status === "present"
-                      ? "✓ Present"
-                      : status === "absent"
-                        ? "✗ Absent"
-                        : "—"}
-                  </Button>
+                          ? "✗ Absent"
+                          : status === "leave"
+                            ? "🏥 Leave"
+                            : "—"}
+                    </Button>
+                    {/* Leave reason icon - show when leave is marked */}
+                    {status === "leave" && record && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedLeaveRecord(record);
+                          setLeaveModalOpen(true);
+                        }}
+                        className="w-full h-6 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 p-0"
+                        title={
+                          record.remarks
+                            ? "View/Edit leave reason"
+                            : "Add leave reason"
+                        }
+                      >
+                        <Info className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 )}
                 {/* Show timestamp for admin if requested and we have a record */}
                 {showTimestamps && record && (
@@ -327,6 +384,21 @@ export function AttendanceGrid({
           })}
         </div>
       </div>
+
+      {/* Leave Reason Modal */}
+      {selectedLeaveRecord && (
+        <LeaveReasonModal
+          open={leaveModalOpen}
+          onOpenChange={setLeaveModalOpen}
+          recordId={selectedLeaveRecord.id || ""}
+          table={type === "student" ? "student_attendance" : "teacher_attendance"}
+          type={type}
+          name={personName}
+          date={selectedLeaveRecord.date}
+          currentReason={selectedLeaveRecord.remarks}
+          canEdit={canEditReasons}
+        />
+      )}
     </Card>
   );
 }
