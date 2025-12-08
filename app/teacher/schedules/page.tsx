@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
@@ -273,6 +273,11 @@ export default function TeacherSchedulesPage() {
   }
 
   return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
     <div className="min-h-screen bg-background">
       <TeacherHeader />
       <div className="p-4 md:p-8 space-y-6">
@@ -451,6 +456,7 @@ export default function TeacherSchedulesPage() {
         </Tabs>
       </div>
     </div>
+    </Suspense>
   );
 }
 
