@@ -19,6 +19,8 @@ export function TeacherHeader() {
       : {};
 
   const isActive = (path: string) => pathname === path;
+  // treat paths that start with a base as active (e.g. /teacher/schedules?tab=quizzes)
+  const isActiveStartsWith = (base: string) => pathname === base || pathname.startsWith(base);
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-30 shadow-sm">
@@ -103,6 +105,17 @@ export function TeacherHeader() {
           }`}
         >
           My Attendance
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/teacher/schedules?tab=quizzes")}
+          className={`rounded-none border-b-2 ${
+            isActiveStartsWith("/teacher/schedules")
+              ? "text-primary font-semibold border-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent"
+          }`}
+        >
+          Quizzes
         </Button>
       </div>
     </header>

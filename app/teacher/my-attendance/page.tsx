@@ -112,6 +112,60 @@ export default function TeacherMyAttendancePage() {
     };
   };
 
+  // Explicit setter for today's status (present, absent, or leave)
+  const handleSetStatus = async (status: "present" | "absent" | "leave") => {
+    if (!teacher) return;
+
+    const today = new Date();
+    const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
+      today.getDate(),
+    ).padStart(2, "0")}`;
+
+    try {
+      setIsFetching(true);
+      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+      const payload = {
+        teacher_id: teacher.id,
+        date,
+        status,
+        school_id: user.school_id,
+      } as any;
+
+      const res = await fetch("/api/teacher-attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to update attendance");
+
+      const body = await res.json();
+      const returned = body.attendance || body;
+      const updated = Array.isArray(returned) ? returned[0] : returned;
+
+      if (updated && updated.date) {
+        try {
+          const d = new Date(updated.date);
+          updated.date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+            d.getDate(),
+          ).padStart(2, "0")}`;
+        } catch (e) {}
+      }
+
+      setAttendance((prev) => {
+        const filtered = (prev || []).filter((a) => a.date !== date);
+        return [...filtered, updated];
+      });
+
+      toast.success("Attendance updated");
+    } catch (err) {
+      console.error("Error setting status:", err);
+      toast.error("Failed to set status");
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   // compute ms until next local midnight and schedule enabling the OUT button
   const scheduleEnableAtMidnight = () => {
     try {
@@ -489,13 +543,15 @@ export default function TeacherMyAttendancePage() {
               Track your daily attendance records for the current month
             </p>
           </div>
-          <button
-            onClick={() => setViewModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <Calendar className="w-4 h-4" />
-            View Records
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Calendar className="w-4 h-4" />
+              View Records
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -524,164 +580,177 @@ export default function TeacherMyAttendancePage() {
           </Card>
         </div>
 
-        {/* Month Navigation */}
+        {/* Today's quick controls (only current date is editable) */}
         <Card className="p-6 mb-8">
-          <div className="flex flex-col w-full  justify-between mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="flex flex-col md:flex-row gap-2 h-10">
-                <div className="flex  items-center gap-4">
-                  <button
-                    onClick={() => handleMonthChange("prev")}
-                    className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                    title="Previous month"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <h2 className="text-2xl font-bold text-foreground min-w-48">
-                    {currentDate.toLocaleDateString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </h2>
-                  <button
-                    onClick={() => handleMonthChange("next")}
-                    className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                    title="Next month"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="flex ml-10 md:ml-0 items-center gap-2">
-                  <select
-                    value={rangeOption}
-                    onChange={(e) => setRangeOption(e.target.value)}
-                    className="px-3 py-1 border border-border rounded text-sm bg-background text-foreground"
-                  >
-                    <option value="last7">Last 7 days</option>
-                    <option value="last15">Last 15 days</option>
-                    <option value="lastMonth">Last month</option>
-                    <option value="currentMonth">Current month</option>
-                    <option value="last3Months">Last 3 months</option>
-                    <option value="last6Months">Last 6 months</option>
-                    <option value="lastYear">Last year</option>
-                  </select>
-                  <button
-                    className={`px-3 py-1 rounded text-sm font-medium transition-all ${
-                      isFetching
-                        ? "bg-secondary text-muted-foreground cursor-not-allowed"
-                        : "bg-primary text-primary-foreground hover:bg-primary/90"
-                    }`}
-                    onClick={() =>
-                      teacher && fetchAttendanceRange(teacher.id, rangeOption)
-                    }
-                    disabled={isFetching}
-                  >
-                    {isFetching ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Loading...
-                      </span>
-                    ) : (
-                      "Load"
-                    )}
-                  </button>
-                </div>
-              </div>
-              {/* Legend */}
-              <div className="flex mt-10 md:mt-0 gap-4 mb-6 pb-6 border-b border-border">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-green-500"></div>
-                  <span className="text-sm text-foreground">Present</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-red-500"></div>
-                  <span className="text-sm text-foreground">Absent</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-gray-400 dark:bg-gray-600"></div>
-                  <span className="text-sm text-foreground">
-                    Off / No Record
-                  </span>
-                </div>
-              </div>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })} — {String(new Date().getDate()).padStart(2, "0")}
+              </h2>
+              <p className="text-sm text-muted-foreground">Only today's attendance can be marked here.</p>
             </div>
-            {/* Calendar Grid */}
-            <div className="overflow-x-auto">
-              <div className="min-w-full">
-                {/* Day headers */}
-                <div className="grid grid-cols-7 gap-2 mb-4">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                    (day) => (
-                      <div
-                        key={day}
-                        className="text-center font-semibold text-sm text-muted-foreground"
-                      >
-                        {day}
-                      </div>
-                    ),
-                  )}
-                </div>
 
-                {/* Calendar days */}
-                <div className="grid grid-cols-7 gap-2">
-                  {days.map((day, index) => {
-                    if (day === null) {
-                      return (
-                        <div
-                          key={`empty-${index}`}
-                          className="aspect-square"
-                        ></div>
-                      );
-                    }
+            {/* <button
+              onClick={() => {
+                const leaveRecords = attendance.filter((a) => a.status === "leave");
+                if (leaveRecords.length === 0) {
+                  toast.info("No leave records found");
+                } else {
+                  // Just show a toast with count, or you can implement a dedicated view
+                  toast.info(`You have ${leaveRecords.length} leave record(s)`);
+                }
+              }}
+              disabled={!teacher || isFetching}
+              className="px-3 py-2 rounded bg-purple-500 text-white font-semibold hover:bg-purple-600 disabled:opacity-50 text-sm whitespace-nowrap"
+            >
+              📋 View Leave Reasons
+            </button> */}
+          </div>
 
-                    const record = getAttendanceRecord(day);
-                    const sunday = isSunday(day);
-                    const today_ = isToday(day);
-                    const past = isPastDay(day);
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleSetStatus("present")}
+              disabled={!teacher || isFetching}
+              className="px-4 py-2 rounded bg-green-500 text-white font-semibold hover:bg-green-600 disabled:opacity-50"
+            >
+              ✓ Present
+            </button>
+            <button
+              onClick={() => handleSetStatus("absent")}
+              disabled={!teacher || isFetching}
+              className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 disabled:opacity-50"
+            >
+              ✗ Absent
+            </button>
+            <button
+              onClick={async () => {
+                await handleSetStatus("leave");
+                // open leave modal for today's record if created
+                const today = new Date();
+                const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+                const rec = attendance.find((a) => a.date === dateStr && a.status === "leave");
+                if (rec) {
+                  setSelectedLeaveRecord(rec);
+                  setLeaveModalOpen(true);
+                }
+              }}
+              disabled={!teacher || isFetching}
+              className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 disabled:opacity-50"
+            >
+              🏥 Leave
+            </button>
+          </div>
+        </Card>
 
+        {/* Calendar view - show all month but only today is editable */}
+        <Card className="p-6 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-foreground">Monthly View</h3>
+            <div className="flex items-center gap-4">
+              <button
+                disabled
+                className="p-2 rounded-lg transition-colors opacity-50 cursor-not-allowed"
+                title="Previous month (disabled)"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-xl font-bold text-foreground min-w-40 text-center">
+                {currentDate.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </h2>
+              <button
+                disabled
+                className="p-2 rounded-lg transition-colors opacity-50 cursor-not-allowed"
+                title="Next month (disabled)"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 mb-6 pb-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-green-500"></div>
+              <span className="text-xs text-foreground">Present</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-red-500"></div>
+              <span className="text-xs text-foreground">Absent</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-blue-500"></div>
+              <span className="text-xs text-foreground">Leave</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-gray-300"></div>
+              <span className="text-xs text-foreground">Off / No Record</span>
+            </div>
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="overflow-x-auto">
+            <div>
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                  (day) => (
+                    <div
+                      key={day}
+                      className="text-center font-semibold text-xs text-muted-foreground"
+                    >
+                      {day}
+                    </div>
+                  ),
+                )}
+              </div>
+
+              {/* Calendar days */}
+              <div className="grid grid-cols-7 gap-2">
+                {days.map((day, index) => {
+                  if (day === null) {
                     return (
-                      <button
-                        key={day}
-                        onClick={() => {
-                          const record = getAttendanceRecord(day);
-                          if (record?.status === "leave") {
-                            setSelectedLeaveRecord(record);
-                            setLeaveModalOpen(true);
-                            return;
-                          }
-                          if (!sunday && isToday(day)) {
-                            let currentStatus: "present" | "absent" | null =
-                              null;
-                            if (record?.status === "present")
-                              currentStatus = "present";
-                            else if (record?.status === "absent")
-                              currentStatus = "absent";
+                      <div
+                        key={`empty-${index}`}
+                        className="aspect-square"
+                      ></div>
+                    );
+                  }
 
-                            handleAttendanceToggle(
-                              `${year}-${String(month + 1).padStart(
-                                2,
-                                "0",
-                              )}-${String(day).padStart(2, "0")}`,
-                              currentStatus,
-                            );
-                            window.location.reload();
-                          }
-                        }}
-                        disabled={sunday || (!isToday(day) && record?.status !== "leave")}
-                        className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all ${
-                          !record
-                            ? "bg-gray-200 text-gray-700"
-                            : record.status === "present"
-                              ? "bg-green-500 text-white"
-                              : record.status === "absent"
-                                ? "bg-red-500 text-white"
-                                : record.status === "leave"
-                                  ? "bg-blue-500 text-white"
-                                  : "bg-gray-200 text-gray-700"
-                        } ${(sunday || !isToday(day)) ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:shadow-md"}`}
-                      >
-                        <div className="text-center">
+                  const record = getAttendanceRecord(day);
+                  const sunday = isSunday(day);
+                  const today_ = isToday(day);
+                  const past = isPastDay(day);
+
+                  return (
+                    <div
+                      key={day}
+                      className={`aspect-square rounded-lg font-semibold text-sm flex items-center justify-center transition-all relative ${
+                        !record
+                          ? "bg-gray-200 text-gray-700"
+                          : record.status === "present"
+                            ? "bg-green-500 text-white"
+                            : record.status === "absent"
+                              ? "bg-red-500 text-white"
+                              : record.status === "leave"
+                                ? "bg-blue-500 text-white"
+                                : "bg-gray-200 text-gray-700"
+                      } ${
+                        sunday || !today_
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer hover:shadow-md"
+                      }`}
+                    >
+                      <div className="text-center w-full"
+                          onClick={() => {
+                            if (record?.status === "leave" && !sunday && today_) {
+                              setSelectedLeaveRecord(record);
+                              setLeaveModalOpen(true);
+                            }
+                          }}
+                        >
                           <div className="text-xs opacity-70">{day}</div>
                           <div className="text-base">
                             {sunday
@@ -690,13 +759,38 @@ export default function TeacherMyAttendancePage() {
                                 ? "✓"
                                 : record?.status === "absent"
                                   ? "✗"
-                                  : "—"}
+                                  : record?.status === "leave"
+                                    ? "🏥"
+                                    : "—"}
                           </div>
+                          {/* Show approval status to teacher if set */}
+                          {record && (record as any).approval_status && (
+                            <div className={`mt-1 text-[10px] font-semibold ${
+                              (record as any).approval_status === "approved"
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}>
+                              {(record as any).approval_status === "approved" ? "Approved" : "Rejected"}
+                            </div>
+                          )}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
+
+                      {record && record.status === "leave" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLeaveRecord(record);
+                            setLeaveModalOpen(true);
+                          }}
+                          title={(record as any).remarks || "View / edit leave reason"}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
+                        >
+                          🛈
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -752,12 +846,14 @@ export default function TeacherMyAttendancePage() {
                 setSelectedLeaveRecord(null);
               }
             }}
-            recordId={selectedLeaveRecord.id}
+            recordId={selectedLeaveRecord!.id}
             table="teacher_attendance"
             type="teacher"
-            name={teacher.name}
-            date={selectedLeaveRecord.date}
-            currentReason={selectedLeaveRecord.remarks}
+            name={teacher!.name}
+            date={selectedLeaveRecord!.date}
+            currentReason={selectedLeaveRecord!.remarks}
+            approvedBy={(selectedLeaveRecord as any).approved_by || (selectedLeaveRecord as any).rejected_by}
+            approvalStatus={(selectedLeaveRecord as any).approval_status}
             canEdit={true}
             onReasonSaved={(recordId, reason) => {
               setAttendance((prev) =>

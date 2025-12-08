@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Pencil } from "lucide-react";
+import { Loader2, Plus, Pencil ,Trash} from "lucide-react";
 import { toast } from "sonner";
 import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
 
@@ -308,27 +308,7 @@ export default function TeacherSchedulesPage() {
 
           <TabsContent value="revisions" className="space-y-4">
             <Card className="p-4 space-y-3">
-              <div className="grid md:grid-cols-4 gap-3">
-                <div>
-                  <Label>Subject</Label>
-                  <Input value={revSubject} onChange={(e) => setRevSubject(e.target.value)} />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Topic</Label>
-                  <Input value={revTopic} onChange={(e) => setRevTopic(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Date</Label>
-                  <Input type="date" value={revDate} onChange={(e) => setRevDate(e.target.value)} />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={createRevision} disabled={saving} className="gap-2">
-                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <Plus className="w-4 h-4" />
-                  Add Revision
-                </Button>
-              </div>
+              <p className="text-sm text-muted-foreground">Revisions are read-only for teachers. Contact admin to add or modify revisions.</p>
             </Card>
 
             <Card className="p-4">
@@ -350,14 +330,6 @@ export default function TeacherSchedulesPage() {
                         Date: {r.revision_date} • Teacher: {teacherName}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteItem("revision", r.id)}
-                      title="Delete"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -366,52 +338,7 @@ export default function TeacherSchedulesPage() {
 
           <TabsContent value="exams" className="space-y-4">
             <Card className="p-4 space-y-3">
-              <div className="grid md:grid-cols-3 gap-3">
-                <div>
-                  <Label>Subject</Label>
-                  <Input value={examSubject} onChange={(e) => setExamSubject(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Start Date</Label>
-                  <Input type="date" value={examStart} onChange={(e) => setExamStart(e.target.value)} />
-                </div>
-                <div>
-                  <Label>End Date</Label>
-                  <Input type="date" value={examEnd} onChange={(e) => setExamEnd(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Duration (minutes)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={examDuration}
-                    onChange={(e) => setExamDuration(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>Paper Given Date</Label>
-                  <Input
-                    type="date"
-                    value={examPaperDate}
-                    onChange={(e) => setExamPaperDate(e.target.value)}
-                  />
-                </div>
-                <div className="md:col-span-3">
-                  <Label>Notes</Label>
-                  <Textarea
-                    rows={2}
-                    value={examNotes}
-                    onChange={(e) => setExamNotes(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={createExam} disabled={saving} className="gap-2">
-                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <Plus className="w-4 h-4" />
-                  Add Exam
-                </Button>
-              </div>
+              <p className="text-sm text-muted-foreground">Series exams are read-only for teachers. Contact admin to add or modify exams.</p>
             </Card>
 
             <Card className="p-4">
@@ -433,14 +360,6 @@ export default function TeacherSchedulesPage() {
                       </p>
                       {e.notes && <p className="text-xs text-muted-foreground">Notes: {e.notes}</p>}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteItem("exam", e.id)}
-                      title="Delete"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -500,14 +419,30 @@ export default function TeacherSchedulesPage() {
                         {q.quiz_date} • Duration: {q.duration_minutes ? `${q.duration_minutes} min` : "—"}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteItem("quiz", q.id)}
-                      title="Delete"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setQuizEditingId(q.id);
+                          setQuizSubject(q.subject);
+                          setQuizTopic(q.topic);
+                          setQuizDate(q.quiz_date);
+                          setQuizDuration(q.duration_minutes?.toString() || "");
+                        }}
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteItem("quiz", q.id)}
+                        title="Delete"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -25,7 +25,10 @@ interface LeaveReasonModalProps {
   date: string; // Date of leave (YYYY-MM-DD)
   currentReason?: string; // Existing reason
   canEdit?: boolean; // Whether user can edit (admin, teacher marking own leave, teacher marking student)
+  approvedBy?: string; // Admin ID who approved/rejected (if set, reason is locked for teachers)
+  approvalStatus?: "approved" | "rejected"; // Current approval status
   onReasonSaved?: (recordId: string, reason: string) => void; // Callback when reason is saved (for temporary records)
+  onApprovalStatusChanged?: (recordId: string, status: "approved" | "rejected") => void; // Callback when approval status changes
 }
 
 export function LeaveReasonModal({
@@ -38,13 +41,19 @@ export function LeaveReasonModal({
   date,
   currentReason,
   canEdit = true,
+  approvedBy,
+  approvalStatus,
   onReasonSaved,
+  onApprovalStatusChanged,
 }: LeaveReasonModalProps) {
   const [reason, setReason] = useState(currentReason || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingApproval, setIsProcessingApproval] = useState(false);
+  const [isEditingReason, setIsEditingReason] = useState(false);
 
   useEffect(() => {
     setReason(currentReason || "");
+    setIsEditingReason(false);
   }, [currentReason, open]);
 
   const handleSave = async () => {
@@ -80,6 +89,85 @@ export function LeaveReasonModal({
       console.error(error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const isAdmin =
+    typeof window !== "undefined" &&
+    JSON.parse(localStorage.getItem("currentUser") || "{}")?.role ===
+      "admin";
+
+  // Determine if textarea should be disabled
+  // Teachers cannot edit after approval/rejection (approvedBy is set)
+  // Admins can always edit if they click "Edit Reason"
+  const isReasonLocked = approvedBy && !isAdmin;
+  const isTextareaDisabled = !canEdit || isReasonLocked || (isAdmin && !isEditingReason);
+
+  const handleApprove = async () => {
+    if (!recordId) return;
+    try {
+      setIsProcessingApproval(true);
+      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+      // Mark approval and lock the reason (store approval_status and approved_by/at)
+      const res = await fetch("/api/teacher-attendance", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: recordId,
+          approval_status: "approved",
+          approved_by: user.id,
+          approved_at: new Date().toISOString(),
+          reason_locked: true,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to approve leave");
+
+      toast.success("Leave approved");
+      onOpenChange(false);
+      if (onApprovalStatusChanged) {
+        onApprovalStatusChanged(recordId, "approved");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to approve leave");
+    } finally {
+      setIsProcessingApproval(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!recordId) return;
+    try {
+      setIsProcessingApproval(true);
+      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+        // Mark rejection: keep status as 'leave' but set approval_status to 'rejected'
+        // This allows the record to remain visible as a rejected leave while
+        // allowing counts to treat it as absent when needed.
+        const res = await fetch("/api/teacher-attendance", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: recordId,
+            approval_status: "rejected",
+            rejected_by: user.id,
+            rejected_at: new Date().toISOString(),
+            reason_locked: true,
+          }),
+        });
+
+      if (!res.ok) throw new Error("Failed to reject leave");
+
+        toast.success("Leave rejected");
+      onOpenChange(false);
+      if (onApprovalStatusChanged) {
+        onApprovalStatusChanged(recordId, "rejected");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to reject leave");
+    } finally {
+      setIsProcessingApproval(false);
     }
   };
 
@@ -134,7 +222,7 @@ export function LeaveReasonModal({
               placeholder="Enter the reason for leave (e.g., medical appointment, family emergency, personal work, etc.)"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              disabled={!canEdit}
+              disabled={isTextareaDisabled}
               className="resize-none"
               rows={4}
             />
@@ -148,20 +236,83 @@ export function LeaveReasonModal({
               You can only view this leave reason. Contact admin or teacher to edit.
             </p>
           )}
+
+          {isReasonLocked && (
+            <p className="text-xs text-red-600 bg-red-50 dark:bg-red-950 p-2 rounded">
+              ✓ This leave has been {approvalStatus === "approved" ? "approved" : "rejected"}. You cannot edit the reason anymore.
+            </p>
+          )}
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-wrap justify-end">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
+            onClick={() => {
+              if (isEditingReason) {
+                setIsEditingReason(false);
+                setReason(currentReason || "");
+              } else {
+                onOpenChange(false);
+              }
+            }}
+            disabled={isLoading || isProcessingApproval}
           >
-            {canEdit ? "Cancel" : "Close"}
+            {isEditingReason ? "Cancel" : "Close"}
           </Button>
-          {canEdit && (
+
+          {/* Edit button for admin when not in edit mode and has teacher attendance */}
+          {isAdmin && table === "teacher_attendance" && !isEditingReason && (
+            <Button
+              variant="outline"
+              onClick={() => setIsEditingReason(true)}
+            >
+              ✏️ Edit Reason
+            </Button>
+          )}
+
+          {/* Save button when editing reason */}
+          {isEditingReason && (
             <Button onClick={handleSave} disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isLoading ? "Saving..." : "Save Reason"}
+              {isLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          )}
+
+          {/* Reject button for teacher attendance when NOT editing reason */}
+          {isAdmin && table === "teacher_attendance" && !isEditingReason && (
+            <Button
+              variant="outline"
+              onClick={handleReject}
+              disabled={isProcessingApproval}
+            >
+              {isProcessingApproval ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                "Reject"
+              )}
+            </Button>
+          )}
+
+          {/* Approve button for teacher attendance when NOT editing reason */}
+          {isAdmin && table === "teacher_attendance" && !isEditingReason && (
+            <Button
+              onClick={handleApprove}
+              disabled={isProcessingApproval}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isProcessingApproval ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                "Approve"
+              )}
+            </Button>
+          )}
+
+          {/* Save button for non-admin canEdit users */}
+          {canEdit && !isAdmin && !isEditingReason && (
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           )}
         </DialogFooter>

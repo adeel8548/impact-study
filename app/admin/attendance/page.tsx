@@ -41,6 +41,8 @@ interface AttendanceRecord {
   date: string;
   status: "present" | "absent" | "leave";
   remarks?: string;
+  approved_by?: string;
+  approved_at?: string;
 }
 
 export default function AttendanceManagement() {
@@ -71,6 +73,12 @@ export default function AttendanceManagement() {
     name: string;
     date: string;
     currentReason?: string;
+    approvedBy?: string;
+    approvalStatus?: "approved" | "rejected";
+  } | null>(null);
+  const [approvedRejectReason, setApprovedRejectReason] = useState<{
+    recordId: string;
+    status: "approved" | "rejected";
   } | null>(null);
 
   // Marking modal state
@@ -157,14 +165,14 @@ export default function AttendanceManagement() {
       }
       default: {
         // default to last7
-        end = yesterday;
+        end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         start = new Date(end.getTime() - (7 - 1) * 24 * 60 * 60 * 1000);
       }
     }
 
     if (!start || !end) {
       // fallback to last7 previous days
-      const e = yesterday;
+      const e = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const s = new Date(e.getTime() - (7 - 1) * 24 * 60 * 60 * 1000);
       start = s;
       end = e;
@@ -258,6 +266,9 @@ export default function AttendanceManagement() {
       name,
       date: record.date,
       currentReason: record.remarks || "",
+      // approvedBy should indicate either approved or rejected actor so teacher editing is locked
+      approvedBy: (record as any).approved_by || (record as any).rejected_by,
+      approvalStatus: (record as any).approval_status,
     });
     setLeaveModalOpen(true);
   };
@@ -748,7 +759,7 @@ export default function AttendanceManagement() {
                             (r) => r.status === "present"
                           ).length;
                           const absentCount = todayRecords.filter(
-                            (r) => r.status === "absent"
+                            (r) => r.status === "absent" || (r as any).approval_status === "rejected"
                           ).length;
                           const notMarked = Math.max(
                             0,
@@ -877,7 +888,7 @@ export default function AttendanceManagement() {
                         (r) => r.status === "present"
                       ).length;
                       const absentCount = todayRecords.filter(
-                        (r) => r.status === "absent"
+                        (r) => r.status === "absent" || (r as any).approval_status === "rejected"
                       ).length;
                       const notMarked = Math.max(
                         0,
@@ -1034,6 +1045,8 @@ export default function AttendanceManagement() {
                               )
                             }
                             isAdmin={true}
+                            type="teacher"
+                            personName={teacher.name}
                             daysToShow={
                               computeRange(
                                 teacherRange,
@@ -1057,6 +1070,11 @@ export default function AttendanceManagement() {
                               ).start
                             }
                             showTimestamps={true}
+                            onLeaveIconClick={(record, type, personName) => {
+                              if (record.id) {
+                                openLeaveReason(record as AttendanceRecord, type, personName);
+                              }
+                            }}
                           />
                         </div>
                       );
@@ -1120,10 +1138,19 @@ export default function AttendanceManagement() {
               name={leaveModalData.name}
               date={leaveModalData.date}
               currentReason={leaveModalData.currentReason}
+              approvedBy={leaveModalData.approvedBy}
+              approvalStatus={leaveModalData.approvalStatus}
               canEdit={true}
               onReasonSaved={(recordId, reason) => {
                 if (leaveModalData) {
                   updateLocalRemarks(recordId, reason, leaveModalData.type);
+                }
+              }}
+              onApprovalStatusChanged={(recordId, status) => {
+                setApprovedRejectReason({ recordId, status });
+                // Refresh teacher attendance to show updated status
+                if (leaveModalData.type === "teacher") {
+                  fetchTeacherAttendance(teacherRange);
                 }
               }}
             />

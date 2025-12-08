@@ -8,7 +8,12 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function StudentsCountCard() {
   const { data, error } = useSWR("/api/students/count", fetcher, {
-    refreshInterval: 60_000,
+    // Disable automatic polling in dev to avoid frequent requests.
+    // Use dedupingInterval to avoid duplicate concurrent requests
+    // and prevent revalidation on window focus.
+    refreshInterval: 0,
+    dedupingInterval: 60_000,
+    revalidateOnFocus: false,
   });
 
   let content = (

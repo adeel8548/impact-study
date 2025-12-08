@@ -15,6 +15,11 @@ interface AttendanceRecord {
   created_at?: string;
   updated_at?: string;
   out_time?: string;
+  approved_by?: string; // Admin who approved
+  approved_at?: string; // When approval happened
+  rejected_by?: string; // Admin who rejected
+  rejected_at?: string; // When rejection happened
+  approval_status?: "approved" | "rejected"; // approval state
 }
 
 interface AttendanceGridProps {
@@ -35,6 +40,8 @@ interface AttendanceGridProps {
   personName?: string;
   // Whether user can edit leave reasons
   canEditReasons?: boolean;
+  // Callback when leave icon is clicked (for admin to open leave modal)
+  onLeaveIconClick?: (record: AttendanceRecord, type: "student" | "teacher", personName: string) => void;
 }
 
 interface HolidayDate {
@@ -53,6 +60,7 @@ export function AttendanceGrid({
   type = "student",
   personName = "Person",
   canEditReasons = true,
+  onLeaveIconClick,
 }: AttendanceGridProps) {
   const [startDate, setStartDate] = useState(() => {
     if (startDateIso) {
@@ -338,29 +346,62 @@ export function AttendanceGrid({
                             ? "🏥 Leave"
                             : "—"}
                     </Button>
-                    {/* Leave reason icon - show when leave is marked */}
+                    {/* Leave reason icon or approval status - show when leave is marked */}
                     {status === "leave" && record && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedLeaveRecord(record);
-                          setLeaveModalOpen(true);
-                        }}
-                        className="w-full h-6 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 p-0"
-                        title={
-                          record.remarks
-                            ? "View/Edit leave reason"
-                            : "Add leave reason"
-                        }
-                      >
-                        <Info className="w-4 h-4" />
-                      </Button>
+                      <>
+                        {record.approval_status ? (
+                          // Show approved/rejected status - clickable for admin to edit
+                          <button
+                            onClick={() => {
+                              if (onLeaveIconClick) {
+                                onLeaveIconClick(record, type, personName);
+                              } else {
+                                setSelectedLeaveRecord(record);
+                                setLeaveModalOpen(true);
+                              }
+                            }}
+                            className={`w-full h-6 rounded text-xs font-semibold flex items-center justify-center cursor-pointer transition-all ${
+                              record.approval_status === "approved"
+                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                : "bg-red-100 text-red-700 hover:bg-red-200"
+                            }`}
+                            title={
+                              record.approval_status === "approved"
+                                ? "Approved - Click to edit reason"
+                                : "Rejected - Click to edit reason"
+                            }
+                          >
+                            {record.approval_status === "approved" ? "✅ Approved" : "❌ Rejected"}
+                          </button>
+                        ) : (
+                          // Show info icon for pending leave
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (onLeaveIconClick) {
+                                onLeaveIconClick(record, type, personName);
+                              } else {
+                                setSelectedLeaveRecord(record);
+                                setLeaveModalOpen(true);
+                              }
+                            }}
+                            className="w-full h-6 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 p-0"
+                            title={
+                              record.remarks
+                                ? "View/Edit leave reason"
+                                : "Add leave reason"
+                            }
+                          >
+                            <Info className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
                 {/* Show timestamp for admin if requested and we have a record */}
-                {showTimestamps && record && (
+                {showTimestamps && record && record.status !== "leave" && (
                   <div className="text-[10px] text-muted-foreground mt-1">
                     {/* Time IN */}
                     <span>

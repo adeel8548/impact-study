@@ -66,6 +66,7 @@ export async function upsertTeacherSalary({
       .update({
         amount,
         status: nextStatus,
+        paid_date: nextStatus === "paid" ? now().toISOString() : null,
       })
       .eq("id", existing.id);
 
@@ -76,6 +77,7 @@ export async function upsertTeacherSalary({
       teacher_id: teacherId,
       amount,
       status: nextStatus,
+      paid_date: nextStatus === "paid" ? now().toISOString() : null,
       month: targetMonthKey,
       year: targetYear,
     });
@@ -129,7 +131,7 @@ export async function resetTeacherSalariesToUnpaid(
 
   const { error } = await adminClient
     .from("teacher_salary")
-    .update({ status: "unpaid", reset_at: now().toISOString() })
+    .update({ status: "unpaid", reset_at: now().toISOString(), paid_date: null })
     .in("id", idsToReset);
 
   if (error) {
