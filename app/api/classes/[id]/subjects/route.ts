@@ -72,3 +72,78 @@ export async function POST(
     );
   }
 }
+
+/**
+ * PUT - Update a subject
+ * Body:
+ * - id: UUID of the subject to update
+ * - name: New name of the subject
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const supabase = await createClient();
+
+  try {
+    const body = await request.json();
+    const { id, name } = body;
+
+    if (!id || !name) {
+      return NextResponse.json(
+        { error: "Subject id and name are required", success: false },
+        { status: 400 },
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("subjects")
+      .update({ name })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json({ data, success: true });
+  } catch (error) {
+    console.error("Error updating subject:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to update subject", success: false },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * DELETE - Delete a subject
+ * Query params:
+ * - id: UUID of the subject to delete
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const supabase = await createClient();
+
+  try {
+    const subjectId = request.nextUrl.searchParams.get("id");
+
+    if (!subjectId) {
+      return NextResponse.json(
+        { error: "Subject id is required", success: false },
+        { status: 400 },
+      );
+    }
+
+    const { error } = await supabase.from("subjects").delete().eq("id", subjectId);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting subject:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to delete subject", success: false },
+      { status: 500 },
+    );
+  }
+}
