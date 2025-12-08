@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,15 @@ interface Student {
     amount: number;
     status: "paid" | "unpaid";
   } | null;
+  allFees?: Array<{
+    id: string;
+    student_id: string;
+    amount: number;
+    status: "paid" | "unpaid";
+    month: number;
+    year: number;
+    paid_date?: string;
+  }>;
 }
 
 interface Class {
@@ -60,6 +69,11 @@ export function StudentFeesListModal({
 }: StudentFeesListModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState<string>("");
+  const [loadingFees, setLoadingFees] = useState(false);
+  const [studentFeesMap, setStudentFeesMap] = useState<
+    Map<string, Student["allFees"]>
+  >(new Map());
+  const [feesLoaded, setFeesLoaded] = useState(false);
 
   const classOrderMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -92,9 +106,64 @@ export function StudentFeesListModal({
     }
   }, [open, classFilter, sortedClasses]);
 
+  // Load all fees for all students when modal opens (lazy load)
+  useEffect(() => {
+    if (!open || feesLoaded) return;
+
+    const loadAllFees = async () => {
+      setLoadingFees(true);
+      try {
+        const response = await fetch("/api/students/fees");
+        const data = await response.json();
+
+        if (data.fees && Array.isArray(data.fees)) {
+          // Build a map of student_id -> array of fees
+          const map = new Map<string, Student["allFees"]>();
+          data.fees.forEach(
+            (fee: {
+              student_id: string;
+              id: string;
+              amount: number;
+              status: string;
+              month: number;
+              year: number;
+              paid_date?: string;
+            }) => {
+              if (!map.has(fee.student_id)) {
+                map.set(fee.student_id, []);
+              }
+              map.get(fee.student_id)!.push({
+                id: fee.id,
+                student_id: fee.student_id,
+                amount: fee.amount,
+                status: fee.status as "paid" | "unpaid",
+                month: fee.month,
+                year: fee.year,
+                paid_date: fee.paid_date,
+              });
+            },
+          );
+          setStudentFeesMap(map);
+        }
+      } catch (e) {
+        console.error("Failed to load all student fees:", e);
+      } finally {
+        setLoadingFees(false);
+        setFeesLoaded(true);
+      }
+    };
+
+    loadAllFees();
+  }, [open, feesLoaded]);
+
   const filteredStudents = students.filter((student) => {
-    const hasCurrentFee = student.currentFee;
-    const matchesStatus = hasCurrentFee?.status === status;
+    // Use allFees if loaded, otherwise fall back to currentFee
+    const studentAllFees = studentFeesMap.get(student.id) || [];
+    const feesToUse =
+      studentAllFees.length > 0 ? studentAllFees : student.currentFee ? [student.currentFee] : [];
+
+    // For filtering, check if ANY fee matches the status
+    const matchesStatus = feesToUse.some((fee) => fee.status === status);
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.roll_number?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -102,10 +171,18 @@ export function StudentFeesListModal({
     return matchesStatus && matchesSearch && matchesClass;
   });
 
-  const totalAmount = filteredStudents.reduce(
-    (acc, student) => acc + (Number(student.currentFee?.amount) || 0),
-    0,
-  );
+  const totalAmount = filteredStudents.reduce((acc, student) => {
+    // Use allFees if loaded, otherwise fall back to currentFee
+    const studentAllFees = studentFeesMap.get(student.id) || [];
+    const feesToUse =
+      studentAllFees.length > 0 ? studentAllFees : student.currentFee ? [student.currentFee] : [];
+
+    const feesForStatus = feesToUse.filter((fee) => fee.status === status);
+    return (
+      acc +
+      feesForStatus.reduce((sum, fee) => sum + (Number(fee.amount) || 0), 0)
+    );
+  }, 0);
 
   const classLabel = sortedClasses.find((c) => c.id === classFilter)?.name;
 
@@ -128,7 +205,7 @@ export function StudentFeesListModal({
           </DialogTitle>
         </DialogHeader>
 
-        {isLoading ? (
+        {isLoading || loadingFees ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>

@@ -151,3 +151,70 @@ export interface DailyQuiz {
   teacher_id?: string | null;
   created_at?: string;
 }
+
+// Exam Results Management
+export interface Exam {
+  id: string;
+  name: string;
+  class_id: string;
+  start_date: string;
+  end_date: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  class_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StudentResult {
+  id: string;
+  student_id: string;
+  subject_id: string;
+  exam_id: string;
+  marks: number | null;
+  total_marks?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StudentResultsTable {
+  studentId: string;
+  studentName: string;
+  [key: string]: string | number | null; // exam_subject_combo -> marks
+}
+
+// Exam Chapter Management
+export interface ExamChapter {
+  id: string;
+  exam_id: string;
+  subject_id: string;
+  chapter_name: string;
+  chapter_date: string;
+  max_marks: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ExamResult {
+  id: string;
+  student_id: string;
+  chapter_id: string;
+  class_id: string;
+  marks: number | null;
+  student?: {
+    id: string;
+    name: string;
+  };
+  chapter?: {
+    id: string;
+    chapter_name: string;
+    max_marks: number;
+  };
+  created_at?: string;
+  updated_at?: string;
+}

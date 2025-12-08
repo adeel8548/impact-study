@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Pencil ,Trash} from "lucide-react";
 import { toast } from "sonner";
+import { ExamCard } from "@/components/exam-card";
+import { QuizCard } from "@/components/quiz-card";
 import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
@@ -346,29 +348,26 @@ export default function TeacherSchedulesPage() {
               <p className="text-sm text-muted-foreground">Series exams are read-only for teachers. Contact admin to add or modify exams.</p>
             </Card>
 
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3">Upcoming Exams</h3>
-              <div className="space-y-2">
-                {exams.length === 0 && (
+            <div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">Upcoming Exams</h3>
+              {exams.length === 0 && (
+                <Card className="p-4">
                   <p className="text-sm text-muted-foreground">No exams yet.</p>
-                )}
+                </Card>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {exams.map((e) => (
-                  <div
+                  <ExamCard
                     key={e.id}
-                    className="flex items-center justify-between border border-border rounded p-3"
-                  >
-                    <div>
-                      <p className="font-medium">{e.subject}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {e.start_date} → {e.end_date} • Duration:{" "}
-                        {e.duration_minutes ? `${e.duration_minutes} min` : "—"}
-                      </p>
-                      {e.notes && <p className="text-xs text-muted-foreground">Notes: {e.notes}</p>}
-                    </div>
-                  </div>
+                    exam={e}
+                    teacherName={teacherName}
+                    className={classes.find((c) => c.id === selectedClass)?.name || "—"}
+                    onEdit={() => {}}
+                    onDelete={() => {}}
+                  />
                 ))}
               </div>
-            </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="quizzes" className="space-y-4">
@@ -405,53 +404,32 @@ export default function TeacherSchedulesPage() {
               </div>
             </Card>
 
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3">Upcoming Quizzes</h3>
-              <div className="space-y-2">
-                {quizzes.length === 0 && (
+            <div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">Upcoming Quizzes</h3>
+              {quizzes.length === 0 && (
+                <Card className="p-4">
                   <p className="text-sm text-muted-foreground">No quizzes yet.</p>
-                )}
+                </Card>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {quizzes.map((q) => (
-                  <div
+                  <QuizCard
                     key={q.id}
-                    className="flex items-center justify-between border border-border rounded p-3"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {q.subject} — {q.topic}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {q.quiz_date} • Duration: {q.duration_minutes ? `${q.duration_minutes} min` : "—"}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setQuizEditingId(q.id);
-                          setQuizSubject(q.subject);
-                          setQuizTopic(q.topic);
-                          setQuizDate(q.quiz_date);
-                          setQuizDuration(q.duration_minutes?.toString() || "");
-                        }}
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteItem("quiz", q.id)}
-                        title="Delete"
-                      >
-                        <Trash className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+                    quiz={q}
+                    teacherName={teacherName}
+                    className={classes.find((c) => c.id === selectedClass)?.name || "—"}
+                    onEdit={(quiz) => {
+                      setQuizEditingId(quiz.id);
+                      setQuizSubject(quiz.subject);
+                      setQuizTopic(quiz.topic);
+                      setQuizDate(quiz.quiz_date);
+                      setQuizDuration(quiz.duration_minutes?.toString() || "");
+                    }}
+                    onDelete={(id) => deleteItem("quiz", id)}
+                  />
                 ))}
               </div>
-            </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -136,7 +136,7 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div className="pb-10">
+            <div className="">
               <Button
                 type="submit"
                 disabled={isLoading || !!envError}
@@ -148,7 +148,7 @@ export default function LoginPage() {
           </form>
         </Card>
 
-        <p className="absolute bottom-1 left-0 right-0 text-center text-sm text-muted-foreground mt-6">
+        <p className=" text-center text-sm text-muted-foreground mt-6">
           Design & Developed by Adeel Tariq All rights reserved © {year}
         </p>
       </div>
