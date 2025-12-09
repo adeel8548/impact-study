@@ -1,26 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * GET - Fetch subjects for a specific class
- * Path params:
- * - id: UUID of the class
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// GET - list subjects (optionally by classId)
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
-  const { id: classId } = await params;
+  const classId = request.nextUrl.searchParams.get("classId");
 
   try {
-    // First, try to fetch from subjects table
-    const { data, error } = await supabase
-      .from("subjects")
-      .select("*")
-      .eq("class_id", classId)
-      .order("name", { ascending: true });
+    let query = supabase.from("subjects").select("*").order("name", { ascending: true });
+    if (classId) query = query.eq("class_id", classId);
 
+    const { data, error } = await query;
     if (error) throw error;
 
     return NextResponse.json({ subjects: data || [], success: true });
@@ -33,39 +23,23 @@ export async function GET(
   }
 }
 
-/**
- * POST - Create a new subject for a class
- * Body:
- * - name: Name of the subject
- */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// POST - create subject
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const { id: classId } = await params;
-
   try {
-    if (!classId) {
-      return NextResponse.json(
-        { error: "Class id is required", success: false },
-        { status: 400 },
-      );
-    }
-
     const body = await request.json();
-    const { name } = body;
+    const { name, class_id } = body;
 
-    if (!name) {
+    if (!name || !class_id) {
       return NextResponse.json(
-        { error: "Subject name is required", success: false },
+        { error: "name and class_id are required", success: false },
         { status: 400 },
       );
     }
 
     const { data, error } = await supabase
       .from("subjects")
-      .insert({ name, class_id: classId })
+      .insert({ name, class_id })
       .select()
       .single();
 
@@ -80,26 +54,16 @@ export async function POST(
   }
 }
 
-/**
- * PUT - Update a subject
- * Body:
- * - id: UUID of the subject to update
- * - name: New name of the subject
- */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// PUT - update subject
+export async function PUT(request: NextRequest) {
   const supabase = await createClient();
-  const { id: classId } = await params;
-
   try {
     const body = await request.json();
     const { id, name } = body;
 
     if (!id || !name) {
       return NextResponse.json(
-        { error: "Subject id and name are required", success: false },
+        { error: "id and name are required", success: false },
         { status: 400 },
       );
     }
@@ -122,29 +86,19 @@ export async function PUT(
   }
 }
 
-/**
- * DELETE - Delete a subject
- * Query params:
- * - id: UUID of the subject to delete
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE - delete subject
+export async function DELETE(request: NextRequest) {
   const supabase = await createClient();
-  const { id: classId } = await params;
-
   try {
-    const subjectId = request.nextUrl.searchParams.get("id");
-
-    if (!subjectId) {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) {
       return NextResponse.json(
-        { error: "Subject id is required", success: false },
+        { error: "id is required", success: false },
         { status: 400 },
       );
     }
 
-    const { error } = await supabase.from("subjects").delete().eq("id", subjectId);
+    const { error } = await supabase.from("subjects").delete().eq("id", id);
     if (error) throw error;
 
     return NextResponse.json({ success: true });
@@ -156,3 +110,4 @@ export async function DELETE(
     );
   }
 }
+

@@ -97,6 +97,17 @@ export function TeacherHeader() {
         </Button>
         <Button
           variant="ghost"
+          onClick={() => router.push("/teacher/student-results")}
+          className={`rounded-none border-b-2 ${
+            isActiveStartsWith("/teacher/student-results")
+              ? "text-primary font-semibold border-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent"
+          }`}
+        >
+          Results
+        </Button>
+        <Button
+          variant="ghost"
           onClick={() => router.push("/teacher/my-attendance")}
           className={`rounded-none border-b-2 ${
             isActive("/teacher/my-attendance")

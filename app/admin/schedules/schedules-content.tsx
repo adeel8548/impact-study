@@ -17,6 +17,7 @@ import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
 type TeacherOption = { id: string; name: string };
+type SubjectOption = { id: string; name: string };
 
 const toLocalDate = (d: Date) => {
   const y = d.getFullYear();
@@ -30,6 +31,7 @@ export function AdminSchedulesContent() {
   const searchParams = useSearchParams();
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [tab, setTab] = useState<string>("revisions");
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,7 @@ export function AdminSchedulesContent() {
       loadRevisions();
       loadExams();
       loadQuizzes();
+      loadSubjects();
     }
   }, [selectedClass]);
 
@@ -111,6 +114,23 @@ export function AdminSchedulesContent() {
       setTeachers(t);
     } catch (e) {
       toast.error("Failed to load teachers");
+    }
+  };
+
+  const loadSubjects = async () => {
+    try {
+      const res = await fetch(`/api/classes/${selectedClass}/subjects`);
+      const json = await res.json();
+      const list: SubjectOption[] = (json.subjects || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+      }));
+      setSubjects(list);
+      if (list.length > 0 && !examSubject) {
+        setExamSubject(list[0].name);
+      }
+    } catch (e) {
+      toast.error("Failed to load subjects");
     }
   };
 
@@ -155,7 +175,7 @@ export function AdminSchedulesContent() {
     setRevEditingId(null);
   };
   const resetExamForm = () => {
-    setExamSubject("");
+    setExamSubject(subjects[0]?.name || "");
     setExamStart(today);
     setExamEnd(today);
     setExamDuration("");
@@ -438,7 +458,19 @@ export function AdminSchedulesContent() {
                 <div className="grid md:grid-cols-3 gap-3">
                   <div>
                     <Label>Subject</Label>
-                    <Input value={examSubject} onChange={(e) => setExamSubject(e.target.value)} />
+                    <select
+                      value={examSubject}
+                      onChange={(e) => setExamSubject(e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
+                      disabled={subjects.length === 0}
+                    >
+                      {subjects.length === 0 && <option value="">No subjects</option>}
+                      {subjects.map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <Label>Start Date</Label>

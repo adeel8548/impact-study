@@ -23,7 +23,7 @@ const menuItems = [
   { href: "/admin/teachers", label: "Teachers", icon: Briefcase },
   { href: "/admin/classes", label: "Classes", icon: BookOpen },
   { href: "/admin/subjects", label: "Subjects", icon: BookOpen },
-  { href: "/admin/exams", label: "Exams", icon: BarChart3 },
+  { href: "/admin/student-results", label: "Student Results", icon: BarChart3 },
   { href: "/admin/chapters", label: "Chapters", icon: BookOpen },
   { href: "/admin/attendance", label: "Attendance", icon: Clock },
   { href: "/admin/revisions", label: "Revisions", icon: BookOpen },

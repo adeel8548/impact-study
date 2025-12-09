@@ -32,7 +32,6 @@ export default function TeacherSchedulesPage() {
   const [teacherId, setTeacherId] = useState<string>("");
   const [teacherName, setTeacherName] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<string>("revisions");
 
   const today = useMemo(() => toLocalDate(new Date()), []);
@@ -42,17 +41,8 @@ export default function TeacherSchedulesPage() {
   const [quizzes, setQuizzes] = useState<DailyQuiz[]>([]);
 
   // Form state
-  const [revSubject, setRevSubject] = useState("");
-  const [revTopic, setRevTopic] = useState("");
-  const [revDate, setRevDate] = useState(today);
-
-  const [examSubject, setExamSubject] = useState("");
-  const [examStart, setExamStart] = useState(today);
-  const [examEnd, setExamEnd] = useState(today);
-  const [examDuration, setExamDuration] = useState("");
-  const [examPaperDate, setExamPaperDate] = useState("");
-  const [examNotes, setExamNotes] = useState("");
-
+  // Quizzes editable by teacher
+  const [saving, setSaving] = useState(false);
   const [quizSubject, setQuizSubject] = useState("");
   const [quizTopic, setQuizTopic] = useState("");
   const [quizDate, setQuizDate] = useState(today);
@@ -105,7 +95,7 @@ export default function TeacherSchedulesPage() {
 
   const loadRevisions = async () => {
     try {
-      const params = new URLSearchParams({ classId: selectedClass });
+      const params = new URLSearchParams({ classId: selectedClass, teacherId });
       const res = await fetch(`/api/revision-schedule?${params}`);
       const json = await res.json();
       setRevisions(json.data || []);
@@ -116,7 +106,7 @@ export default function TeacherSchedulesPage() {
 
   const loadExams = async () => {
     try {
-      const params = new URLSearchParams({ classId: selectedClass });
+      const params = new URLSearchParams({ classId: selectedClass, teacherId });
       const res = await fetch(`/api/series-exams?${params}`);
       const json = await res.json();
       setExams(json.data || []);
@@ -127,7 +117,7 @@ export default function TeacherSchedulesPage() {
 
   const loadQuizzes = async () => {
     try {
-      const params = new URLSearchParams({ classId: selectedClass });
+      const params = new URLSearchParams({ classId: selectedClass, teacherId });
       const res = await fetch(`/api/daily-quizzes?${params}`);
       const json = await res.json();
       setQuizzes(json.data || []);
@@ -136,79 +126,7 @@ export default function TeacherSchedulesPage() {
     }
   };
 
-  const createRevision = async () => {
-    if (!revSubject || !revTopic || !revDate) {
-      toast.error("Fill subject, topic, date");
-      return;
-    }
-    setSaving(true);
-    try {
-      const payload = {
-        class_id: selectedClass,
-        subject: revSubject,
-        topic: revTopic,
-        revision_date: revDate,
-        teacher_id: teacherId,
-      };
-      const res = await fetch("/api/revision-schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Failed to save revision");
-      toast.success("Revision saved");
-      setRevSubject("");
-      setRevTopic("");
-      setRevDate(today);
-      loadRevisions();
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to save revision");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const createExam = async () => {
-    if (!examSubject || !examStart || !examEnd) {
-      toast.error("Fill subject and dates");
-      return;
-    }
-    setSaving(true);
-    try {
-      const payload = {
-        class_id: selectedClass,
-        subject: examSubject,
-        start_date: examStart,
-        end_date: examEnd,
-        duration_minutes: examDuration ? Number(examDuration) : null,
-        paper_given_date: examPaperDate || null,
-        notes: examNotes || null,
-        teacher_id: teacherId,
-      };
-      const res = await fetch("/api/series-exams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Failed to save exam");
-      toast.success("Exam saved");
-      setExamSubject("");
-      setExamStart(today);
-      setExamEnd(today);
-      setExamDuration("");
-      setExamPaperDate("");
-      setExamNotes("");
-      loadExams();
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to save exam");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const createQuiz = async () => {
+  const createOrUpdateQuiz = async () => {
     if (!quizSubject || !quizTopic || !quizDate) {
       toast.error("Fill subject, topic, date");
       return;
@@ -232,11 +150,11 @@ export default function TeacherSchedulesPage() {
       });
       if (!res.ok) throw new Error("Failed to save quiz");
       toast.success(quizEditingId ? "Quiz updated" : "Quiz saved");
+      setQuizEditingId(null);
       setQuizSubject("");
       setQuizTopic("");
       setQuizDate(today);
       setQuizDuration("");
-      setQuizEditingId(null);
       loadQuizzes();
     } catch (e) {
       console.error(e);
@@ -246,23 +164,15 @@ export default function TeacherSchedulesPage() {
     }
   };
 
-  const deleteItem = async (table: "revision" | "exam" | "quiz", id: string) => {
+  const deleteQuiz = async (id: string) => {
     try {
-      const url =
-        table === "revision"
-          ? `/api/revision-schedule?id=${id}`
-          : table === "exam"
-            ? `/api/series-exams?id=${id}`
-            : `/api/daily-quizzes?id=${id}`;
-      const res = await fetch(url, { method: "DELETE" });
+      const res = await fetch(`/api/daily-quizzes?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
-      toast.success("Deleted");
-      if (table === "revision") loadRevisions();
-      else if (table === "exam") loadExams();
-      else loadQuizzes();
+      toast.success("Quiz deleted");
+      loadQuizzes();
     } catch (e) {
       console.error(e);
-      toast.error("Failed to delete");
+      toast.error("Failed to delete quiz");
     }
   };
 
@@ -314,10 +224,6 @@ export default function TeacherSchedulesPage() {
           </TabsList>
 
           <TabsContent value="revisions" className="space-y-4">
-            <Card className="p-4 space-y-3">
-              <p className="text-sm text-muted-foreground">Revisions are read-only for teachers. Contact admin to add or modify revisions.</p>
-            </Card>
-
             <Card className="p-4">
               <h3 className="font-semibold mb-3">Upcoming Revisions</h3>
               <div className="space-y-2">
@@ -344,10 +250,6 @@ export default function TeacherSchedulesPage() {
           </TabsContent>
 
           <TabsContent value="exams" className="space-y-4">
-            <Card className="p-4 space-y-3">
-              <p className="text-sm text-muted-foreground">Series exams are read-only for teachers. Contact admin to add or modify exams.</p>
-            </Card>
-
             <div>
               <h3 className="text-2xl font-bold text-foreground mb-4">Upcoming Exams</h3>
               {exams.length === 0 && (
@@ -362,8 +264,8 @@ export default function TeacherSchedulesPage() {
                     exam={e}
                     teacherName={teacherName}
                     className={classes.find((c) => c.id === selectedClass)?.name || "—"}
-                    onEdit={() => {}}
-                    onDelete={() => {}}
+                    onEdit={undefined}
+                    onDelete={undefined}
                   />
                 ))}
               </div>
@@ -395,11 +297,16 @@ export default function TeacherSchedulesPage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button onClick={createQuiz} disabled={saving} className="gap-2">
+              <div className="flex justify-end gap-2">
+                {quizEditingId && (
+                  <Button variant="outline" onClick={() => setQuizEditingId(null)}>
+                    Cancel
+                  </Button>
+                )}
+                <Button onClick={createOrUpdateQuiz} disabled={saving} className="gap-2">
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <Plus className="w-4 h-4" />
-                  Add Quiz
+                  {quizEditingId ? "Update Quiz" : "Add Quiz"}
                 </Button>
               </div>
             </Card>
@@ -425,7 +332,7 @@ export default function TeacherSchedulesPage() {
                       setQuizDate(quiz.quiz_date);
                       setQuizDuration(quiz.duration_minutes?.toString() || "");
                     }}
-                    onDelete={(id) => deleteItem("quiz", id)}
+                    onDelete={(id) => deleteQuiz(id)}
                   />
                 ))}
               </div>

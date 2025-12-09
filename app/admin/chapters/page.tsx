@@ -20,14 +20,14 @@ type ExamChapter = {
 };
 
 type ClassOption = { id: string; name: string };
-type Subject = { id: string; name: string; class_id: string };
-type SeriesExam = { id: string; name: string; class_id: string };
+type SeriesExam = { id: string; subject: string; start_date: string; end_date: string };
+type SubjectOption = { id: string; name: string };
 
 export default function ChaptersPage() {
   const router = useRouter();
   const [chapters, setChapters] = useState<ExamChapter[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [exams, setExams] = useState<SeriesExam[]>([]);
 
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -39,7 +39,6 @@ export default function ChaptersPage() {
 
   const [chapterName, setChapterName] = useState("");
   const [chapterDate, setChapterDate] = useState("");
-  const [maxMarks, setMaxMarks] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Check authentication
@@ -63,73 +62,80 @@ export default function ChaptersPage() {
       }
     } catch (error) {
       console.error("Error loading classes:", error);
-      toast.error("کلاسز لوڈ نہیں ہو سکیں");
+      toast.error("Failed to load classes");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load subjects for selected class
+  // Load exams and subjects for selected class
   useEffect(() => {
     if (selectedClass) {
-      loadSubjects();
+      loadExamsAndSubjects();
     }
   }, [selectedClass]);
 
-  const loadSubjects = async () => {
+  const loadExamsAndSubjects = async () => {
     try {
-      const res = await fetch(`/api/classes/${selectedClass}/subjects`);
-      const data = await res.json();
-      setSubjects(data.subjects || []);
-      setSelectedSubject("");
+      const [examsRes, subjectsRes] = await Promise.all([
+        fetch(`/api/series-exams?classId=${selectedClass}`),
+        fetch(`/api/classes/${selectedClass}/subjects`),
+      ]);
+      const examsJson = await examsRes.json();
+      const subjectsJson = await subjectsRes.json();
+
+      const examsData = examsJson.data || [];
+      setExams(examsData);
+
+      const subjectOptions = (subjectsJson.subjects || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+      }));
+      setSubjects(subjectOptions);
+
+      setSelectedSubject(subjectOptions[0]?.id || "");
       setSelectedExam("");
       setChapters([]);
     } catch (error) {
-      console.error("Error loading subjects:", error);
-    }
-  };
-
-  // Load exams for selected class
-  useEffect(() => {
-    if (selectedClass) {
-      loadExams();
-    }
-  }, [selectedClass]);
-
-  const loadExams = async () => {
-    try {
-      const res = await fetch(`/api/series-exams?classId=${selectedClass}`);
-      const data = await res.json();
-      setExams(data.data || []);
-    } catch (error) {
       console.error("Error loading exams:", error);
+      toast.error("Failed to load series exams");
     }
   };
 
-  // Load chapters for selected exam and subject
+  // Filter exams based on selected subject
+  const selectedSubjectName =
+    subjects.find((s) => s.id === selectedSubject)?.name || "";
+  const filteredExams = selectedSubjectName
+    ? exams.filter((e) => e.subject === selectedSubjectName)
+    : [];
+
+  // Load chapters for selected exam
   useEffect(() => {
-    if (selectedExam && selectedSubject) {
+    if (selectedExam) {
       loadChapters();
     }
-  }, [selectedExam, selectedSubject]);
+  }, [selectedExam]);
 
   const loadChapters = async () => {
     try {
-      const res = await fetch(
-        `/api/chapters?examId=${selectedExam}&subjectId=${selectedSubject}`
-      );
+      const res = await fetch(`/api/chapters?examId=${selectedExam}`);
       const data = await res.json();
       setChapters(data.data || []);
     } catch (error) {
       console.error("Error loading chapters:", error);
-      toast.error("ابواب لوڈ نہیں ہو سکے");
+      toast.error("Failed to load chapters");
     }
   };
 
   // Save chapter
   const handleSaveChapter = async () => {
-    if (!chapterName.trim() || !chapterDate || !maxMarks) {
-      toast.error("تمام فیلڈز درج کریں");
+    if (!chapterName.trim() || !chapterDate) {
+      toast.error("Please enter chapter name and date");
+      return;
+    }
+
+    if (!selectedExam) {
+      toast.error("Please select an exam");
       return;
     }
 
@@ -141,14 +147,13 @@ export default function ChaptersPage() {
             id: editingId,
             chapter_name: chapterName,
             chapter_date: chapterDate,
-            max_marks: parseInt(maxMarks),
           }
         : {
             exam_id: selectedExam,
             subject_id: selectedSubject,
             chapter_name: chapterName,
             chapter_date: chapterDate,
-            max_marks: parseInt(maxMarks),
+            max_marks: 100,
           };
 
       const res = await fetch("/api/chapters", {
@@ -160,12 +165,12 @@ export default function ChaptersPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      toast.success(editingId ? "ابواب اپڈیٹ ہو گیا" : "ابواب شامل ہو گیا");
+      toast.success(editingId ? "Chapter updated" : "Chapter added");
       resetForm();
       loadChapters();
     } catch (error) {
       console.error("Error saving chapter:", error);
-      toast.error("ابواب محفوظ نہیں ہو سکا");
+      toast.error("Failed to save chapter");
     } finally {
       setSaving(false);
     }
@@ -173,18 +178,18 @@ export default function ChaptersPage() {
 
   // Delete chapter
   const handleDeleteChapter = async (id: string) => {
-    if (!confirm("کیا آپ یہ ابواب حذف کرنا چاہتے ہیں؟")) return;
+    if (!confirm("Are you sure you want to delete this chapter?")) return;
 
     try {
       const res = await fetch(`/api/chapters?id=${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      toast.success("ابواب حذف ہو گیا");
+      toast.success("Chapter deleted");
       loadChapters();
     } catch (error) {
       console.error("Error deleting chapter:", error);
-      toast.error("ابواب حذف نہیں ہو سکا");
+      toast.error("Failed to delete chapter");
     }
   };
 
@@ -193,23 +198,13 @@ export default function ChaptersPage() {
     setEditingId(chapter.id);
     setChapterName(chapter.chapter_name);
     setChapterDate(chapter.chapter_date);
-    setMaxMarks(chapter.max_marks.toString());
   };
 
   const resetForm = () => {
     setEditingId(null);
     setChapterName("");
     setChapterDate("");
-    setMaxMarks("");
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -218,22 +213,24 @@ export default function ChaptersPage() {
         <div className="p-4 md:p-8 space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold text-foreground">ابواب</h1>
+            <h1 className="text-3xl font-bold text-foreground">Chapters</h1>
             <p className="text-muted-foreground">
-              امتحانات کے لیے ابواب کو منظم کریں
+              Manage chapters for series exams
             </p>
           </div>
 
           {/* Selection Section */}
-          <Card className="p-4 space-y-4">
+          <Card className="p-6 bg-white">
+            <h2 className="text-lg font-semibold mb-4">Select Exam</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Class Selection */}
               <div>
-                <Label className="text-sm">کلاس منتخب کریں</Label>
+                <Label htmlFor="class-select" className="text-sm font-medium mb-2 block">Class</Label>
                 <select
+                  id="class-select"
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded bg-background text-foreground mt-2"
+                  className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                 >
                   {classes.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -245,13 +242,15 @@ export default function ChaptersPage() {
 
               {/* Subject Selection */}
               <div>
-                <Label className="text-sm">مضمون منتخب کریں</Label>
+                <Label htmlFor="subject-select" className="text-sm font-medium mb-2 block">Subject</Label>
                 <select
+                  id="subject-select"
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded bg-background text-foreground mt-2"
+                  disabled={subjects.length === 0}
+                  className="w-full px-3 py-2 border border-border rounded bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">منتخب کریں</option>
+                  <option value="">Select</option>
                   {subjects.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
@@ -262,16 +261,18 @@ export default function ChaptersPage() {
 
               {/* Exam Selection */}
               <div>
-                <Label className="text-sm">امتحان منتخب کریں</Label>
+                <Label htmlFor="exam-select" className="text-sm font-medium mb-2 block">Series Exam</Label>
                 <select
+                  id="exam-select"
                   value={selectedExam}
                   onChange={(e) => setSelectedExam(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded bg-background text-foreground mt-2"
+                  disabled={filteredExams.length === 0}
+                  className="w-full px-3 py-2 border border-border rounded bg-background text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">منتخب کریں</option>
-                  {exams.map((e) => (
+                  <option value="">Select</option>
+                  {filteredExams.map((e) => (
                     <option key={e.id} value={e.id}>
-                      {e.name}
+                      {e.subject} ({e.start_date} → {e.end_date})
                     </option>
                   ))}
                 </select>
@@ -280,35 +281,30 @@ export default function ChaptersPage() {
           </Card>
 
           {/* Add/Edit Form */}
-          {selectedExam && selectedSubject && (
-            <Card className="p-4 space-y-3">
-              <h3 className="font-semibold">
-                {editingId ? "ابواب میں ترمیم کریں" : "نیا ابواب شامل کریں"}
+          {selectedExam && (
+            <Card className="p-6 bg-white">
+              <h3 className="text-lg font-semibold mb-4">
+                {editingId ? "Edit Chapter" : "Add New Chapter"}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <Label>ابواب کا نام</Label>
+                  <Label htmlFor="chapter-name">Chapter Name</Label>
                   <Input
+                    id="chapter-name"
                     value={chapterName}
                     onChange={(e) => setChapterName(e.target.value)}
-                    placeholder="مثال: باب 1، حرکیات"
+                    placeholder="e.g., Chapter 1: Motion"
+                    className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>تاریخ</Label>
+                  <Label htmlFor="chapter-date">Date</Label>
                   <Input
+                    id="chapter-date"
                     type="date"
                     value={chapterDate}
                     onChange={(e) => setChapterDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>کل نمبر</Label>
-                  <Input
-                    type="number"
-                    value={maxMarks}
-                    onChange={(e) => setMaxMarks(e.target.value)}
-                    placeholder="50"
+                    className="mt-2"
                   />
                 </div>
               </div>
@@ -325,43 +321,41 @@ export default function ChaptersPage() {
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <Plus className="w-4 h-4" />
-                  {editingId ? "اپڈیٹ کریں" : "شامل کریں"}
+                    {editingId ? "Update" : "Add"}
                 </Button>
               </div>
             </Card>
           )}
 
           {/* Chapters List */}
-          {selectedExam && selectedSubject && (
-            <Card className="p-4">
-              <h3 className="font-semibold mb-4">ابواب کی فہرست</h3>
+          {selectedExam && (
+            <Card className="p-6 bg-white">
+              <h3 className="text-lg font-semibold mb-4">Chapters List</h3>
               {chapters.length === 0 ? (
-                <p className="text-muted-foreground">کوئی ابواب نہیں</p>
+                <p className="text-muted-foreground text-center py-8">No chapters</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto border rounded-lg">
                   <table className="w-full text-sm">
-                    <thead className="border-b border-border">
+                    <thead className="bg-muted border-b">
                       <tr>
-                        <th className="text-right p-2">نام</th>
-                        <th className="text-right p-2">تاریخ</th>
-                        <th className="text-right p-2">کل نمبر</th>
-                        <th className="text-right p-2">عمل</th>
+                        <th className="text-left p-3 font-semibold">Chapter Name</th>
+                        <th className="text-left p-3 font-semibold">Date</th>
+                        <th className="text-center p-3 font-semibold">Max Marks</th>
+                        <th className="text-center p-3 font-semibold">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {chapters.map((chapter) => (
+                      {chapters.map((chapter, idx) => (
                         <tr
                           key={chapter.id}
-                          className="border-b border-border hover:bg-muted/50"
+                          className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}
                         >
-                          <td className="p-2">{chapter.chapter_name}</td>
-                          <td className="p-2">
-                            {new Date(chapter.chapter_date).toLocaleDateString(
-                              "ur-PK"
-                            )}
+                          <td className="p-3">{chapter.chapter_name}</td>
+                          <td className="p-3">
+                            {new Date(chapter.chapter_date).toLocaleDateString("en-US")}
                           </td>
-                          <td className="p-2">{chapter.max_marks}</td>
-                          <td className="p-2 flex gap-2">
+                          <td className="p-3 text-center">{chapter.max_marks}</td>
+                          <td className="p-3 flex gap-2 justify-center">
                             <Button
                               variant="ghost"
                               size="icon"

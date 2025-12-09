@@ -51,7 +51,7 @@ export default function SubjectsPage() {
       }
     } catch (error) {
       console.error("Error loading classes:", error);
-      toast.error("کلاسز لوڈ نہیں ہو سکیں");
+      toast.error("Failed to load classes");
     } finally {
       setLoading(false);
     }
@@ -71,14 +71,19 @@ export default function SubjectsPage() {
       setSubjects(data.subjects || []);
     } catch (error) {
       console.error("Error loading subjects:", error);
-      toast.error("مضامین لوڈ نہیں ہو سکے");
+      toast.error("Failed to load subjects");
     }
   };
 
   // Create or update subject
   const handleSaveSubject = async () => {
+    if (!selectedClass) {
+      toast.error("Please select a class first");
+      return;
+    }
+
     if (!subjectName.trim()) {
-      toast.error("مضمون کا نام درج کریں");
+      toast.error("Enter subject name");
       return;
     }
 
@@ -87,7 +92,7 @@ export default function SubjectsPage() {
       const method = editingId ? "PUT" : "POST";
       const body = editingId
         ? { id: editingId, name: subjectName }
-        : { name: subjectName, class_id: selectedClass };
+        : { name: subjectName };
 
       const res = await fetch(`/api/classes/${selectedClass}/subjects`, {
         method,
@@ -98,13 +103,13 @@ export default function SubjectsPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      toast.success(editingId ? "مضمون اپڈیٹ ہو گیا" : "مضمون شامل ہو گیا");
+      toast.success(editingId ? "Subject updated" : "Subject added");
       setSubjectName("");
       setEditingId(null);
       loadSubjects();
     } catch (error) {
       console.error("Error saving subject:", error);
-      toast.error("مضمون محفوظ نہیں ہو سکا");
+      toast.error("Failed to save subject");
     } finally {
       setSaving(false);
     }
@@ -112,7 +117,7 @@ export default function SubjectsPage() {
 
   // Delete subject
   const handleDeleteSubject = async (id: string) => {
-    if (!confirm("کیا آپ اس مضمون کو حذف کرنا چاہتے ہیں؟")) return;
+    if (!confirm("Are you sure you want to delete this subject?")) return;
 
     try {
       const res = await fetch(`/api/classes/${selectedClass}/subjects?id=${id}`, {
@@ -122,11 +127,11 @@ export default function SubjectsPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      toast.success("مضمون حذف ہو گیا");
+      toast.success("Subject deleted");
       loadSubjects();
     } catch (error) {
       console.error("Error deleting subject:", error);
-      toast.error("مضمون حذف نہیں ہو سکا");
+      toast.error("Failed to delete subject");
     }
   };
 
@@ -157,15 +162,15 @@ export default function SubjectsPage() {
         <div className="p-4 md:p-8 space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold text-foreground">مضامین</h1>
+            <h1 className="text-3xl font-bold text-foreground">Subjects</h1>
             <p className="text-muted-foreground">
-              کلاسز کے لیے مضامین کو منظم کریں
+              Manage subjects for classes
             </p>
           </div>
 
           {/* Class Selection */}
           <Card className="p-4">
-            <Label className="text-sm">کلاس منتخب کریں</Label>
+            <Label className="text-sm">Select Class</Label>
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
@@ -182,20 +187,20 @@ export default function SubjectsPage() {
           {/* Add/Edit Form */}
           <Card className="p-4 space-y-3">
             <h3 className="font-semibold">
-              {editingId ? "مضمون میں ترمیم کریں" : "نیا مضمون شامل کریں"}
+              {editingId ? "Edit Subject" : "Add New Subject"}
             </h3>
             <div>
-              <Label>مضمون کا نام</Label>
+              <Label>Subject Name</Label>
               <Input
                 value={subjectName}
                 onChange={(e) => setSubjectName(e.target.value)}
-                placeholder="مثال: ریاضی، انگریزی"
+                placeholder="Example: Math, English"
               />
             </div>
             <div className="flex gap-2 justify-end">
               {editingId && (
                 <Button variant="outline" onClick={handleCancel}>
-                  منسوخ کریں
+                  Cancel
                 </Button>
               )}
               <Button
@@ -205,7 +210,7 @@ export default function SubjectsPage() {
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 <Plus className="w-4 h-4" />
-                {editingId ? "اپڈیٹ کریں" : "شامل کریں"}
+                {editingId ? "Update" : "Add"}
               </Button>
             </div>
           </Card>
@@ -213,10 +218,10 @@ export default function SubjectsPage() {
           {/* Subjects List */}
           <Card className="p-4">
             <h3 className="font-semibold mb-4">
-              {classes.find((c) => c.id === selectedClass)?.name} کے مضامین
+              Subjects for {classes.find((c) => c.id === selectedClass)?.name}
             </h3>
             {subjects.length === 0 ? (
-              <p className="text-muted-foreground">کوئی مضمون نہیں</p>
+              <p className="text-muted-foreground">No subjects</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {subjects.map((subject) => (
