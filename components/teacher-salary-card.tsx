@@ -3,7 +3,14 @@
 import { useState, useTransition, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, AlertCircle, Edit2, Trash2, Calendar } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Edit2,
+  Trash2,
+  Calendar,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TeacherSalaryCardProps {
@@ -40,7 +47,10 @@ export function TeacherSalaryCard({
   const salaryAmount = Number(teacher.salary?.amount ?? 0) || 0;
 
   useEffect(() => {
-    console.log(`TeacherSalaryCard for ${teacher.name} received assignedClasses:`, assignedClasses);
+    console.log(
+      `TeacherSalaryCard for ${teacher.name} received assignedClasses:`,
+      assignedClasses,
+    );
   }, [assignedClasses, teacher.name]);
 
   const handleToggle = () => {
@@ -168,4 +178,3 @@ export function TeacherSalaryCard({
     </Card>
   );
 }
-

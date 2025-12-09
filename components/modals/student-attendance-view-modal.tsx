@@ -8,12 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Calendar,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 
@@ -39,7 +34,8 @@ interface StudentAttendanceViewModalProps {
   studentClass?: Class;
 }
 
-const normalizeClassName = (value?: string) => value?.trim().toLowerCase() ?? "";
+const normalizeClassName = (value?: string) =>
+  value?.trim().toLowerCase() ?? "";
 
 export function StudentAttendanceViewModal({
   open,
@@ -87,7 +83,7 @@ export function StudentAttendanceViewModal({
         const firstOfThisMonth = new Date(
           today.getFullYear(),
           today.getMonth(),
-          1
+          1,
         );
         end = new Date(firstOfThisMonth.getTime() - 1 * 24 * 60 * 60 * 1000);
         start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -102,7 +98,7 @@ export function StudentAttendanceViewModal({
         start = new Date(
           today.getFullYear(),
           today.getMonth() - 3,
-          today.getDate()
+          today.getDate(),
         );
         break;
       }
@@ -110,7 +106,7 @@ export function StudentAttendanceViewModal({
         start = new Date(
           today.getFullYear(),
           today.getMonth() - 6,
-          today.getDate()
+          today.getDate(),
         );
         break;
       }
@@ -118,7 +114,7 @@ export function StudentAttendanceViewModal({
         start = new Date(
           today.getFullYear() - 1,
           today.getMonth(),
-          today.getDate()
+          today.getDate(),
         );
         break;
       }
@@ -167,7 +163,7 @@ export function StudentAttendanceViewModal({
         try {
           const d = new Date(a.date);
           const localDate = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
+            d.getMonth() + 1,
           ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           return { ...a, date: localDate };
         } catch (e) {
@@ -204,7 +200,7 @@ export function StudentAttendanceViewModal({
         try {
           const d = new Date(a.date);
           const localDate = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
+            d.getMonth() + 1,
           ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           return { ...a, date: localDate };
         } catch (e) {
@@ -251,14 +247,14 @@ export function StudentAttendanceViewModal({
   // Calculate stats - only for current selected month
   let presentCount = 0;
   let absentCount = 0;
-  
+
   attendance.forEach((record) => {
     // Filter records to only current month
     try {
       const recordDate = new Date(record.date);
       const recordYear = recordDate.getFullYear();
       const recordMonth = recordDate.getMonth();
-      
+
       if (recordYear === year && recordMonth === month) {
         if (record.status === "present") presentCount++;
         if (record.status === "absent") absentCount++;
@@ -300,7 +296,8 @@ export function StudentAttendanceViewModal({
             </span>
             {studentClass && (
               <span className="font-semibold text-gray-800 flex gap-2 items-center">
-                Class: <span className="text-blue-800">({studentClass.name})</span>
+                Class:{" "}
+                <span className="text-blue-800">({studentClass.name})</span>
               </span>
             )}
           </DialogTitle>
@@ -319,7 +316,7 @@ export function StudentAttendanceViewModal({
                   Present
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {attendance.filter(a => a.status === "present").length}
+                  {attendance.filter((a) => a.status === "present").length}
                 </p>
               </Card>
 
@@ -328,7 +325,7 @@ export function StudentAttendanceViewModal({
                   Absent
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {attendance.filter(a => a.status === "absent").length}
+                  {attendance.filter((a) => a.status === "absent").length}
                 </p>
               </Card>
 
@@ -337,7 +334,7 @@ export function StudentAttendanceViewModal({
                   Leave
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {attendance.filter(a => a.status === "leave").length}
+                  {attendance.filter((a) => a.status === "leave").length}
                 </p>
               </Card>
             </div>
@@ -417,7 +414,9 @@ export function StudentAttendanceViewModal({
             {/* Note - This is Read-Only */}
             <Card className="p-3 bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-500">
               <p className="text-sm text-foreground">
-                <strong>Note:</strong> This is a read-only view of your attendance history. To mark attendance, ask your admin or teacher.
+                <strong>Note:</strong> This is a read-only view of your
+                attendance history. To mark attendance, ask your admin or
+                teacher.
               </p>
             </Card>
 
@@ -483,7 +482,10 @@ export function StudentAttendanceViewModal({
                               });
                               setReasonModalOpen(true);
                             }}
-                            title={(record as any).remarks || "View / add leave reason"}
+                            title={
+                              (record as any).remarks ||
+                              "View / add leave reason"
+                            }
                             className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
                           >
                             🛈

@@ -6,12 +6,8 @@ export async function POST() {
 
   if (error) {
     console.error("[cron] Failed to reset teacher salaries:", error);
-    return NextResponse.json(
-      { success: false, error },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, error }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
 }
-

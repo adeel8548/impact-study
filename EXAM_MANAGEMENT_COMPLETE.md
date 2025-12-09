@@ -9,7 +9,7 @@ A comprehensive school exam management system built with Next.js 13 (App Router)
 ✅ Enter and edit student marks per chapter  
 ✅ View organized results in a responsive table  
 ✅ Full CRUD operations with loading states  
-✅ Responsive design for all devices  
+✅ Responsive design for all devices
 
 ---
 
@@ -45,6 +45,7 @@ A comprehensive school exam management system built with Next.js 13 (App Router)
 ## File Structure & Locations
 
 ### Frontend Pages
+
 ```
 app/
 ├── teacher/
@@ -53,6 +54,7 @@ app/
 ```
 
 ### API Routes
+
 ```
 app/api/
 ├── chapters/
@@ -68,6 +70,7 @@ app/api/
 ```
 
 ### Database Migrations
+
 ```
 scripts/
 ├── 008_exam_management.sql             # Create exam_chapters and exam_results tables
@@ -75,6 +78,7 @@ scripts/
 ```
 
 ### Type Definitions
+
 ```
 lib/
 └── types.ts                            # Updated with ExamChapter and ExamResult types
@@ -85,6 +89,7 @@ lib/
 ## Database Schema
 
 ### exam_chapters Table
+
 ```sql
 CREATE TABLE exam_chapters (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -103,6 +108,7 @@ CREATE INDEX idx_exam_chapters_subject_id ON exam_chapters(subject_id);
 ```
 
 ### exam_results Table
+
 ```sql
 CREATE TABLE exam_results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -126,12 +132,14 @@ CREATE INDEX idx_exam_results_class_id ON exam_results(class_id);
 ## Features Breakdown
 
 ### 1. Class & Subject Selection
+
 - **Dropdown selectors** for class, subject, exam, and chapter
 - Auto-filters subjects based on selected class
 - Auto-filters chapters based on selected exam and subject
 - Loads all students in the class
 
 ### 2. Exam Management (Create Tab)
+
 - **Form fields:**
   - Exam name (text input)
   - Start date (date picker)
@@ -141,6 +149,7 @@ CREATE INDEX idx_exam_results_class_id ON exam_results(class_id);
 - Loading states and error handling
 
 ### 3. Chapter Management (Chapters Tab)
+
 - **Create chapter form:**
   - Chapter name (text input)
   - Chapter date (date picker)
@@ -153,6 +162,7 @@ CREATE INDEX idx_exam_results_class_id ON exam_results(class_id);
 - Dynamic form toggling
 
 ### 4. Results Management (Results Tab)
+
 - **Responsive table showing:**
   - Student name (first column)
   - Marks input field (editable)
@@ -174,6 +184,7 @@ CREATE INDEX idx_exam_results_class_id ON exam_results(class_id);
 ### Main Page: ExamManagementPage
 
 #### State Management (Line 30-85)
+
 ```javascript
 // User & Auth
 const [teacherId, setTeacherId] = useState<string>("");
@@ -197,12 +208,14 @@ const [newChapterName, setNewChapterName] = useState("");
 ```
 
 #### Effects (Line 107-175)
+
 1. **Mount effect**: Authenticate user, load classes
 2. **Class change effect**: Load subjects, exams, students
 3. **Exam/Subject change effect**: Load chapters
 4. **Chapter change effect**: Load results
 
 #### API Functions (Line 180-260)
+
 - `loadClasses()` - Fetch teacher's classes
 - `loadSubjects()` - Fetch subjects for class
 - `loadStudents()` - Fetch students in class
@@ -211,6 +224,7 @@ const [newChapterName, setNewChapterName] = useState("");
 - `loadResults()` - Fetch results for chapter
 
 #### CRUD Operations (Line 270-430)
+
 - **Create Exam**: POST to /api/series-exams
 - **Create Chapter**: POST to /api/chapters
 - **Delete Chapter**: DELETE to /api/chapters
@@ -218,7 +232,9 @@ const [newChapterName, setNewChapterName] = useState("");
 - **Delete Result**: DELETE to /api/exam-results
 
 #### Render (Line 440+)
+
 Three main tabs with responsive layouts:
+
 - Results Tab: Editable marks table
 - Chapters Tab: Create and manage chapters
 - Exams Tab: Create and view exams
@@ -228,7 +244,9 @@ Three main tabs with responsive layouts:
 ## API Endpoints Documentation
 
 ### GET /api/chapters
+
 **Parameters:**
+
 ```javascript
 {
   examId?: string,      // UUID
@@ -237,6 +255,7 @@ Three main tabs with responsive layouts:
 ```
 
 **Response:**
+
 ```javascript
 {
   data: ExamChapter[],
@@ -245,14 +264,17 @@ Three main tabs with responsive layouts:
 ```
 
 **Example:**
+
 ```javascript
-fetch(`/api/chapters?examId=123&subjectId=456`)
+fetch(`/api/chapters?examId=123&subjectId=456`);
 ```
 
 ---
 
 ### POST /api/chapters
+
 **Body:**
+
 ```javascript
 {
   exam_id: string,        // UUID
@@ -264,6 +286,7 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ```
 
 **Response:**
+
 ```javascript
 {
   data: ExamChapter,
@@ -274,7 +297,9 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ---
 
 ### POST /api/exam-results (Upsert)
+
 **Body:**
+
 ```javascript
 {
   student_id: string,     // UUID
@@ -285,12 +310,14 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ```
 
 **Logic:**
+
 1. Check if result exists for (student_id, chapter_id, class_id)
 2. If exists: UPDATE
 3. If not: INSERT
 4. Return saved record
 
 **Response:**
+
 ```javascript
 {
   data: ExamResult,
@@ -301,7 +328,9 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ---
 
 ### GET /api/exam-results
+
 **Parameters:**
+
 ```javascript
 {
   studentId?: string,
@@ -311,6 +340,7 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ```
 
 **Response:**
+
 ```javascript
 {
   data: ExamResult[] // With nested student & chapter data,
@@ -321,31 +351,37 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ---
 
 ### DELETE /api/exam-results
+
 **Parameters:**
+
 ```javascript
 {
-  id: string  // UUID of exam_results record
+  id: string; // UUID of exam_results record
 }
 ```
 
 **Response:**
+
 ```javascript
 {
-  success: boolean
+  success: boolean;
 }
 ```
 
 ---
 
 ### GET /api/classes/[id]/subjects
+
 **Path Parameters:**
+
 ```javascript
 {
-  id: string  // UUID of class
+  id: string; // UUID of class
 }
 ```
 
 **Response:**
+
 ```javascript
 {
   subjects: Subject[],
@@ -356,21 +392,25 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ---
 
 ### POST /api/classes/[id]/subjects
+
 **Path Parameters:**
+
 ```javascript
 {
-  id: string  // UUID of class
+  id: string; // UUID of class
 }
 ```
 
 **Body:**
+
 ```javascript
 {
-  name: string  // Subject name
+  name: string; // Subject name
 }
 ```
 
 **Response:**
+
 ```javascript
 {
   data: Subject,
@@ -385,20 +425,25 @@ fetch(`/api/chapters?examId=123&subjectId=456`)
 ### Layout Sections
 
 #### Header
+
 - "Exam Management" title
 - Subtitle describing functionality
 - Uses existing TeacherHeader component
 
 #### Selection Controls (4-Column Grid)
+
 ```
 [Class Dropdown] [Subject Dropdown] [Exam Dropdown] [Chapter Dropdown]
 ```
+
 Auto-responsive:
+
 - 1 column on mobile
 - 2 columns on tablet
 - 4 columns on desktop
 
 #### Tabs Section
+
 Three main tabs with icons:
 
 1. **Results Tab**
@@ -418,6 +463,7 @@ Three main tabs with icons:
    - Exams List (scrollable, clickable)
 
 #### Responsive Design
+
 - Mobile: 1 column for all inputs
 - Tablet: 2 columns for forms
 - Desktop: 3-4 columns
@@ -429,11 +475,13 @@ Three main tabs with icons:
 ## Loading States & Error Handling
 
 ### Loading Indicators
+
 - Page spinner on initial load
 - Button spinners during saves
 - Conditional "Loading..." messages
 
 ### Error Handling
+
 - Try-catch blocks on all API calls
 - Toast notifications (via Sonner library)
   - ✅ Success toasts
@@ -443,6 +491,7 @@ Three main tabs with icons:
 - Console logging for debugging
 
 ### Validation
+
 - Required field checks before submission
 - Numeric validation for marks
 - Date format validation
@@ -453,13 +502,14 @@ Three main tabs with icons:
 ## TypeScript Types
 
 ### ExamChapter
+
 ```typescript
 interface ExamChapter {
   id: string;
   exam_id: string;
   subject_id: string;
   chapter_name: string;
-  chapter_date: string;       // YYYY-MM-DD
+  chapter_date: string; // YYYY-MM-DD
   max_marks: number;
   created_at?: string;
   updated_at?: string;
@@ -467,6 +517,7 @@ interface ExamChapter {
 ```
 
 ### ExamResult
+
 ```typescript
 interface ExamResult {
   id: string;
@@ -489,6 +540,7 @@ interface ExamResult {
 ```
 
 ### Internal Types
+
 ```typescript
 type ClassOption = { id: string; name: string };
 type StudentOption = { id: string; name: string };
@@ -500,23 +552,28 @@ type SubjectOption = { id: string; name: string };
 ## Installation & Setup
 
 ### 1. Database Setup
+
 Run the migration in your Supabase dashboard:
+
 ```bash
 # File: scripts/008_exam_management.sql
 ```
 
 Creates:
+
 - exam_chapters table with indexes
 - exam_results table with indexes
 - RLS policies for authenticated users
 
 ### 2. Environment Variables
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
 ```
 
 ### 3. Access the Page
+
 Navigate to: `http://localhost:3000/teacher/exam-management`
 
 ---
@@ -537,17 +594,20 @@ Navigate to: `http://localhost:3000/teacher/exam-management`
 ## Performance Optimizations
 
 ✅ **Database:**
+
 - Indexed queries on foreign keys
 - Unique constraint prevents duplicates
 - RLS policies for security
 
 ✅ **Frontend:**
+
 - Lazy loading: Data fetches only when needed
 - Efficient state management
 - No unnecessary re-renders
 - Memoized conditions
 
 ✅ **API:**
+
 - Single endpoints with query filters
 - Batched data fetching
 - Proper error handling
@@ -557,17 +617,20 @@ Navigate to: `http://localhost:3000/teacher/exam-management`
 ## Security Features
 
 ✅ **Authentication**
+
 - User role verification (must be 'teacher')
 - LocalStorage auth check
 - Redirect to home if not authorized
 
 ✅ **Database**
+
 - Row-level security (RLS) enabled
 - Policies for authenticated users only
 - Foreign key constraints
 - Cascade deletion
 
 ✅ **API**
+
 - Input validation
 - Required parameter checks
 - Error message safety
@@ -587,11 +650,13 @@ Navigate to: `http://localhost:3000/teacher/exam-management`
 ## Known Limitations & Future Features
 
 ### Current Limitations
+
 - Single teacher can see own class data only
 - No bulk import/export
 - No analytics yet
 
 ### Future Enhancements
+
 - [ ] Bulk CSV upload for marks
 - [ ] Grade generation from marks
 - [ ] Result reports and PDFs
@@ -605,21 +670,25 @@ Navigate to: `http://localhost:3000/teacher/exam-management`
 ## Troubleshooting
 
 ### Data not loading?
+
 1. Check Supabase connection
 2. Verify teacher is assigned to class
 3. Check browser console for errors
 
 ### Marks not saving?
+
 1. Verify student exists in class
 2. Check that valid chapter is selected
 3. Ensure marks are valid numbers
 
 ### Chapters not appearing?
+
 1. Select an exam first
 2. Verify chapters exist in database
 3. Check that subject is selected
 
 ### API errors?
+
 1. Check Supabase RLS policies are enabled
 2. Verify environment variables are set
 3. Check request parameters format
@@ -640,7 +709,9 @@ Navigate to: `http://localhost:3000/teacher/exam-management`
 ## Development Notes
 
 ### Code Organization
+
 The page is organized into sections with clear comments:
+
 1. Component declaration
 2. Type definitions
 3. State management
@@ -650,6 +721,7 @@ The page is organized into sections with clear comments:
 7. Render sections (JSX)
 
 ### Naming Conventions
+
 - Components: PascalCase
 - Functions: camelCase
 - Constants: camelCase
@@ -657,6 +729,7 @@ The page is organized into sections with clear comments:
 - Props: descriptive names
 
 ### Best Practices
+
 - Use "use client" for client components
 - Proper error handling
 - Loading states for all async operations
@@ -683,6 +756,7 @@ Total                                   ~1,290 lines
 ## Support & Questions
 
 For issues or questions:
+
 1. Check the troubleshooting section
 2. Review the setup guide
 3. Check browser console for errors
@@ -693,4 +767,4 @@ For issues or questions:
 
 **System Created:** December 8, 2025  
 **Version:** 1.0.0  
-**Status:** Production Ready  
+**Status:** Production Ready

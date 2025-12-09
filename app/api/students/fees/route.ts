@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     if (error) {
       return NextResponse.json(
         { error: error.message, fees: [] },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch student fees", fees: [] },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

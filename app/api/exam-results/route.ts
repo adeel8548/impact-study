@@ -15,9 +15,7 @@ export async function GET(request: NextRequest) {
   const classId = request.nextUrl.searchParams.get("classId");
 
   try {
-    let query = supabase
-      .from("exam_results")
-      .select(`
+    let query = supabase.from("exam_results").select(`
         *,
         student:students(id, name),
         chapter:exam_chapters(id, chapter_name, max_marks)
@@ -27,14 +25,20 @@ export async function GET(request: NextRequest) {
     if (chapterId) query = query.eq("chapter_id", chapterId);
     if (classId) query = query.eq("class_id", classId);
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
+    });
     if (error) throw error;
 
     return NextResponse.json({ data: data || [], success: true });
   } catch (error) {
     console.error("Error fetching exam results:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch results", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch results",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -56,7 +60,10 @@ export async function POST(request: NextRequest) {
 
     if (!student_id || !chapter_id || !class_id) {
       return NextResponse.json(
-        { error: "student_id, chapter_id, and class_id are required", success: false },
+        {
+          error: "student_id, chapter_id, and class_id are required",
+          success: false,
+        },
         { status: 400 },
       );
     }
@@ -108,7 +115,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error saving exam result:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to save result", success: false },
+      {
+        error: error instanceof Error ? error.message : "Failed to save result",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -138,7 +148,11 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error("Error deleting exam result:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete result", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to delete result",
+        success: false,
+      },
       { status: 500 },
     );
   }

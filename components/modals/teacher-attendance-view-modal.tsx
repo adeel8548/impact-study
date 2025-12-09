@@ -78,7 +78,7 @@ export function TeacherAttendanceViewModal({
         try {
           const d = new Date(a.date);
           const localDate = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
+            d.getMonth() + 1,
           ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           return { ...a, date: localDate };
         } catch (e) {
@@ -145,7 +145,7 @@ export function TeacherAttendanceViewModal({
 
   const getAttendanceRecord = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-      day
+      day,
     ).padStart(2, "0")}`;
     return attendance.find((a) => a.date === dateStr);
   };
@@ -281,7 +281,7 @@ export function TeacherAttendanceViewModal({
                       >
                         {day}
                       </div>
-                    )
+                    ),
                   )}
                 </div>
 
@@ -307,12 +307,12 @@ export function TeacherAttendanceViewModal({
                           !record
                             ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                             : record.status === "present"
-                            ? "bg-green-500 text-white"
-                            : record.status === "absent"
-                            ? "bg-red-500 text-white"
-                            : record.status === "leave"
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-400 text-white dark:bg-gray-600"
+                              ? "bg-green-500 text-white"
+                              : record.status === "absent"
+                                ? "bg-red-500 text-white"
+                                : record.status === "leave"
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-400 text-white dark:bg-gray-600"
                         }`}
                       >
                         {/* Top: Day number and Status */}

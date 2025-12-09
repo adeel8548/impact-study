@@ -20,7 +20,8 @@ export function TeacherHeader() {
 
   const isActive = (path: string) => pathname === path;
   // treat paths that start with a base as active (e.g. /teacher/schedules?tab=quizzes)
-  const isActiveStartsWith = (base: string) => pathname === base || pathname.startsWith(base);
+  const isActiveStartsWith = (base: string) =>
+    pathname === base || pathname.startsWith(base);
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-30 shadow-sm">

@@ -84,7 +84,7 @@ export default function AttendanceManagement() {
   // Marking modal state
   const [markingModalOpen, setMarkingModalOpen] = useState(false);
   const [markingType, setMarkingType] = useState<"teacher" | "student">(
-    "teacher"
+    "teacher",
   );
   const [markingTargetId, setMarkingTargetId] = useState("");
   const [markingTargetName, setMarkingTargetName] = useState("");
@@ -100,7 +100,7 @@ export default function AttendanceManagement() {
   // Date range helper: accepts option keys and optional custom dates, returns local start/end strings, day count and label
   const computeRange = (
     option: string,
-    custom?: { start?: string; end?: string }
+    custom?: { start?: string; end?: string },
   ) => {
     const today = new Date();
     let start: Date | null = null;
@@ -124,7 +124,7 @@ export default function AttendanceManagement() {
         const firstOfThisMonth = new Date(
           today.getFullYear(),
           today.getMonth(),
-          1
+          1,
         );
         end = new Date(firstOfThisMonth.getTime() - 1 * 24 * 60 * 60 * 1000); // last day of previous month
         start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -172,7 +172,11 @@ export default function AttendanceManagement() {
 
     if (!start || !end) {
       // fallback to last7 previous days
-      const e = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const e = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
       const s = new Date(e.getTime() - (7 - 1) * 24 * 60 * 60 * 1000);
       start = s;
       end = e;
@@ -335,7 +339,7 @@ export default function AttendanceManagement() {
   // Fetch attendance for students for a computed range option or explicit custom dates
   const fetchStudentAttendance = async (
     rangeOption = "last7",
-    customDates?: { start?: string; end?: string }
+    customDates?: { start?: string; end?: string },
   ) => {
     if (!selectedClass) return;
     try {
@@ -362,7 +366,7 @@ export default function AttendanceManagement() {
       ).map((a: any) => {
         const d = new Date(a.date);
         const localDate = toLocalDate(
-          new Date(d.getFullYear(), d.getMonth(), d.getDate())
+          new Date(d.getFullYear(), d.getMonth(), d.getDate()),
         );
         return { ...a, date: localDate };
       });
@@ -396,7 +400,7 @@ export default function AttendanceManagement() {
 
   const fetchTeacherAttendance = async (
     rangeOption = "last7",
-    customDates?: { start?: string; end?: string }
+    customDates?: { start?: string; end?: string },
   ) => {
     try {
       setIsFetching(true);
@@ -420,7 +424,7 @@ export default function AttendanceManagement() {
       ).map((a: any) => {
         const d = new Date(a.date);
         const localDate = toLocalDate(
-          new Date(d.getFullYear(), d.getMonth(), d.getDate())
+          new Date(d.getFullYear(), d.getMonth(), d.getDate()),
         );
         return { ...a, date: localDate };
       });
@@ -439,19 +443,19 @@ export default function AttendanceManagement() {
   const handleStudentAttendanceChange = async (
     studentId: string,
     date: string,
-    status: "present" | "absent" | "leave" | null
+    status: "present" | "absent" | "leave" | null,
   ) => {
     try {
       if (!status) {
         // Delete attendance locally for now
         const recordToDelete = studentAttendance.find(
-          (a) => a.student_id === studentId && a.date === date
+          (a) => a.student_id === studentId && a.date === date,
         );
         if (recordToDelete) {
           setStudentAttendance((prev) =>
             (prev || []).filter(
-              (a) => !(a.student_id === studentId && a.date === date)
-            )
+              (a) => !(a.student_id === studentId && a.date === date),
+            ),
           );
         }
         return;
@@ -461,7 +465,7 @@ export default function AttendanceManagement() {
 
       // Check if we already have a record for this student & date
       const existing = (studentAttendance || []).find(
-        (a) => a.student_id === studentId && a.date === date
+        (a) => a.student_id === studentId && a.date === date,
       );
 
       let response: Response | null = null;
@@ -501,7 +505,7 @@ export default function AttendanceManagement() {
 
       setStudentAttendance((prev) => {
         const filtered = (prev || []).filter(
-          (a) => !(a.student_id === studentId && a.date === date)
+          (a) => !(a.student_id === studentId && a.date === date),
         );
         if (Array.isArray(returned)) return [...filtered, ...returned];
         return [...filtered, returned];
@@ -529,16 +533,16 @@ export default function AttendanceManagement() {
   const handleTeacherAttendanceChange = async (
     teacherId: string,
     date: string,
-    status: "present" | "absent" | "leave" | null
+    status: "present" | "absent" | "leave" | null,
   ) => {
     try {
       if (!status) {
         setTeacherAttendance((prev) =>
           Array.isArray(prev)
             ? prev.filter(
-                (a) => !(a.teacher_id === teacherId && a.date === date)
+                (a) => !(a.teacher_id === teacherId && a.date === date),
               )
-            : []
+            : [],
         );
         return;
       }
@@ -565,7 +569,7 @@ export default function AttendanceManagement() {
 
       setTeacherAttendance((prev) => {
         const filtered = (prev || []).filter(
-          (a) => !(a.teacher_id === teacherId && a.date === date)
+          (a) => !(a.teacher_id === teacherId && a.date === date),
         );
         if (Array.isArray(returned)) return [...filtered, ...returned];
         return [...filtered, returned];
@@ -593,7 +597,7 @@ export default function AttendanceManagement() {
   const openMarkingModal = (
     type: "teacher" | "student",
     id: string,
-    name: string
+    name: string,
   ) => {
     setMarkingType(type);
     setMarkingTargetId(id);
@@ -603,7 +607,7 @@ export default function AttendanceManagement() {
 
   const handleMarked = (
     date: string,
-    status: "present" | "absent" | "leave"
+    status: "present" | "absent" | "leave",
   ) => {
     // Refresh attendance after marking
     if (markingType === "teacher") {
@@ -698,7 +702,7 @@ export default function AttendanceManagement() {
                                 start: studentCustomStart,
                                 end: studentCustomEnd,
                               }
-                            : undefined
+                            : undefined,
                         )
                       }
                       disabled={
@@ -727,7 +731,9 @@ export default function AttendanceManagement() {
                       className="px-3 py-1 border border-border rounded text-sm"
                       onClick={() => {
                         setStudentAttendance((prev) =>
-                          prev.filter((a) => a.date === toLocalDate(new Date()))
+                          prev.filter(
+                            (a) => a.date === toLocalDate(new Date()),
+                          ),
                         );
                         setStudentsPastLoaded(false);
                       }}
@@ -756,14 +762,16 @@ export default function AttendanceManagement() {
                               : []
                           ).filter((a) => a.date === today);
                           const presentCount = todayRecords.filter(
-                            (r) => r.status === "present"
+                            (r) => r.status === "present",
                           ).length;
                           const absentCount = todayRecords.filter(
-                            (r) => r.status === "absent" || (r as any).approval_status === "rejected"
+                            (r) =>
+                              r.status === "absent" ||
+                              (r as any).approval_status === "rejected",
                           ).length;
                           const notMarked = Math.max(
                             0,
-                            students.length - (presentCount + absentCount)
+                            students.length - (presentCount + absentCount),
                           );
 
                           return (
@@ -796,7 +804,7 @@ export default function AttendanceManagement() {
                     <div className="space-y-4">
                       {students?.map((student) => {
                         const studentRecords = studentAttendance.filter(
-                          (a) => a.student_id === student.id
+                          (a) => a.student_id === student.id,
                         );
                         return (
                           <div
@@ -817,7 +825,7 @@ export default function AttendanceManagement() {
                                   openMarkingModal(
                                     "student",
                                     student.id,
-                                    student.name
+                                    student.name,
                                   )
                                 }
                                 className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
@@ -832,7 +840,7 @@ export default function AttendanceManagement() {
                                 handleStudentAttendanceChange(
                                   student.id,
                                   date,
-                                  status
+                                  status,
                                 )
                               }
                               isAdmin={true}
@@ -844,20 +852,20 @@ export default function AttendanceManagement() {
                                         start: studentCustomStart,
                                         end: studentCustomEnd,
                                       }
-                                    : undefined
+                                    : undefined,
                                 ).days
                               }
-                                startDateIso={
-                                  computeRange(
-                                    studentRange,
-                                    studentRange === "custom"
-                                      ? {
-                                          start: studentCustomStart,
-                                          end: studentCustomEnd,
-                                        }
-                                      : undefined
-                                  ).start
-                                }
+                              startDateIso={
+                                computeRange(
+                                  studentRange,
+                                  studentRange === "custom"
+                                    ? {
+                                        start: studentCustomStart,
+                                        end: studentCustomEnd,
+                                      }
+                                    : undefined,
+                                ).start
+                              }
                             />
                           </div>
                         );
@@ -885,14 +893,16 @@ export default function AttendanceManagement() {
                           : []
                       ).filter((a) => a.date === today);
                       const presentCount = todayRecords.filter(
-                        (r) => r.status === "present"
+                        (r) => r.status === "present",
                       ).length;
                       const absentCount = todayRecords.filter(
-                        (r) => r.status === "absent" || (r as any).approval_status === "rejected"
+                        (r) =>
+                          r.status === "absent" ||
+                          (r as any).approval_status === "rejected",
                       ).length;
                       const notMarked = Math.max(
                         0,
-                        teachers.length - (presentCount + absentCount)
+                        teachers.length - (presentCount + absentCount),
                       );
 
                       return (
@@ -946,7 +956,7 @@ export default function AttendanceManagement() {
                                     start: teacherCustomStart,
                                     end: teacherCustomEnd,
                                   }
-                                : undefined
+                                : undefined,
                             )
                           }
                           disabled={
@@ -985,8 +995,8 @@ export default function AttendanceManagement() {
                           onClick={() => {
                             setTeacherAttendance((prev) =>
                               prev.filter(
-                                (a) => a.date === toLocalDate(new Date())
-                              )
+                                (a) => a.date === toLocalDate(new Date()),
+                              ),
                             );
                             setTeachersPastLoaded(false);
                           }}
@@ -1026,7 +1036,7 @@ export default function AttendanceManagement() {
                                 openMarkingModal(
                                   "teacher",
                                   teacher.id,
-                                  teacher.name
+                                  teacher.name,
                                 )
                               }
                               className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
@@ -1041,7 +1051,7 @@ export default function AttendanceManagement() {
                               handleTeacherAttendanceChange(
                                 teacher.id,
                                 date,
-                                status
+                                status,
                               )
                             }
                             isAdmin={true}
@@ -1055,7 +1065,7 @@ export default function AttendanceManagement() {
                                       start: teacherCustomStart,
                                       end: teacherCustomEnd,
                                     }
-                                  : undefined
+                                  : undefined,
                               ).days
                             }
                             startDateIso={
@@ -1066,13 +1076,17 @@ export default function AttendanceManagement() {
                                       start: teacherCustomStart,
                                       end: teacherCustomEnd,
                                     }
-                                  : undefined
+                                  : undefined,
                               ).start
                             }
                             showTimestamps={true}
                             onLeaveIconClick={(record, type, personName) => {
                               if (record.id) {
-                                openLeaveReason(record as AttendanceRecord, type, personName);
+                                openLeaveReason(
+                                  record as AttendanceRecord,
+                                  type,
+                                  personName,
+                                );
                               }
                             }}
                           />

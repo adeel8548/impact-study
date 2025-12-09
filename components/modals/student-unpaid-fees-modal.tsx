@@ -32,8 +32,18 @@ interface Fee {
 }
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export function StudentUnpaidFeesModal({
@@ -69,20 +79,26 @@ export function StudentUnpaidFeesModal({
     }
   };
 
-  const handleMarkAsPaid = async (feeId: string, month: number, year: number) => {
+  const handleMarkAsPaid = async (
+    feeId: string,
+    month: number,
+    year: number,
+  ) => {
     setPayingId(feeId);
     try {
       const paidDate = new Date(year, month - 1, 1).toISOString();
-      
+
       const result = await updateFeeStatus(feeId, "paid", paidDate);
-      
+
       if (result.error) {
         console.error("Error updating fee status:", result.error);
       } else {
         // Update local state
-        setFees(fees.map(f => 
-          f.id === feeId ? { ...f, status: "paid", paid_date: paidDate } : f
-        ));
+        setFees(
+          fees.map((f) =>
+            f.id === feeId ? { ...f, status: "paid", paid_date: paidDate } : f,
+          ),
+        );
       }
     } catch (error) {
       console.error("Error marking as paid:", error);
@@ -95,14 +111,14 @@ export function StudentUnpaidFeesModal({
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-  
+
   // If we're in the last months of the year, we might want to show next year's fees
   // Otherwise show current year
   let displayYear = currentYear;
-  
+
   // Create a map of existing fees for the display year (check both current and next year)
   const allFeesByYear = new Map<number, Map<number, Fee>>();
-  fees.forEach(fee => {
+  fees.forEach((fee) => {
     if (!allFeesByYear.has(fee.year)) {
       allFeesByYear.set(fee.year, new Map());
     }
@@ -123,7 +139,7 @@ export function StudentUnpaidFeesModal({
   }
 
   const feeMap = allFeesByYear.get(displayYear) || new Map();
-  
+
   // Generate all 12 months for display year
   const monthsData = Array.from({ length: 12 }, (_, i) => {
     const month = i + 1;
@@ -136,9 +152,9 @@ export function StudentUnpaidFeesModal({
     };
   });
 
-  const unpaidCount = monthsData.filter(m => !m.isPaid).length;
+  const unpaidCount = monthsData.filter((m) => !m.isPaid).length;
   const totalUnpaid = monthsData
-    .filter(m => !m.isPaid && m.fee)
+    .filter((m) => !m.isPaid && m.fee)
     .reduce((sum, m) => sum + (m.fee?.amount || 0), 0);
 
   return (
@@ -147,7 +163,9 @@ export function StudentUnpaidFeesModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600" />
-            <span>Fees Overview {displayYear} - {studentName}</span>
+            <span>
+              Fees Overview {displayYear} - {studentName}
+            </span>
           </DialogTitle>
         </DialogHeader>
 
@@ -165,7 +183,8 @@ export function StudentUnpaidFeesModal({
                       Total Unpaid Fees
                     </p>
                     <p className="text-2xl font-bold text-red-900 dark:text-red-100">
-                      PKR {totalUnpaid.toLocaleString("en-US", {
+                      PKR{" "}
+                      {totalUnpaid.toLocaleString("en-US", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 2,
                       })}
@@ -201,9 +220,9 @@ export function StudentUnpaidFeesModal({
                 const fee = monthData.fee;
                 const isPaid = monthData.isPaid;
                 const isPayingThis = paying === fee?.id;
-                
+
                 return (
-                  <Card 
+                  <Card
                     key={monthData.month}
                     className={`p-4 border-2 transition-colors ${
                       isPaid
@@ -224,12 +243,16 @@ export function StudentUnpaidFeesModal({
                       {fee ? (
                         <>
                           <div className="flex justify-between items-end">
-                            <p className="text-sm text-muted-foreground">Amount:</p>
-                            <p className={`font-bold ${
-                              isPaid
-                                ? "text-green-600 dark:text-green-400"
-                                : "text-red-600 dark:text-red-400"
-                            }`}>
+                            <p className="text-sm text-muted-foreground">
+                              Amount:
+                            </p>
+                            <p
+                              className={`font-bold ${
+                                isPaid
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-red-600 dark:text-red-400"
+                              }`}
+                            >
                               PKR {fee.amount.toLocaleString()}
                             </p>
                           </div>
@@ -244,7 +267,13 @@ export function StudentUnpaidFeesModal({
                           ) : (
                             <Button
                               size="sm"
-                              onClick={() => handleMarkAsPaid(fee.id, monthData.month, monthData.year)}
+                              onClick={() =>
+                                handleMarkAsPaid(
+                                  fee.id,
+                                  monthData.month,
+                                  monthData.year,
+                                )
+                              }
                               disabled={isPayingThis}
                               className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
                             >
@@ -281,4 +310,3 @@ export function StudentUnpaidFeesModal({
     </Dialog>
   );
 }
-

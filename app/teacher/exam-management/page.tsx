@@ -19,7 +19,7 @@ type SubjectOption = { id: string; name: string };
 
 /**
  * Exam Management Page
- * 
+ *
  * Features:
  * - Teachers can select a class and view associated subjects
  * - Create new series exams with multiple chapters
@@ -71,7 +71,9 @@ export default function ExamManagementPage() {
   const [newChapterMaxMarks, setNewChapterMaxMarks] = useState("100");
 
   // Results editing state
-  const [editingResults, setEditingResults] = useState<Record<string, number>>({});
+  const [editingResults, setEditingResults] = useState<Record<string, number>>(
+    {},
+  );
 
   // ============================================
   // Initialization and Authentication
@@ -180,7 +182,7 @@ export default function ExamManagementPage() {
   const loadChapters = async () => {
     try {
       const res = await fetch(
-        `/api/chapters?examId=${selectedExam}&subjectId=${selectedSubject}`
+        `/api/chapters?examId=${selectedExam}&subjectId=${selectedSubject}`,
       );
       const data = await res.json();
       const chapterList = data.data || [];
@@ -260,7 +262,9 @@ export default function ExamManagementPage() {
       loadExams();
     } catch (error) {
       console.error("Error creating exam:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create exam");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create exam",
+      );
     } finally {
       setSaving(false);
     }
@@ -304,7 +308,9 @@ export default function ExamManagementPage() {
       loadChapters();
     } catch (error) {
       console.error("Error creating chapter:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create chapter");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create chapter",
+      );
     } finally {
       setSaving(false);
     }
@@ -333,7 +339,9 @@ export default function ExamManagementPage() {
       }
     } catch (error) {
       console.error("Error deleting chapter:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete chapter");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete chapter",
+      );
     } finally {
       setSaving(false);
     }
@@ -349,7 +357,7 @@ export default function ExamManagementPage() {
   const handleSaveMarks = async (
     studentId: string,
     resultId: string | undefined,
-    marks: number
+    marks: number,
   ) => {
     try {
       const res = await fetch("/api/exam-results", {
@@ -370,7 +378,9 @@ export default function ExamManagementPage() {
       loadResults();
     } catch (error) {
       console.error("Error saving marks:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to save marks");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save marks",
+      );
     }
   };
 
@@ -392,7 +402,9 @@ export default function ExamManagementPage() {
       loadResults();
     } catch (error) {
       console.error("Error deleting result:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete result");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete result",
+      );
     }
   };
 
@@ -529,7 +541,9 @@ export default function ExamManagementPage() {
                           <th className="text-left p-2 font-semibold">
                             Student Name
                           </th>
-                          <th className="text-center p-2 font-semibold">Marks</th>
+                          <th className="text-center p-2 font-semibold">
+                            Marks
+                          </th>
                           <th className="text-center p-2 font-semibold">
                             Total
                           </th>
@@ -541,10 +555,11 @@ export default function ExamManagementPage() {
                       <tbody>
                         {students.map((student) => {
                           const result = results.find(
-                            (r) => r.student_id === student.id
+                            (r) => r.student_id === student.id,
                           );
                           const resultId = result?.id || `new_${student.id}`;
-                          const currentMarks = editingResults[resultId] ?? result?.marks ?? "";
+                          const currentMarks =
+                            editingResults[resultId] ?? result?.marks ?? "";
 
                           return (
                             <tr
@@ -557,7 +572,11 @@ export default function ExamManagementPage() {
                                   type="number"
                                   min="0"
                                   max={selectedChapterData?.max_marks}
-                                  value={typeof currentMarks === "number" ? currentMarks : ""}
+                                  value={
+                                    typeof currentMarks === "number"
+                                      ? currentMarks
+                                      : ""
+                                  }
                                   onChange={(e) => {
                                     const newValue = e.target.value
                                       ? parseFloat(e.target.value)
@@ -569,11 +588,14 @@ export default function ExamManagementPage() {
                                   }}
                                   onBlur={() => {
                                     const marksValue = editingResults[resultId];
-                                    if (typeof marksValue === "number" && marksValue !== result?.marks) {
+                                    if (
+                                      typeof marksValue === "number" &&
+                                      marksValue !== result?.marks
+                                    ) {
                                       handleSaveMarks(
                                         student.id,
                                         result?.id,
-                                        marksValue
+                                        marksValue,
                                       );
                                     }
                                   }}
@@ -589,7 +611,9 @@ export default function ExamManagementPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => handleDeleteResult(result.id)}
+                                    onClick={() =>
+                                      handleDeleteResult(result.id)
+                                    }
                                     className="h-8 w-8 text-destructive hover:text-destructive"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -621,7 +645,10 @@ export default function ExamManagementPage() {
               <>
                 {/* Create Chapter Form */}
                 {!showCreateChapter ? (
-                  <Button onClick={() => setShowCreateChapter(true)} className="gap-2">
+                  <Button
+                    onClick={() => setShowCreateChapter(true)}
+                    className="gap-2"
+                  >
                     <Plus className="w-4 h-4" />
                     Create Chapter
                   </Button>
@@ -651,7 +678,9 @@ export default function ExamManagementPage() {
                           type="number"
                           min="1"
                           value={newChapterMaxMarks}
-                          onChange={(e) => setNewChapterMaxMarks(e.target.value)}
+                          onChange={(e) =>
+                            setNewChapterMaxMarks(e.target.value)
+                          }
                         />
                       </div>
                     </div>
@@ -676,10 +705,14 @@ export default function ExamManagementPage() {
 
                 {/* Chapters List */}
                 <Card className="p-4">
-                  <h3 className="font-semibold mb-4">Chapters for {selectedSubjectData?.name}</h3>
+                  <h3 className="font-semibold mb-4">
+                    Chapters for {selectedSubjectData?.name}
+                  </h3>
                   <div className="space-y-2">
                     {chapters.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No chapters yet</p>
+                      <p className="text-sm text-muted-foreground">
+                        No chapters yet
+                      </p>
                     ) : (
                       chapters.map((chapter) => (
                         <div
@@ -687,7 +720,9 @@ export default function ExamManagementPage() {
                           className="flex items-center justify-between p-3 border border-border rounded"
                         >
                           <div>
-                            <p className="font-medium">{chapter.chapter_name}</p>
+                            <p className="font-medium">
+                              {chapter.chapter_name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               Date: {chapter.chapter_date} | Max Marks:{" "}
                               {chapter.max_marks}

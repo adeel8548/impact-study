@@ -132,7 +132,8 @@ export function TeacherSalaryListModal({
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-lg font-semibold text-foreground">
-                          PKR {Number(teacher.salary?.amount || 0).toLocaleString()}
+                          PKR{" "}
+                          {Number(teacher.salary?.amount || 0).toLocaleString()}
                         </p>
                         <div
                           className={cn(

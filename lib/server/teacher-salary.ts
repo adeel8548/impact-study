@@ -116,10 +116,7 @@ export async function resetTeacherSalariesToUnpaid(
       if (!r) continue;
       if (String(r.month) === targetMonthKey) {
         idsToReset.push(r.id);
-      } else if (
-        Number(r.month) === month &&
-        Number(r.year) === year
-      ) {
+      } else if (Number(r.month) === month && Number(r.year) === year) {
         idsToReset.push(r.id);
       }
     }
@@ -131,7 +128,11 @@ export async function resetTeacherSalariesToUnpaid(
 
   const { error } = await adminClient
     .from("teacher_salary")
-    .update({ status: "unpaid", reset_at: now().toISOString(), paid_date: null })
+    .update({
+      status: "unpaid",
+      reset_at: now().toISOString(),
+      paid_date: null,
+    })
     .in("id", idsToReset);
 
   if (error) {
@@ -140,4 +141,3 @@ export async function resetTeacherSalariesToUnpaid(
 
   return { error: null };
 }
-

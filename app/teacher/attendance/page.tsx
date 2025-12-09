@@ -30,9 +30,7 @@ export default function TeacherAttendance() {
   const [attendance, setAttendance] = useState<
     Record<string, "present" | "absent" | "leave">
   >({});
-  const [leaveReasons, setLeaveReasons] = useState<
-    Record<string, string>
-  >({});
+  const [leaveReasons, setLeaveReasons] = useState<Record<string, string>>({});
   const [attendanceRecords, setAttendanceRecords] = useState<
     Record<string, { id?: string; remarks?: string }>
   >({});
@@ -41,9 +39,11 @@ export default function TeacherAttendance() {
 
   // Leave reason modal state
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
-  const [selectedStudentForReason, setSelectedStudentForReason] = useState<
-    { id: string; name: string; recordId?: string } | null
-  >(null);
+  const [selectedStudentForReason, setSelectedStudentForReason] = useState<{
+    id: string;
+    name: string;
+    recordId?: string;
+  } | null>(null);
 
   // Range filter for history
   const [historyRange, setHistoryRange] = useState<string>("last7");
@@ -328,7 +328,10 @@ export default function TeacherAttendance() {
         );
 
         if (result.error) {
-          console.error(`Error marking attendance for student ${studentId}:`, result.error);
+          console.error(
+            `Error marking attendance for student ${studentId}:`,
+            result.error,
+          );
         }
 
         if (status === "leave") {
@@ -560,7 +563,8 @@ export default function TeacherAttendance() {
                                 id: student.id,
                                 name: student.name,
                                 recordId:
-                                  attendanceRecords[student.id]?.id || undefined,
+                                  attendanceRecords[student.id]?.id ||
+                                  undefined,
                               });
                               setLeaveModalOpen(true);
                             }}
@@ -573,9 +577,7 @@ export default function TeacherAttendance() {
                           </button>
                           {attendance[student.id] === "leave" &&
                             leaveReasons[student.id] && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                               
-                              </p>
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2"></p>
                             )}
                         </td>
                       </tr>

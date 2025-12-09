@@ -20,7 +20,12 @@ type ExamChapter = {
 };
 
 type ClassOption = { id: string; name: string };
-type SeriesExam = { id: string; subject: string; start_date: string; end_date: string };
+type SeriesExam = {
+  id: string;
+  subject: string;
+  start_date: string;
+  end_date: string;
+};
 type SubjectOption = { id: string; name: string };
 
 export default function ChaptersPage() {
@@ -225,7 +230,12 @@ export default function ChaptersPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Class Selection */}
               <div>
-                <Label htmlFor="class-select" className="text-sm font-medium mb-2 block">Class</Label>
+                <Label
+                  htmlFor="class-select"
+                  className="text-sm font-medium mb-2 block"
+                >
+                  Class
+                </Label>
                 <select
                   id="class-select"
                   value={selectedClass}
@@ -242,7 +252,12 @@ export default function ChaptersPage() {
 
               {/* Subject Selection */}
               <div>
-                <Label htmlFor="subject-select" className="text-sm font-medium mb-2 block">Subject</Label>
+                <Label
+                  htmlFor="subject-select"
+                  className="text-sm font-medium mb-2 block"
+                >
+                  Subject
+                </Label>
                 <select
                   id="subject-select"
                   value={selectedSubject}
@@ -261,7 +276,12 @@ export default function ChaptersPage() {
 
               {/* Exam Selection */}
               <div>
-                <Label htmlFor="exam-select" className="text-sm font-medium mb-2 block">Series Exam</Label>
+                <Label
+                  htmlFor="exam-select"
+                  className="text-sm font-medium mb-2 block"
+                >
+                  Series Exam
+                </Label>
                 <select
                   id="exam-select"
                   value={selectedExam}
@@ -321,7 +341,7 @@ export default function ChaptersPage() {
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <Plus className="w-4 h-4" />
-                    {editingId ? "Update" : "Add"}
+                  {editingId ? "Update" : "Add"}
                 </Button>
               </div>
             </Card>
@@ -332,16 +352,24 @@ export default function ChaptersPage() {
             <Card className="p-6 bg-white">
               <h3 className="text-lg font-semibold mb-4">Chapters List</h3>
               {chapters.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No chapters</p>
+                <p className="text-muted-foreground text-center py-8">
+                  No chapters
+                </p>
               ) : (
                 <div className="overflow-x-auto border rounded-lg">
                   <table className="w-full text-sm">
                     <thead className="bg-muted border-b">
                       <tr>
-                        <th className="text-left p-3 font-semibold">Chapter Name</th>
+                        <th className="text-left p-3 font-semibold">
+                          Chapter Name
+                        </th>
                         <th className="text-left p-3 font-semibold">Date</th>
-                        <th className="text-center p-3 font-semibold">Max Marks</th>
-                        <th className="text-center p-3 font-semibold">Actions</th>
+                        <th className="text-center p-3 font-semibold">
+                          Max Marks
+                        </th>
+                        <th className="text-center p-3 font-semibold">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -352,9 +380,13 @@ export default function ChaptersPage() {
                         >
                           <td className="p-3">{chapter.chapter_name}</td>
                           <td className="p-3">
-                            {new Date(chapter.chapter_date).toLocaleDateString("en-US")}
+                            {new Date(chapter.chapter_date).toLocaleDateString(
+                              "en-US",
+                            )}
                           </td>
-                          <td className="p-3 text-center">{chapter.max_marks}</td>
+                          <td className="p-3 text-center">
+                            {chapter.max_marks}
+                          </td>
                           <td className="p-3 flex gap-2 justify-center">
                             <Button
                               variant="ghost"

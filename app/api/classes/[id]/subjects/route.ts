@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = await createClient();
   const { id: classId } = await params;
@@ -27,7 +27,11 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching subjects:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch subjects", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch subjects",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -40,7 +44,7 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = await createClient();
   const { id: classId } = await params;
@@ -74,7 +78,11 @@ export async function POST(
   } catch (error) {
     console.error("Error creating subject:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create subject", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to create subject",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -88,7 +96,7 @@ export async function POST(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = await createClient();
   const { id: classId } = await params;
@@ -116,7 +124,11 @@ export async function PUT(
   } catch (error) {
     console.error("Error updating subject:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update subject", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to update subject",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -129,7 +141,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = await createClient();
   const { id: classId } = await params;
@@ -144,14 +156,21 @@ export async function DELETE(
       );
     }
 
-    const { error } = await supabase.from("subjects").delete().eq("id", subjectId);
+    const { error } = await supabase
+      .from("subjects")
+      .delete()
+      .eq("id", subjectId);
     if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting subject:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete subject", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to delete subject",
+        success: false,
+      },
       { status: 500 },
     );
   }

@@ -34,7 +34,7 @@ export function AdminAttendanceMarkingModal({
   // Date picker allows any date (past, present, or future)
   // Admins can mark attendance for any previous day for both teachers and students
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
   const [selectedStatus, setSelectedStatus] = useState<
     "present" | "absent" | "leave"
@@ -89,20 +89,18 @@ export function AdminAttendanceMarkingModal({
 
       if (!response || !response.ok) {
         const errorBody = await response?.json();
-        throw new Error(
-          errorBody?.error || "Failed to mark attendance"
-        );
+        throw new Error(errorBody?.error || "Failed to mark attendance");
       }
 
       toast.success(
-        `${targetName}'s attendance marked as ${selectedStatus} for ${selectedDate}`
+        `${targetName}'s attendance marked as ${selectedStatus} for ${selectedDate}`,
       );
       onMarked?.(selectedDate, selectedStatus);
       onOpenChange(false);
     } catch (error) {
       console.error("Error marking attendance:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to mark attendance"
+        error instanceof Error ? error.message : "Failed to mark attendance",
       );
     } finally {
       setIsSaving(false);
@@ -127,8 +125,12 @@ export function AdminAttendanceMarkingModal({
           {/* Date Picker */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Date</label>
-              <span className="text-xs text-muted-foreground">Select any date to mark attendance</span>
+              <label className="text-sm font-medium text-foreground">
+                Date
+              </label>
+              <span className="text-xs text-muted-foreground">
+                Select any date to mark attendance
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -147,9 +149,7 @@ export function AdminAttendanceMarkingModal({
               Status
             </label>
             <div className="space-y-2">
-              {(
-                ["present", "absent", "leave"] as const
-              ).map((status) => (
+              {(["present", "absent", "leave"] as const).map((status) => (
                 <label
                   key={status}
                   className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-secondary transition-colors"
@@ -170,8 +170,8 @@ export function AdminAttendanceMarkingModal({
                         status === "present"
                           ? "bg-green-500"
                           : status === "absent"
-                          ? "bg-red-500"
-                          : "bg-gray-400"
+                            ? "bg-red-500"
+                            : "bg-gray-400"
                       }`}
                     ></div>
                     <span className="text-sm font-medium text-foreground capitalize">

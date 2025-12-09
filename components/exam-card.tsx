@@ -49,7 +49,9 @@ export function ExamCard({
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Start Date
               </span>
-              <span className="text-foreground font-medium">{exam.start_date}</span>
+              <span className="text-foreground font-medium">
+                {exam.start_date}
+              </span>
             </div>
 
             {/* End Date */}
@@ -57,7 +59,9 @@ export function ExamCard({
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 End Date
               </span>
-              <span className="text-foreground font-medium">{exam.end_date}</span>
+              <span className="text-foreground font-medium">
+                {exam.end_date}
+              </span>
             </div>
 
             {/* Class */}
@@ -113,7 +117,9 @@ export function ExamCard({
                   {truncateNotes(exam.notes)}
                 </button>
               ) : (
-                <p className="text-sm text-foreground break-words">{exam.notes}</p>
+                <p className="text-sm text-foreground break-words">
+                  {exam.notes}
+                </p>
               )}
             </div>
           )}

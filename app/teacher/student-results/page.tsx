@@ -34,7 +34,9 @@ export default async function TeacherStudentResultsPage() {
       <TeacherHeader />
       <div className="p-4 md:p-8 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Student Results</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            Student Results
+          </h1>
           <p className="text-muted-foreground">
             Add and update marks for your assigned classes
           </p>
@@ -51,4 +53,3 @@ export default async function TeacherStudentResultsPage() {
     </div>
   );
 }
-

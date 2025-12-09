@@ -18,14 +18,20 @@ export async function GET(request: NextRequest) {
     if (subjectId) query = query.eq("subject_id", subjectId);
     if (examId) query = query.eq("exam_id", examId);
 
-    const { data, error } = await query.order("created_at", { ascending: true });
+    const { data, error } = await query.order("created_at", {
+      ascending: true,
+    });
     if (error) throw error;
 
     return NextResponse.json({ data: data || [], success: true });
   } catch (error) {
     console.error("Error fetching chapters:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch chapters", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch chapters",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -54,7 +60,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating chapter:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create chapter", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to create chapter",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -91,7 +101,11 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error("Error updating chapter:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update chapter", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to update chapter",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -114,14 +128,21 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase.from("exam_chapters").delete().eq("id", id);
+    const { error } = await supabase
+      .from("exam_chapters")
+      .delete()
+      .eq("id", id);
     if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting chapter:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete chapter", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to delete chapter",
+        success: false,
+      },
       { status: 500 },
     );
   }

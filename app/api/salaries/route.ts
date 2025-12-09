@@ -51,7 +51,10 @@ export async function PUT(request: NextRequest) {
   try {
     const { id, amount, status, paid_date } = await request.json();
     if (!id) {
-      return NextResponse.json({ success: false, error: "id is required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "id is required" },
+        { status: 400 },
+      );
     }
 
     const updateData: any = {};
@@ -69,7 +72,10 @@ export async function PUT(request: NextRequest) {
     }
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ success: false, error: "Nothing to update" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Nothing to update" },
+        { status: 400 },
+      );
     }
 
     const { data, error } = await supabase

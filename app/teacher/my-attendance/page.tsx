@@ -585,9 +585,15 @@ export default function TeacherMyAttendancePage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground">
-                {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })} — {String(new Date().getDate()).padStart(2, "0")}
+                {currentDate.toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}{" "}
+                — {String(new Date().getDate()).padStart(2, "0")}
               </h2>
-              <p className="text-sm text-muted-foreground">Only today's attendance can be marked here.</p>
+              <p className="text-sm text-muted-foreground">
+                Only today's attendance can be marked here.
+              </p>
             </div>
 
             {/* <button
@@ -628,7 +634,9 @@ export default function TeacherMyAttendancePage() {
                 // open leave modal for today's record if created
                 const today = new Date();
                 const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-                const rec = attendance.find((a) => a.date === dateStr && a.status === "leave");
+                const rec = attendance.find(
+                  (a) => a.date === dateStr && a.status === "leave",
+                );
                 if (rec) {
                   setSelectedLeaveRecord(rec);
                   setLeaveModalOpen(true);
@@ -645,7 +653,9 @@ export default function TeacherMyAttendancePage() {
         {/* Calendar view - show all month but only today is editable */}
         <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-foreground">Monthly View</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              Monthly View
+            </h3>
             <div className="flex items-center gap-4">
               <button
                 disabled
@@ -743,37 +753,42 @@ export default function TeacherMyAttendancePage() {
                           : "cursor-pointer hover:shadow-md"
                       }`}
                     >
-                      <div className="text-center w-full"
-                          onClick={() => {
-                            if (record?.status === "leave" && !sunday && today_) {
-                              setSelectedLeaveRecord(record);
-                              setLeaveModalOpen(true);
-                            }
-                          }}
-                        >
-                          <div className="text-xs opacity-70">{day}</div>
-                          <div className="text-base">
-                            {sunday
-                              ? "Off"
-                              : record?.status === "present"
-                                ? "✓"
-                                : record?.status === "absent"
-                                  ? "✗"
-                                  : record?.status === "leave"
-                                    ? "🏥"
-                                    : "—"}
-                          </div>
-                          {/* Show approval status to teacher if set */}
-                          {record && (record as any).approval_status && (
-                            <div className={`mt-1 text-[10px] font-semibold ${
+                      <div
+                        className="text-center w-full"
+                        onClick={() => {
+                          if (record?.status === "leave" && !sunday && today_) {
+                            setSelectedLeaveRecord(record);
+                            setLeaveModalOpen(true);
+                          }
+                        }}
+                      >
+                        <div className="text-xs opacity-70">{day}</div>
+                        <div className="text-base">
+                          {sunday
+                            ? "Off"
+                            : record?.status === "present"
+                              ? "✓"
+                              : record?.status === "absent"
+                                ? "✗"
+                                : record?.status === "leave"
+                                  ? "🏥"
+                                  : "—"}
+                        </div>
+                        {/* Show approval status to teacher if set */}
+                        {record && (record as any).approval_status && (
+                          <div
+                            className={`mt-1 text-[10px] font-semibold ${
                               (record as any).approval_status === "approved"
                                 ? "text-green-600"
                                 : "text-red-600"
-                            }`}>
-                              {(record as any).approval_status === "approved" ? "Approved" : "Rejected"}
-                            </div>
-                          )}
-                        </div>
+                            }`}
+                          >
+                            {(record as any).approval_status === "approved"
+                              ? "Approved"
+                              : "Rejected"}
+                          </div>
+                        )}
+                      </div>
 
                       {record && record.status === "leave" && (
                         <button
@@ -782,7 +797,10 @@ export default function TeacherMyAttendancePage() {
                             setSelectedLeaveRecord(record);
                             setLeaveModalOpen(true);
                           }}
-                          title={(record as any).remarks || "View / edit leave reason"}
+                          title={
+                            (record as any).remarks ||
+                            "View / edit leave reason"
+                          }
                           className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
                         >
                           🛈
@@ -852,7 +870,10 @@ export default function TeacherMyAttendancePage() {
             name={teacher!.name}
             date={selectedLeaveRecord!.date}
             currentReason={selectedLeaveRecord!.remarks}
-            approvedBy={(selectedLeaveRecord as any).approved_by || (selectedLeaveRecord as any).rejected_by}
+            approvedBy={
+              (selectedLeaveRecord as any).approved_by ||
+              (selectedLeaveRecord as any).rejected_by
+            }
             approvalStatus={(selectedLeaveRecord as any).approval_status}
             canEdit={true}
             onReasonSaved={(recordId, reason) => {
@@ -870,22 +891,27 @@ export default function TeacherMyAttendancePage() {
           <h3 className="font-semibold text-foreground mb-2">How to use</h3>
           <ul className="text-sm text-foreground space-y-1">
             <li>
-              ✓ <strong>Today's box only:</strong> Click to toggle between Present and Absent (only for today)
+              ✓ <strong>Today's box only:</strong> Click to toggle between
+              Present and Absent (only for today)
             </li>
             <li>
-              ✓ <strong>Past days:</strong> Display your recorded attendance (read-only, cannot modify)
+              ✓ <strong>Past days:</strong> Display your recorded attendance
+              (read-only, cannot modify)
             </li>
             <li>
-              ✓ <strong>Future days:</strong> Cannot mark attendance for future dates
+              ✓ <strong>Future days:</strong> Cannot mark attendance for future
+              dates
             </li>
             <li>
               ✓ <strong>Sundays:</strong> Marked as "Off" and cannot be changed
             </li>
             <li>
-              ✓ <strong>Automatic saving:</strong> All changes are instantly saved to the database
+              ✓ <strong>Automatic saving:</strong> All changes are instantly
+              saved to the database
             </li>
             <li>
-              ✓ <strong>Month navigation:</strong> Use arrows to view previous or future months
+              ✓ <strong>Month navigation:</strong> Use arrows to view previous
+              or future months
             </li>
           </ul>
         </Card>

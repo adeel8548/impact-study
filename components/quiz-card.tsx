@@ -54,7 +54,9 @@ export function QuizCard({
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Date
             </span>
-            <span className="text-foreground font-medium">{quiz.quiz_date}</span>
+            <span className="text-foreground font-medium">
+              {quiz.quiz_date}
+            </span>
           </div>
 
           {/* Duration */}

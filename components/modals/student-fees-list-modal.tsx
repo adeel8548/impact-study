@@ -49,15 +49,9 @@ interface StudentFeesListModalProps {
   isLoading?: boolean;
 }
 
-const normalizeClassName = (value?: string) => value?.trim().toLowerCase() ?? "";
-const preferredClassOrder = [
-  "10th",
-  "9th",
-  "pre 9th",
-  "8th",
-  "pre 8th",
-  "7th",
-];
+const normalizeClassName = (value?: string) =>
+  value?.trim().toLowerCase() ?? "";
+const preferredClassOrder = ["10th", "9th", "pre 9th", "8th", "pre 8th", "7th"];
 
 export function StudentFeesListModal({
   open,
@@ -160,14 +154,19 @@ export function StudentFeesListModal({
     // Use allFees if loaded, otherwise fall back to currentFee
     const studentAllFees = studentFeesMap.get(student.id) || [];
     const feesToUse =
-      studentAllFees.length > 0 ? studentAllFees : student.currentFee ? [student.currentFee] : [];
+      studentAllFees.length > 0
+        ? studentAllFees
+        : student.currentFee
+          ? [student.currentFee]
+          : [];
 
     // For filtering, check if ANY fee matches the status
     const matchesStatus = feesToUse.some((fee) => fee.status === status);
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.roll_number?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClass = !classFilter || String(student.class_id) === classFilter;
+    const matchesClass =
+      !classFilter || String(student.class_id) === classFilter;
     return matchesStatus && matchesSearch && matchesClass;
   });
 
@@ -175,7 +174,11 @@ export function StudentFeesListModal({
     // Use allFees if loaded, otherwise fall back to currentFee
     const studentAllFees = studentFeesMap.get(student.id) || [];
     const feesToUse =
-      studentAllFees.length > 0 ? studentAllFees : student.currentFee ? [student.currentFee] : [];
+      studentAllFees.length > 0
+        ? studentAllFees
+        : student.currentFee
+          ? [student.currentFee]
+          : [];
 
     const feesForStatus = feesToUse.filter((fee) => fee.status === status);
     return (
@@ -284,7 +287,10 @@ export function StudentFeesListModal({
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-lg font-semibold text-foreground">
-                          PKR {Number(student.currentFee?.amount || 0).toLocaleString()}
+                          PKR{" "}
+                          {Number(
+                            student.currentFee?.amount || 0,
+                          ).toLocaleString()}
                         </p>
                         <div
                           className={cn(

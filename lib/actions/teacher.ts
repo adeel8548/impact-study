@@ -302,15 +302,13 @@ async function persistTeacherClasses(
   classIds: string[] = [],
 ) {
   const uniqueClassIds = Array.from(new Set(classIds || []));
-  const { error } = await adminClient
-    .from("teacher_classes")
-    .upsert(
-      {
-        teacher_id: teacherId,
-        class_ids: uniqueClassIds,
-      },
-      { onConflict: "teacher_id" },
-    );
+  const { error } = await adminClient.from("teacher_classes").upsert(
+    {
+      teacher_id: teacherId,
+      class_ids: uniqueClassIds,
+    },
+    { onConflict: "teacher_id" },
+  );
 
   if (error) {
     console.error("Failed to persist teacher_classes:", error);

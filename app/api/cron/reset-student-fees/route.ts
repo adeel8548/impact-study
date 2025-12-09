@@ -7,10 +7,7 @@ export async function POST() {
 
     if (error) {
       console.error("[cron] Failed to reset student fees:", error);
-      return NextResponse.json(
-        { success: false, error },
-        { status: 500 },
-      );
+      return NextResponse.json({ success: false, error }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

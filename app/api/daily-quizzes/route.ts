@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching daily_quizzes:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch", success: false },
+      {
+        error: error instanceof Error ? error.message : "Failed to fetch",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -36,13 +39,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const payload = Array.isArray(body) ? body : [body];
-    const { data, error } = await supabase.from("daily_quizzes").insert(payload).select();
+    const { data, error } = await supabase
+      .from("daily_quizzes")
+      .insert(payload)
+      .select();
     if (error) throw error;
     return NextResponse.json({ data, success: true });
   } catch (error) {
     console.error("Error creating daily_quizzes:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create", success: false },
+      {
+        error: error instanceof Error ? error.message : "Failed to create",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -70,7 +79,10 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error("Error updating daily_quizzes:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update", success: false },
+      {
+        error: error instanceof Error ? error.message : "Failed to update",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -86,15 +98,20 @@ export async function DELETE(request: NextRequest) {
         { status: 400 },
       );
     }
-    const { error } = await supabase.from("daily_quizzes").delete().eq("id", id);
+    const { error } = await supabase
+      .from("daily_quizzes")
+      .delete()
+      .eq("id", id);
     if (error) throw error;
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting daily_quizzes:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete", success: false },
+      {
+        error: error instanceof Error ? error.message : "Failed to delete",
+        success: false,
+      },
       { status: 500 },
     );
   }
 }
-

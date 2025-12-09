@@ -7,7 +7,10 @@ export async function GET(request: NextRequest) {
   const classId = request.nextUrl.searchParams.get("classId");
 
   try {
-    let query = supabase.from("subjects").select("*").order("name", { ascending: true });
+    let query = supabase
+      .from("subjects")
+      .select("*")
+      .order("name", { ascending: true });
     if (classId) query = query.eq("class_id", classId);
 
     const { data, error } = await query;
@@ -17,7 +20,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching subjects:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch subjects", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch subjects",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -48,7 +55,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating subject:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create subject", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to create subject",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -80,7 +91,11 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error("Error updating subject:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update subject", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to update subject",
+        success: false,
+      },
       { status: 500 },
     );
   }
@@ -105,9 +120,12 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error("Error deleting subject:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete subject", success: false },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to delete subject",
+        success: false,
+      },
       { status: 500 },
     );
   }
 }
-

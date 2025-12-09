@@ -224,11 +224,7 @@ export default function ClassManagement() {
                     Cancel
                   </Button>
                   <Button onClick={handleSaveClass} disabled={saving}>
-                    {saving
-                      ? "Saving..."
-                      : editingClass
-                        ? "Update"
-                        : "Add"}
+                    {saving ? "Saving..." : editingClass ? "Update" : "Add"}
                   </Button>
                 </div>
               </div>

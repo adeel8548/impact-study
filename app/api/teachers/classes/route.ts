@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (profileError) throw profileError;
 
     const classIds: string[] = (profile?.class_ids as string[]) || [];
-    
+
     if (classIds.length === 0) {
       // Fallback: try to get from teacher_classes junction table
       const { data: mapping, error } = await adminClient
@@ -32,12 +32,12 @@ export async function GET(request: NextRequest) {
         .eq("teacher_id", teacherId);
 
       if (error) throw error;
-      
-      const fallbackIds = (mapping || []).map(m => m.class_id);
+
+      const fallbackIds = (mapping || []).map((m) => m.class_id);
       if (fallbackIds.length === 0) {
         return NextResponse.json({ success: true, classes: [] });
       }
-      
+
       const { data: classes, error: classError } = await adminClient
         .from("classes")
         .select("id, name")

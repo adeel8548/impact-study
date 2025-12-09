@@ -52,7 +52,9 @@ export function StudentModal({
 
   // <-- Add this useEffect here
   useEffect(() => {
-    const feesAmount = student?.currentFee?.amount ? student.currentFee.amount.toString() : "";
+    const feesAmount = student?.currentFee?.amount
+      ? student.currentFee.amount.toString()
+      : "";
     setFormData({
       name: student?.name || "",
       roll_number: student?.roll_number || "",

@@ -17,7 +17,12 @@ import { toast } from "sonner";
 
 type Class = { id: string; name: string };
 type Subject = { id: string; subject: string };
-type SeriesExam = { id: string; subject: string; start_date: string; end_date: string };
+type SeriesExam = {
+  id: string;
+  subject: string;
+  start_date: string;
+  end_date: string;
+};
 type ExamChapter = { id: string; chapter_name: string; max_marks: number };
 type Student = { id: string; name: string; roll_number?: string };
 
@@ -54,11 +59,17 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
   const [marks, setMarks] = useState<MarkInput>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedExamDetails, setSelectedExamDetails] = useState<SeriesExam | null>(null);
+  const [selectedExamDetails, setSelectedExamDetails] =
+    useState<SeriesExam | null>(null);
   const [prefillLoaded, setPrefillLoaded] = useState(false);
-  const [chapterMaxDraft, setChapterMaxDraft] = useState<Record<string, number | "">>({});
+  const [chapterMaxDraft, setChapterMaxDraft] = useState<
+    Record<string, number | "">
+  >({});
 
-  const totalMaxMarks = chapters.reduce((sum, ch) => sum + (ch.max_marks || 0), 0);
+  const totalMaxMarks = chapters.reduce(
+    (sum, ch) => sum + (ch.max_marks || 0),
+    0,
+  );
 
   const getStudentTotal = (studentId: string) => {
     return chapters.reduce((sum, ch) => {
@@ -87,9 +98,13 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
   };
 
   const overallTotals = (() => {
-    const totalObtained = students.reduce((sum, stu) => sum + getStudentTotal(stu.id), 0);
+    const totalObtained = students.reduce(
+      (sum, stu) => sum + getStudentTotal(stu.id),
+      0,
+    );
     const maxOverall = totalMaxMarks * (students.length || 1);
-    const overallPercent = maxOverall === 0 ? 0 : (totalObtained / maxOverall) * 100;
+    const overallPercent =
+      maxOverall === 0 ? 0 : (totalObtained / maxOverall) * 100;
     return { totalObtained, maxOverall, overallPercent };
   })();
 
@@ -136,7 +151,9 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
         // Extract unique subjects
         const uniqueSubjects = Array.from(
-          new Map<string, SeriesExam>(examsData.map((e) => [e.subject, e])).values()
+          new Map<string, SeriesExam>(
+            examsData.map((e) => [e.subject, e]),
+          ).values(),
         );
 
         const subjectsArray = uniqueSubjects.map((exam) => ({
@@ -166,13 +183,15 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     const loadExams = async () => {
       try {
         const teacherParam = teacherId ? `&teacherId=${teacherId}` : "";
-        const res = await fetch(`/api/series-exams?classId=${selectedClass}${teacherParam}`);
+        const res = await fetch(
+          `/api/series-exams?classId=${selectedClass}${teacherParam}`,
+        );
         const data = await res.json();
         const examsData = data.data || [];
 
         // Filter by subject
         const filteredExams = examsData.filter(
-          (e: SeriesExam) => e.subject === selectedSubject
+          (e: SeriesExam) => e.subject === selectedSubject,
         );
 
         setExams(filteredExams);
@@ -202,14 +221,19 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         const chaptersArray: ExamChapter[] = chaptersData.data || [];
         setChapters(chaptersArray);
         setChapterMaxDraft(
-          chaptersArray.reduce<Record<string, number | "">>((acc: Record<string, number | "">, ch: ExamChapter) => {
-            acc[ch.id] = ch.max_marks ?? "";
-            return acc;
-          }, {})
+          chaptersArray.reduce<Record<string, number | "">>(
+            (acc: Record<string, number | "">, ch: ExamChapter) => {
+              acc[ch.id] = ch.max_marks ?? "";
+              return acc;
+            },
+            {},
+          ),
         );
 
         // Load students for the class
-        const studentsRes = await fetch(`/api/students?classId=${selectedClass}`);
+        const studentsRes = await fetch(
+          `/api/students?classId=${selectedClass}`,
+        );
         const studentsData = await studentsRes.json();
         setStudents(studentsData.students || []);
 
@@ -228,7 +252,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
         // Prefill marks for existing results
         const resultsRes = await fetch(
-          `/api/student-results?seriesExamId=${selectedExam}&classId=${selectedClass}`
+          `/api/student-results?seriesExamId=${selectedExam}&classId=${selectedClass}`,
         );
         const resultsJson = await resultsRes.json();
         const existingResults = resultsJson.data || [];
@@ -255,7 +279,11 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     loadData();
   }, [selectedExam, selectedClass, exams]);
 
-  const handleMarkChange = (studentId: string, chapterId: string, value: string) => {
+  const handleMarkChange = (
+    studentId: string,
+    chapterId: string,
+    value: string,
+  ) => {
     if (value === "") {
       setMarks({
         ...marks,
@@ -272,8 +300,14 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
     const chapter = chapters.find((c) => c.id === chapterId);
     let safeValue = parsed;
-    if (chapter && chapter.max_marks !== undefined && parsed > chapter.max_marks) {
-      toast.error(`Marks cannot exceed max (${chapter.max_marks}) for this chapter`);
+    if (
+      chapter &&
+      chapter.max_marks !== undefined &&
+      parsed > chapter.max_marks
+    ) {
+      toast.error(
+        `Marks cannot exceed max (${chapter.max_marks}) for this chapter`,
+      );
       safeValue = chapter.max_marks;
     }
 
@@ -308,7 +342,9 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
       setChapters((prev) =>
-        prev.map((c) => (c.id === chapterId ? { ...c, max_marks: maxMarks } : c))
+        prev.map((c) =>
+          c.id === chapterId ? { ...c, max_marks: maxMarks } : c,
+        ),
       );
       toast.success("Max marks updated");
     } catch (error) {
@@ -317,7 +353,10 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     }
   };
 
-  const debouncedSaveMaxMarks = ((fn: (id: string, val: number) => void, delay = 500) => {
+  const debouncedSaveMaxMarks = ((
+    fn: (id: string, val: number) => void,
+    delay = 500,
+  ) => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     return (id: string, val: number) => {
       if (timer) clearTimeout(timer);
@@ -332,13 +371,16 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     }
 
     // Group marks by student
-    const studentResultsMap = new Map<string, Array<{ chapter_id: string; marks: number }>>();
+    const studentResultsMap = new Map<
+      string,
+      Array<{ chapter_id: string; marks: number }>
+    >();
     const chapterMaxMap = chapters.reduce<Record<string, number | undefined>>(
       (acc: Record<string, number | undefined>, chapter: ExamChapter) => {
         acc[chapter.id] = chapter.max_marks;
         return acc;
       },
-      {}
+      {},
     );
     const invalidMarks: string[] = [];
 
@@ -350,9 +392,16 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         const markValue = marks[key];
 
         if (markValue !== "" && markValue !== undefined) {
-          const numeric = typeof markValue === "number" ? markValue : parseFloat(String(markValue));
+          const numeric =
+            typeof markValue === "number"
+              ? markValue
+              : parseFloat(String(markValue));
           const max = chapterMaxMap[chapter.id];
-          if (isNaN(numeric) || numeric < 0 || (max !== undefined && numeric > max)) {
+          if (
+            isNaN(numeric) ||
+            numeric < 0 ||
+            (max !== undefined && numeric > max)
+          ) {
             invalidMarks.push(`${student.name} - ${chapter.chapter_name}`);
             return;
           }
@@ -371,8 +420,10 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     if (invalidMarks.length > 0) {
       toast.error(
         `Invalid marks for: ${invalidMarks.slice(0, 3).join(", ")}${
-          invalidMarks.length > 3 ? " +" + (invalidMarks.length - 3) + " more" : ""
-        }`
+          invalidMarks.length > 3
+            ? " +" + (invalidMarks.length - 3) + " more"
+            : ""
+        }`,
       );
       return;
     }
@@ -385,17 +436,18 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     setSaving(true);
     try {
       // Save results for each student
-      const promises = Array.from(studentResultsMap.entries()).map(([studentId, chapterResults]) =>
-        fetch("/api/student-results", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            student_id: studentId,
-            series_exam_id: selectedExam,
-            class_id: selectedClass,
-            chapter_results: chapterResults,
+      const promises = Array.from(studentResultsMap.entries()).map(
+        ([studentId, chapterResults]) =>
+          fetch("/api/student-results", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              student_id: studentId,
+              series_exam_id: selectedExam,
+              class_id: selectedClass,
+              chapter_results: chapterResults,
+            }),
           }),
-        })
       );
 
       const responses = await Promise.all(promises);
@@ -432,7 +484,10 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Class Dropdown */}
           <div>
-            <Label htmlFor="class-select" className="text-sm font-medium mb-2 block">
+            <Label
+              htmlFor="class-select"
+              className="text-sm font-medium mb-2 block"
+            >
               Class
             </Label>
             <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -451,11 +506,17 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
           {/* Subject Dropdown */}
           <div>
-            <Label htmlFor="subject-select" className="text-sm font-medium mb-2 block">
+            <Label
+              htmlFor="subject-select"
+              className="text-sm font-medium mb-2 block"
+            >
               Subject
             </Label>
             <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger id="subject-select" disabled={!selectedClass || subjects.length === 0}>
+              <SelectTrigger
+                id="subject-select"
+                disabled={!selectedClass || subjects.length === 0}
+              >
                 <SelectValue placeholder="Select Subject" />
               </SelectTrigger>
               <SelectContent>
@@ -470,11 +531,17 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
           {/* Exam Dropdown */}
           <div>
-            <Label htmlFor="exam-select" className="text-sm font-medium mb-2 block">
+            <Label
+              htmlFor="exam-select"
+              className="text-sm font-medium mb-2 block"
+            >
               Series Exam
             </Label>
             <Select value={selectedExam} onValueChange={setSelectedExam}>
-              <SelectTrigger id="exam-select" disabled={!selectedSubject || exams.length === 0}>
+              <SelectTrigger
+                id="exam-select"
+                disabled={!selectedSubject || exams.length === 0}
+              >
                 <SelectValue placeholder="Select Exam" />
               </SelectTrigger>
               <SelectContent>
@@ -492,7 +559,10 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
             <div className="flex flex-col justify-end">
               <div className="text-xs text-muted-foreground">
                 <p className="font-semibold">Exam Period:</p>
-                <p>{selectedExamDetails.start_date} → {selectedExamDetails.end_date}</p>
+                <p>
+                  {selectedExamDetails.start_date} →{" "}
+                  {selectedExamDetails.end_date}
+                </p>
               </div>
             </div>
           )}
@@ -525,7 +595,8 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
             <div className="p-8 text-center bg-muted/50 rounded-lg flex flex-col items-center gap-2">
               <AlertCircle className="h-6 w-6 text-muted-foreground" />
               <p className="text-muted-foreground">
-                No chapters found for the selected exam. Please create chapters first.
+                No chapters found for the selected exam. Please create chapters
+                first.
               </p>
             </div>
           ) : students.length === 0 ? (
@@ -554,15 +625,22 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                           className="px-4 py-3 text-left text-sm font-semibold min-w-[120px]"
                         >
                           <div className="flex flex-col gap-1">
-                            <span className="truncate">{chapter.chapter_name}</span>
+                            <span className="truncate">
+                              {chapter.chapter_name}
+                            </span>
                             <div className="flex items-center gap-2 text-xs">
-                              <span className="text-muted-foreground">Max:</span>
+                              <span className="text-muted-foreground">
+                                Max:
+                              </span>
                               <Input
                                 type="number"
                                 min="0"
                                 value={chapterMaxDraft[chapter.id] ?? ""}
                                 onChange={(e) =>
-                                  handleChapterMaxChange(chapter.id, e.target.value)
+                                  handleChapterMaxChange(
+                                    chapter.id,
+                                    e.target.value,
+                                  )
                                 }
                                 className="h-8 text-xs w-20"
                               />
@@ -584,12 +662,17 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                         key={student.id}
                         className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}
                       >
-                        <td className="px-4 py-3 text-sm font-medium">{student.name}</td>
+                        <td className="px-4 py-3 text-sm font-medium">
+                          {student.name}
+                        </td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           {student.roll_number || "-"}
                         </td>
                         {chapters.map((chapter) => (
-                          <td key={`${student.id}-${chapter.id}`} className="px-4 py-3">
+                          <td
+                            key={`${student.id}-${chapter.id}`}
+                            className="px-4 py-3"
+                          >
                             <Input
                               type="number"
                               placeholder="0"
@@ -600,7 +683,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                                 handleMarkChange(
                                   student.id,
                                   chapter.id,
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="w-full h-9 text-sm"
@@ -639,14 +722,17 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                   <div className="px-4 py-3 rounded border bg-muted/50">
                     <div className="font-semibold text-foreground">Overall</div>
                     <div className="text-muted-foreground">
-                      Total Obtained: {overallTotals.totalObtained} / {overallTotals.maxOverall}
+                      Total Obtained: {overallTotals.totalObtained} /{" "}
+                      {overallTotals.maxOverall}
                     </div>
                     <div className="text-muted-foreground">
                       Percent: {overallTotals.overallPercent.toFixed(1)}%
                     </div>
                   </div>
                   <div className="px-4 py-3 rounded border bg-muted/50">
-                    <div className="font-semibold text-foreground">Per Student</div>
+                    <div className="font-semibold text-foreground">
+                      Per Student
+                    </div>
                     <div className="text-muted-foreground">
                       Max per student: {totalMaxMarks}
                     </div>

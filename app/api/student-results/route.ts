@@ -15,9 +15,7 @@ export async function GET(request: NextRequest) {
   const classId = request.nextUrl.searchParams.get("classId");
 
   try {
-    let query = supabase
-      .from("student_results")
-      .select(`
+    let query = supabase.from("student_results").select(`
         *,
         student:students(id, name),
         chapter:exam_chapters(id, chapter_name, max_marks)
@@ -27,7 +25,9 @@ export async function GET(request: NextRequest) {
     if (seriesExamId) query = query.eq("series_exam_id", seriesExamId);
     if (classId) query = query.eq("class_id", classId);
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
+    });
     if (error) throw error;
 
     return NextResponse.json({ data: data || [], success: true });
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
           error instanceof Error ? error.message : "Failed to fetch results",
         success: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
             "student_id, series_exam_id, class_id, and chapter_results are required",
           success: false,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         result.chapter_id &&
         result.marks !== undefined &&
         !isNaN(parseFloat(result.marks)) &&
-        parseFloat(result.marks) >= 0
+        parseFloat(result.marks) >= 0,
     );
 
     if (!allValid) {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid marks - must be non-negative numbers",
           success: false,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
           error instanceof Error ? error.message : "Failed to save results",
         success: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -176,14 +176,14 @@ export async function PUT(request: NextRequest) {
     if (!id || marks === undefined) {
       return NextResponse.json(
         { error: "id and marks are required", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (isNaN(parseFloat(marks)) || parseFloat(marks) < 0) {
       return NextResponse.json(
         { error: "Marks must be a non-negative number", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -207,7 +207,7 @@ export async function PUT(request: NextRequest) {
           error instanceof Error ? error.message : "Failed to update results",
         success: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

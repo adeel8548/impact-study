@@ -40,8 +40,10 @@ export function AttendanceRangeModal({
   }, [initialStart, initialEnd, open]);
 
   const handleApply = () => {
-    if (!start || !end) return toast.error("Please select both start and end dates");
-    if (new Date(start) > new Date(end)) return toast.error("Start date must be before end date");
+    if (!start || !end)
+      return toast.error("Please select both start and end dates");
+    if (new Date(start) > new Date(end))
+      return toast.error("Start date must be before end date");
     setLoading(true);
     try {
       onApply(start, end);
@@ -56,22 +58,39 @@ export function AttendanceRangeModal({
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>Choose a custom date range to filter attendance</DialogDescription>
+          <DialogDescription>
+            Choose a custom date range to filter attendance
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="start">Start Date</Label>
-            <Input id="start" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            <Input
+              id="start"
+              type="date"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="end">End Date</Label>
-            <Input id="end" type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            <Input
+              id="end"
+              type="date"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+            />
           </div>
 
           <div className="flex gap-3 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button onClick={handleApply} disabled={loading || !start || !end}>

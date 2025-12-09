@@ -173,7 +173,7 @@ export default function TeacherManagement() {
       });
       setTeacherSalaryMap(salaryMap);
       setSalarySummary(summarizeTeachers(typedTeachers));
-      
+
       // class_ids are already loaded from the teacher profiles
     } catch (error) {
       console.error("Failed to load teachers:", error);
@@ -206,21 +206,18 @@ export default function TeacherManagement() {
         return false;
       });
 
-      const summary = current.reduce<SalarySummary>(
-        (acc, salary) => {
-          const amount = toNumericAmount(salary.amount);
-          acc.totalAmount += amount;
-          if (salary.status === "paid") {
-            acc.paidAmount += amount;
-            acc.paidCount += 1;
-          } else {
-            acc.unpaidAmount += amount;
-            acc.unpaidCount += 1;
-          }
-          return acc;
-        },
-        emptySummary(),
-      );
+      const summary = current.reduce<SalarySummary>((acc, salary) => {
+        const amount = toNumericAmount(salary.amount);
+        acc.totalAmount += amount;
+        if (salary.status === "paid") {
+          acc.paidAmount += amount;
+          acc.paidCount += 1;
+        } else {
+          acc.unpaidAmount += amount;
+          acc.unpaidCount += 1;
+        }
+        return acc;
+      }, emptySummary());
 
       const latestMap: Record<string, TeacherSalarySnapshot> = {};
       current.forEach((salary) => {
@@ -436,7 +433,9 @@ export default function TeacherManagement() {
                     PKR {salarySummary.paidAmount.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {salarySummary.paidCount} {salarySummary.paidCount === 1 ? "teacher" : "teachers"} paid
+                    {salarySummary.paidCount}{" "}
+                    {salarySummary.paidCount === 1 ? "teacher" : "teachers"}{" "}
+                    paid
                   </p>
                 </div>
                 <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
@@ -462,7 +461,8 @@ export default function TeacherManagement() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {salarySummary.unpaidCount}{" "}
-                    {salarySummary.unpaidCount === 1 ? "teacher" : "teachers"} pending
+                    {salarySummary.unpaidCount === 1 ? "teacher" : "teachers"}{" "}
+                    pending
                   </p>
                 </div>
                 <div className="p-3 bg-red-100 dark:bg-red-900 rounded-lg">

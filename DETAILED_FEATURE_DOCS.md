@@ -3,33 +3,40 @@
 ## Feature 1: Teacher's Own Attendance View Modal
 
 ### Component Location
+
 `components/modals/teacher-own-attendance-view-modal.tsx`
 
 ### Integration Point
+
 `app/teacher/my-attendance/page.tsx` - "View Records" button
 
 ### Description
+
 Provides teachers with a comprehensive read-only view of their attendance history with month-by-month navigation and date range filtering.
 
 ### UI/UX Elements
 
 #### Header
+
 - Title: "My Attendance Records"
 - Location: Modal header
 
 #### Statistics Cards
+
 - **Present**: Shows count of present days in selected month
 - **Absent**: Shows count of absent days in selected month
 - Color-coded: Green for present, Red for absent
 - Location: Top of modal
 
 #### Month Navigation
+
 - Previous button (left arrow)
 - Month/Year display (e.g., "December 2024")
 - Next button (right arrow)
 - Purpose: Navigate between months
 
 #### Date Range Filter
+
 - Dropdown menu with 7 options:
   - Last 7 days
   - Last 15 days
@@ -42,11 +49,13 @@ Provides teachers with a comprehensive read-only view of their attendance histor
 - Loading state with spinner
 
 #### Legend
+
 - Green square: Present
 - Red square: Absent
 - Gray square: Off/No Record
 
 #### Calendar Grid
+
 - 7-column layout (Sun-Sat)
 - Day headers showing day names
 - Each day is a card showing:
@@ -76,12 +85,14 @@ User can:
 ```
 
 ### API Usage
+
 ```
 GET /api/teacher-attendance?teacherId={teacherId}&month={YYYY-MM}
 GET /api/teacher-attendance?teacherId={teacherId}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
 ```
 
 ### Props
+
 ```tsx
 interface TeacherOwnAttendanceViewModalProps {
   open: boolean;
@@ -92,6 +103,7 @@ interface TeacherOwnAttendanceViewModalProps {
 ```
 
 ### State Management
+
 - `isLoading`: Initial load state
 - `currentDate`: Current month being viewed
 - `attendance`: Array of attendance records
@@ -111,6 +123,7 @@ interface TeacherOwnAttendanceViewModalProps {
 ✅ Loading states
 
 ### Styling
+
 - Uses ShadcN UI Dialog component
 - Tailwind CSS for styling
 - Responsive grid layout
@@ -122,29 +135,35 @@ interface TeacherOwnAttendanceViewModalProps {
 ## Feature 2: Admin Attendance Marking Modal
 
 ### Component Location
+
 `components/modals/admin-attendance-marking-modal.tsx`
 
 ### Integration Points
+
 1. `app/admin/attendance/page.tsx` - Students section
 2. `app/admin/attendance/page.tsx` - Teachers section
 
 ### Description
+
 Allows administrators to mark attendance for any person (teacher or student) for any date in the past or future. Not restricted to the current day.
 
 ### UI/UX Elements
 
 #### Modal Header
+
 - Title: "Mark Attendance"
 - Description: "For {Type}: {Name}"
   - Example: "For Teacher: John Smith"
 
 #### Date Picker
+
 - HTML date input field
 - Can select any date (past, present, future)
 - Defaults to today's date
 - Icon: Calendar icon beside input
 
 #### Status Selection
+
 - Three radio button options:
   1. Present (Green dot)
   2. Absent (Red dot)
@@ -154,6 +173,7 @@ Allows administrators to mark attendance for any person (teacher or student) for
 - Defaults to "Present"
 
 #### Summary Card
+
 - Blue background (light mode) / Dark blue (dark mode)
 - Shows what will be marked:
   - "Summary: Mark {Name} as {Status} on {FormattedDate}"
@@ -161,6 +181,7 @@ Allows administrators to mark attendance for any person (teacher or student) for
 - Helps confirm action before saving
 
 #### Action Buttons
+
 - Cancel button (outline style)
 - Mark Attendance button (primary style)
 - Disabled state during saving
@@ -201,6 +222,7 @@ Modal closes
 ### API Usage
 
 For Teachers:
+
 ```
 POST /api/teacher-attendance
 Body: {
@@ -212,6 +234,7 @@ Body: {
 ```
 
 For Students:
+
 ```
 POST /api/attendance
 Body: {
@@ -225,6 +248,7 @@ Body: {
 ```
 
 ### Props
+
 ```tsx
 interface AdminAttendanceMarkingModalProps {
   open: boolean;
@@ -237,6 +261,7 @@ interface AdminAttendanceMarkingModalProps {
 ```
 
 ### State Management
+
 - `isSaving`: Tracks API request state
 - `selectedDate`: Selected date in YYYY-MM-DD format
 - `selectedStatus`: Selected attendance status
@@ -256,6 +281,7 @@ interface AdminAttendanceMarkingModalProps {
 ✅ Dark mode support
 
 ### Styling
+
 - Uses ShadcN UI Dialog component
 - Tailwind CSS styling
 - Color-coded status options
@@ -263,6 +289,7 @@ interface AdminAttendanceMarkingModalProps {
 - Responsive buttons with hover states
 
 ### Error Handling
+
 - Validates date and status selection
 - Shows error toast if API fails
 - Includes error details from API response
@@ -273,12 +300,15 @@ interface AdminAttendanceMarkingModalProps {
 ## Feature 3: "View Records" Button on Teacher My-Attendance Page
 
 ### Location
+
 `app/teacher/my-attendance/page.tsx`
 
 ### Button Placement
+
 Top right of page, next to the page title
 
 ### Button Styling
+
 - Blue primary background
 - White text
 - Calendar icon on left
@@ -298,16 +328,19 @@ Top right of page, next to the page title
 ```
 
 ### Functionality
+
 - Clicking opens `TeacherOwnAttendanceViewModal`
 - Modal receives current teacher's ID and name
 - Modal persists on same page (doesn't navigate)
 
 ### State Added
+
 ```tsx
 const [viewModalOpen, setViewModalOpen] = useState(false);
 ```
 
 ### Imports Added
+
 ```tsx
 import { TeacherOwnAttendanceViewModal } from "@/components/modals/teacher-own-attendance-view-modal";
 import { Calendar } from "lucide-react";
@@ -320,16 +353,19 @@ import { Calendar } from "lucide-react";
 ### Locations
 
 #### Student Section
+
 - Appears next to each student name (right side)
 - Within the student's attendance card
 - One button per student
 
 #### Teacher Section
+
 - Appears next to each teacher name (right side)
 - Within the teacher's attendance card
 - One button per teacher
 
 ### Button Styling
+
 - Blue primary background
 - White text
 - Small size (consistent with interface)
@@ -340,9 +376,7 @@ import { Calendar } from "lucide-react";
 
 ```tsx
 <button
-  onClick={() =>
-    openMarkingModal("student", student.id, student.name)
-  }
+  onClick={() => openMarkingModal("student", student.id, student.name)}
   className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
 >
   Mark Any Date
@@ -352,12 +386,14 @@ import { Calendar } from "lucide-react";
 ### Functionality
 
 Clicking button for a student:
+
 1. Opens `AdminAttendanceMarkingModal`
 2. Sets type to "student"
 3. Sets targetId to student.id
 4. Sets targetName to student.name
 
 Clicking button for a teacher:
+
 1. Opens `AdminAttendanceMarkingModal`
 2. Sets type to "teacher"
 3. Sets targetId to teacher.id
@@ -369,7 +405,7 @@ Clicking button for a teacher:
 const openMarkingModal = (
   type: "teacher" | "student",
   id: string,
-  name: string
+  name: string,
 ) => {
   setMarkingType(type);
   setMarkingTargetId(id);
@@ -388,14 +424,18 @@ const handleMarked = (date: string, status: "present" | "absent" | "leave") => {
 ```
 
 ### State Added
+
 ```tsx
 const [markingModalOpen, setMarkingModalOpen] = useState(false);
-const [markingType, setMarkingType] = useState<"teacher" | "student">("teacher");
+const [markingType, setMarkingType] = useState<"teacher" | "student">(
+  "teacher",
+);
 const [markingTargetId, setMarkingTargetId] = useState("");
 const [markingTargetName, setMarkingTargetName] = useState("");
 ```
 
 ### Modal Integration
+
 ```tsx
 <AdminAttendanceMarkingModal
   open={markingModalOpen}
@@ -503,15 +543,18 @@ Teacher Page
 ## Validation & Error Handling
 
 ### Client-Side Validation
+
 1. Date selection required
 2. Status selection required
 3. Cannot mark without both fields
 
 ### Server-Side Validation
+
 - Handled by Supabase RLS policies
 - API endpoint validation
 
 ### Error Messages
+
 - Toast notifications for all errors
 - User-friendly messages:
   - "Please select a date and status"
@@ -519,6 +562,7 @@ Teacher Page
   - "{Name}'s attendance marked as {Status} for {Date}"
 
 ### Loading States
+
 - Spinner during API calls
 - Disabled buttons during saving
 - Loading text in buttons

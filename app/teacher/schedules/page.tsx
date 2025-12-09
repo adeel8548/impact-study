@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Pencil ,Trash} from "lucide-react";
+import { Loader2, Plus, Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { ExamCard } from "@/components/exam-card";
 import { QuizCard } from "@/components/quiz-card";
@@ -166,7 +166,9 @@ export default function TeacherSchedulesPage() {
 
   const deleteQuiz = async (id: string) => {
     try {
-      const res = await fetch(`/api/daily-quizzes?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/daily-quizzes?id=${id}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error("Delete failed");
       toast.success("Quiz deleted");
       loadQuizzes();
@@ -185,163 +187,197 @@ export default function TeacherSchedulesPage() {
   }
 
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    }>
-    <div className="min-h-screen bg-background">
-      <TeacherHeader />
-      <div className="p-4 md:p-8 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Schedules</h1>
-            <p className="text-muted-foreground">
-              Manage revisions, series exams, and daily/weekly quizzes.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm">Class</Label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="px-3 py-2 border border-border rounded bg-background text-foreground"
-            >
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
+      }
+    >
+      <div className="min-h-screen bg-background">
+        <TeacherHeader />
+        <div className="p-4 md:p-8 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Schedules</h1>
+              <p className="text-muted-foreground">
+                Manage revisions, series exams, and daily/weekly quizzes.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm">Class</Label>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="px-3 py-2 border border-border rounded bg-background text-foreground"
+              >
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-        <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="revisions">Revisions</TabsTrigger>
-            <TabsTrigger value="exams">Series Exams</TabsTrigger>
-            <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
-          </TabsList>
+          <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="revisions">Revisions</TabsTrigger>
+              <TabsTrigger value="exams">Series Exams</TabsTrigger>
+              <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="revisions" className="space-y-4">
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3">Upcoming Revisions</h3>
-              <div className="space-y-2">
-                {revisions.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No revisions yet.</p>
-                )}
-                {revisions.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center justify-between border border-border rounded p-3"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {r.subject} — {r.topic}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Date: {r.revision_date} • Teacher: {teacherName}
-                      </p>
+            <TabsContent value="revisions" className="space-y-4">
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3">Upcoming Revisions</h3>
+                <div className="space-y-2">
+                  {revisions.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No revisions yet.
+                    </p>
+                  )}
+                  {revisions.map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between border border-border rounded p-3"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {r.subject} — {r.topic}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Date: {r.revision_date} • Teacher: {teacherName}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </TabsContent>
+                  ))}
+                </div>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="exams" className="space-y-4">
-            <div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">Upcoming Exams</h3>
-              {exams.length === 0 && (
-                <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">No exams yet.</p>
-                </Card>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {exams.map((e) => (
-                  <ExamCard
-                    key={e.id}
-                    exam={e}
-                    teacherName={teacherName}
-                    className={classes.find((c) => c.id === selectedClass)?.name || "—"}
-                    onEdit={undefined}
-                    onDelete={undefined}
-                  />
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="quizzes" className="space-y-4">
-            <Card className="p-4 space-y-3">
-              <div className="grid md:grid-cols-4 gap-3">
-                <div>
-                  <Label>Subject</Label>
-                  <Input value={quizSubject} onChange={(e) => setQuizSubject(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Topic</Label>
-                  <Input value={quizTopic} onChange={(e) => setQuizTopic(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Date</Label>
-                  <Input type="date" value={quizDate} onChange={(e) => setQuizDate(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Duration (minutes)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={quizDuration}
-                    onChange={(e) => setQuizDuration(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                {quizEditingId && (
-                  <Button variant="outline" onClick={() => setQuizEditingId(null)}>
-                    Cancel
-                  </Button>
+            <TabsContent value="exams" className="space-y-4">
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Upcoming Exams
+                </h3>
+                {exams.length === 0 && (
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">
+                      No exams yet.
+                    </p>
+                  </Card>
                 )}
-                <Button onClick={createOrUpdateQuiz} disabled={saving} className="gap-2">
-                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <Plus className="w-4 h-4" />
-                  {quizEditingId ? "Update Quiz" : "Add Quiz"}
-                </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {exams.map((e) => (
+                    <ExamCard
+                      key={e.id}
+                      exam={e}
+                      teacherName={teacherName}
+                      className={
+                        classes.find((c) => c.id === selectedClass)?.name || "—"
+                      }
+                      onEdit={undefined}
+                      onDelete={undefined}
+                    />
+                  ))}
+                </div>
               </div>
-            </Card>
+            </TabsContent>
 
-            <div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">Upcoming Quizzes</h3>
-              {quizzes.length === 0 && (
-                <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">No quizzes yet.</p>
-                </Card>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {quizzes.map((q) => (
-                  <QuizCard
-                    key={q.id}
-                    quiz={q}
-                    teacherName={teacherName}
-                    className={classes.find((c) => c.id === selectedClass)?.name || "—"}
-                    onEdit={(quiz) => {
-                      setQuizEditingId(quiz.id);
-                      setQuizSubject(quiz.subject);
-                      setQuizTopic(quiz.topic);
-                      setQuizDate(quiz.quiz_date);
-                      setQuizDuration(quiz.duration_minutes?.toString() || "");
-                    }}
-                    onDelete={(id) => deleteQuiz(id)}
-                  />
-                ))}
+            <TabsContent value="quizzes" className="space-y-4">
+              <Card className="p-4 space-y-3">
+                <div className="grid md:grid-cols-4 gap-3">
+                  <div>
+                    <Label>Subject</Label>
+                    <Input
+                      value={quizSubject}
+                      onChange={(e) => setQuizSubject(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Topic</Label>
+                    <Input
+                      value={quizTopic}
+                      onChange={(e) => setQuizTopic(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Date</Label>
+                    <Input
+                      type="date"
+                      value={quizDate}
+                      onChange={(e) => setQuizDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Duration (minutes)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={quizDuration}
+                      onChange={(e) => setQuizDuration(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  {quizEditingId && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setQuizEditingId(null)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    onClick={createOrUpdateQuiz}
+                    disabled={saving}
+                    className="gap-2"
+                  >
+                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <Plus className="w-4 h-4" />
+                    {quizEditingId ? "Update Quiz" : "Add Quiz"}
+                  </Button>
+                </div>
+              </Card>
+
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Upcoming Quizzes
+                </h3>
+                {quizzes.length === 0 && (
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">
+                      No quizzes yet.
+                    </p>
+                  </Card>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {quizzes.map((q) => (
+                    <QuizCard
+                      key={q.id}
+                      quiz={q}
+                      teacherName={teacherName}
+                      className={
+                        classes.find((c) => c.id === selectedClass)?.name || "—"
+                      }
+                      onEdit={(quiz) => {
+                        setQuizEditingId(quiz.id);
+                        setQuizSubject(quiz.subject);
+                        setQuizTopic(quiz.topic);
+                        setQuizDate(quiz.quiz_date);
+                        setQuizDuration(
+                          quiz.duration_minutes?.toString() || "",
+                        );
+                      }}
+                      onDelete={(id) => deleteQuiz(id)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-    </div>
     </Suspense>
   );
 }
-

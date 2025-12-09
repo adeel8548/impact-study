@@ -44,7 +44,7 @@ export function StudentsClientComponent({
   const classOrderMap = useMemo(() => {
     const map = new Map<string, number>();
     preferredClassOrder.forEach((name, index) =>
-      map.set(normalizeClassName(name), index)
+      map.set(normalizeClassName(name), index),
     );
     return map;
   }, []);
@@ -67,7 +67,7 @@ export function StudentsClientComponent({
 
   const defaultClassId = useMemo(() => {
     const ten = sortedClasses.find(
-      (cls) => normalizeClassName(cls?.name) === normalizeClassName("10th")
+      (cls) => normalizeClassName(cls?.name) === normalizeClassName("10th"),
     )?.id;
     return ten ? String(ten) : "";
   }, [sortedClasses]);
@@ -98,7 +98,7 @@ export function StudentsClientComponent({
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
   const [feesListModalOpen, setFeesListModalOpen] = useState(false);
   const [feesListStatus, setFeesListStatus] = useState<"paid" | "unpaid">(
-    "paid"
+    "paid",
   );
   const [unpaidFeesModalOpen, setUnpaidFeesModalOpen] = useState(false);
   const [selectedStudentForUnpaidFees, setSelectedStudentForUnpaidFees] =
@@ -295,7 +295,7 @@ export function StudentsClientComponent({
                 <th className="text-center p-4 font-semibold text-foreground">
                   All Month Fees
                 </th>
-                 <th className="text-center p-4 font-semibold text-foreground">
+                <th className="text-center p-4 font-semibold text-foreground">
                   Attendance
                 </th>
                 <th className="text-center p-4 font-semibold text-foreground">
@@ -306,7 +306,7 @@ export function StudentsClientComponent({
             <tbody>
               {orderedStudents?.map((student) => {
                 const studentClass = classes?.find(
-                  (c) => c.id === student?.class_id
+                  (c) => c.id === student?.class_id,
                 );
                 return (
                   <tr
@@ -361,8 +361,8 @@ export function StudentsClientComponent({
                                               : "paid",
                                         },
                                       }
-                                    : s
-                                )
+                                    : s,
+                                ),
                               );
                             }}
                           />
@@ -469,7 +469,7 @@ export function StudentsClientComponent({
           studentId={selectedStudentForAttendance.id}
           studentName={selectedStudentForAttendance.name}
           studentClass={classes.find(
-            (c) => c.id === (selectedStudentForAttendance as any).class_id
+            (c) => c.id === (selectedStudentForAttendance as any).class_id,
           )}
         />
       )}

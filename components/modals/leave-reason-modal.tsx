@@ -28,7 +28,10 @@ interface LeaveReasonModalProps {
   approvedBy?: string; // Admin ID who approved/rejected (if set, reason is locked for teachers)
   approvalStatus?: "approved" | "rejected"; // Current approval status
   onReasonSaved?: (recordId: string, reason: string) => void; // Callback when reason is saved (for temporary records)
-  onApprovalStatusChanged?: (recordId: string, status: "approved" | "rejected") => void; // Callback when approval status changes
+  onApprovalStatusChanged?: (
+    recordId: string,
+    status: "approved" | "rejected",
+  ) => void; // Callback when approval status changes
 }
 
 export function LeaveReasonModal({
@@ -94,14 +97,14 @@ export function LeaveReasonModal({
 
   const isAdmin =
     typeof window !== "undefined" &&
-    JSON.parse(localStorage.getItem("currentUser") || "{}")?.role ===
-      "admin";
+    JSON.parse(localStorage.getItem("currentUser") || "{}")?.role === "admin";
 
   // Determine if textarea should be disabled
   // Teachers cannot edit after approval/rejection (approvedBy is set)
   // Admins can always edit if they click "Edit Reason"
   const isReasonLocked = approvedBy && !isAdmin;
-  const isTextareaDisabled = !canEdit || isReasonLocked || (isAdmin && !isEditingReason);
+  const isTextareaDisabled =
+    !canEdit || isReasonLocked || (isAdmin && !isEditingReason);
 
   const handleApprove = async () => {
     if (!recordId) return;
@@ -141,24 +144,24 @@ export function LeaveReasonModal({
     try {
       setIsProcessingApproval(true);
       const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-        // Mark rejection: keep status as 'leave' but set approval_status to 'rejected'
-        // This allows the record to remain visible as a rejected leave while
-        // allowing counts to treat it as absent when needed.
-        const res = await fetch("/api/teacher-attendance", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: recordId,
-            approval_status: "rejected",
-            rejected_by: user.id,
-            rejected_at: new Date().toISOString(),
-            reason_locked: true,
-          }),
-        });
+      // Mark rejection: keep status as 'leave' but set approval_status to 'rejected'
+      // This allows the record to remain visible as a rejected leave while
+      // allowing counts to treat it as absent when needed.
+      const res = await fetch("/api/teacher-attendance", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: recordId,
+          approval_status: "rejected",
+          rejected_by: user.id,
+          rejected_at: new Date().toISOString(),
+          reason_locked: true,
+        }),
+      });
 
       if (!res.ok) throw new Error("Failed to reject leave");
 
-        toast.success("Leave rejected");
+      toast.success("Leave rejected");
       onOpenChange(false);
       if (onApprovalStatusChanged) {
         onApprovalStatusChanged(recordId, "rejected");
@@ -233,13 +236,16 @@ export function LeaveReasonModal({
 
           {!canEdit && (
             <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 p-2 rounded">
-              You can only view this leave reason. Contact admin or teacher to edit.
+              You can only view this leave reason. Contact admin or teacher to
+              edit.
             </p>
           )}
 
           {isReasonLocked && (
             <p className="text-xs text-red-600 bg-red-50 dark:bg-red-950 p-2 rounded">
-              ✓ This leave has been {approvalStatus === "approved" ? "approved" : "rejected"}. You cannot edit the reason anymore.
+              ✓ This leave has been{" "}
+              {approvalStatus === "approved" ? "approved" : "rejected"}. You
+              cannot edit the reason anymore.
             </p>
           )}
         </div>
@@ -262,10 +268,7 @@ export function LeaveReasonModal({
 
           {/* Edit button for admin when not in edit mode and has teacher attendance */}
           {isAdmin && table === "teacher_attendance" && !isEditingReason && (
-            <Button
-              variant="outline"
-              onClick={() => setIsEditingReason(true)}
-            >
+            <Button variant="outline" onClick={() => setIsEditingReason(true)}>
               ✏️ Edit Reason
             </Button>
           )}

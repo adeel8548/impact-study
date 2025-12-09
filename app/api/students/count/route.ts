@@ -17,11 +17,9 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to fetch count",
+        error: error instanceof Error ? error.message : "Failed to fetch count",
       },
       { status: 500 },
     );
   }
 }
-

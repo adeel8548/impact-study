@@ -7,6 +7,7 @@
 ## Implementation Details
 
 ### Date Picker Behavior
+
 - The date picker allows selection of **any date** (past, present, or future)
 - Defaults to today's date for convenience
 - No restrictions on which date can be selected
@@ -18,11 +19,13 @@
 ### Supported Actions
 
 #### For Teachers
+
 - Admin can mark attendance for any previous day
 - Can set status: Present, Absent, or Leave
 - Updates teacher_attendance table
 
 #### For Students
+
 - Admin can mark attendance for any previous day
 - Can set status: Present, Absent, or Leave
 - Updates student_attendance table
@@ -50,12 +53,15 @@ Success - Record marked for that date
 ## UI Changes Made
 
 ### Modal Description
+
 Now includes: "Mark attendance for any previous day"
 
 ### Date Label
+
 Now shows: "Select any date to mark attendance"
 
 ### Code Comments
+
 Added documentation explaining that admins can mark any previous day
 
 ## Example Use Cases
@@ -82,11 +88,13 @@ Added documentation explaining that admins can mark any previous day
 ## Technical Implementation
 
 ### Date Validation
+
 - ✅ No client-side date restrictions
 - ✅ Server accepts any date
 - ✅ Upsert operation handles existing records
 
 ### API Endpoints
+
 ```
 POST /api/teacher-attendance
 {
@@ -110,12 +118,14 @@ POST /api/attendance
 ## Current Restrictions
 
 ❌ **NOT Restricted**:
+
 - Marking only today
 - Marking only weekdays
 - Marking only recent dates
 - Bulk marking (can mark one person at a time)
 
 ✅ **IS Restricted**:
+
 - Teachers can only mark their OWN attendance for TODAY (on my-attendance page)
 - But admins CAN mark any teacher's ANY date (on admin attendance page)
 

@@ -266,6 +266,7 @@ When "Create Chapter" is clicked:
 ## 🎨 Component Colors & States
 
 ### Inputs & Dropdowns
+
 ```
 Default:     Border gray, text black
 Focus:       Border blue, shadow
@@ -274,6 +275,7 @@ Hover:       Light blue background
 ```
 
 ### Buttons
+
 ```
 Primary:     Blue background, white text
 Hover:       Darker blue
@@ -283,6 +285,7 @@ Loading:     Spinner icon, disabled
 ```
 
 ### Table
+
 ```
 Header:      Slightly darker background
 Rows:        Alternate subtle background
@@ -291,6 +294,7 @@ Border:      Light gray lines
 ```
 
 ### Alerts/Toasts
+
 ```
 Success:     Green icon, green text
 Error:       Red icon, red text
@@ -303,6 +307,7 @@ Warning:     Yellow icon, yellow text
 ## 🎯 Interaction States
 
 ### Form Submission
+
 ```
 User Types
     ↓
@@ -324,6 +329,7 @@ Form resets (if success)
 ```
 
 ### Marks Entry
+
 ```
 User sees empty input
     ↓
@@ -341,6 +347,7 @@ Field updates with saved value
 ```
 
 ### Delete Action
+
 ```
 User clicks trash icon
     ↓
@@ -360,6 +367,7 @@ Success toast shown ✅
 ## 🔄 Loading States
 
 ### Page Load
+
 ```
 Spinner appears
     ↓
@@ -373,6 +381,7 @@ Content displays
 ```
 
 ### Button Load
+
 ```
 Button shows spinner icon
 Button text grayed out
@@ -385,8 +394,9 @@ Button re-enabled
 ```
 
 ### List Load
+
 ```
-List shows "Loading..." 
+List shows "Loading..."
     ↓
 API returns data
     ↓
@@ -400,6 +410,7 @@ Ready for interaction
 ## 🎞️ Animation Flows
 
 ### Tab Switch
+
 ```
 Current tab fades out (fast)
     ↓
@@ -409,6 +420,7 @@ New tab fades in (smooth)
 ```
 
 ### Item Hover
+
 ```
 Mouse enters item
     ↓
@@ -418,6 +430,7 @@ Buttons become visible
 ```
 
 ### Notification Toast
+
 ```
 Toast slides in (top)
     ↓
@@ -431,6 +444,7 @@ Fades out and slides away
 ## 📐 Spacing & Sizing
 
 ### Gaps
+
 ```
 Between sections:  24px (1.5rem)
 Between cards:     16px (1rem)
@@ -439,6 +453,7 @@ Between inputs:    12px (0.75rem)
 ```
 
 ### Button Sizes
+
 ```
 Large:   12px padding, 16px gap
 Medium:  10px padding, 12px gap
@@ -447,6 +462,7 @@ Icon:    8x8 (24px container)
 ```
 
 ### Typography
+
 ```
 Page title:      32px bold (text-3xl)
 Section title:   20px semibold (text-lg)
@@ -466,7 +482,7 @@ Helper text:     12px muted
 ✅ Color contrast meets WCAG standards  
 ✅ Form inputs properly labeled  
 ✅ Error messages associated with fields  
-✅ Loading states announced  
+✅ Loading states announced
 
 ---
 
@@ -511,6 +527,7 @@ Helper text:     12px muted
 ## 🏆 Summary
 
 The UI provides:
+
 - **Clear visual hierarchy** (Title > Sections > Content)
 - **Responsive design** (1 to 4 columns)
 - **Intuitive navigation** (Tabs, dropdowns)
@@ -524,4 +541,4 @@ The UI provides:
 
 **UI Design Created:** December 8, 2025  
 **Framework:** Tailwind CSS + Next.js  
-**Responsiveness:** Mobile-first approach  
+**Responsiveness:** Mobile-first approach

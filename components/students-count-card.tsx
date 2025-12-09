@@ -17,15 +17,14 @@ export function StudentsCountCard() {
   });
 
   let content = (
-    <Loader2 className="h-6 w-6 animate-spin text-primary" aria-label="Loading" />
+    <Loader2
+      className="h-6 w-6 animate-spin text-primary"
+      aria-label="Loading"
+    />
   );
 
   if (error) {
-    content = (
-      <span className="text-sm text-red-600">
-        Failed to load
-      </span>
-    );
+    content = <span className="text-sm text-red-600">Failed to load</span>;
   } else if (data?.success) {
     content = <span className="text-3xl font-bold">{data.count}</span>;
   }
@@ -42,4 +41,3 @@ export function StudentsCountCard() {
     </Card>
   );
 }
-

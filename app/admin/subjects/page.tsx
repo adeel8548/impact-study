@@ -120,9 +120,12 @@ export default function SubjectsPage() {
     if (!confirm("Are you sure you want to delete this subject?")) return;
 
     try {
-      const res = await fetch(`/api/classes/${selectedClass}/subjects?id=${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/classes/${selectedClass}/subjects?id=${id}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -163,9 +166,7 @@ export default function SubjectsPage() {
           {/* Header */}
           <div>
             <h1 className="text-3xl font-bold text-foreground">Subjects</h1>
-            <p className="text-muted-foreground">
-              Manage subjects for classes
-            </p>
+            <p className="text-muted-foreground">Manage subjects for classes</p>
           </div>
 
           {/* Class Selection */}

@@ -296,7 +296,10 @@ export function AdminSchedulesContent() {
     }
   };
 
-  const deleteItem = async (table: "revision" | "exam" | "quiz", id: string) => {
+  const deleteItem = async (
+    table: "revision" | "exam" | "quiz",
+    id: string,
+  ) => {
     try {
       const url =
         table === "revision"
@@ -363,15 +366,25 @@ export function AdminSchedulesContent() {
                 <div className="grid md:grid-cols-4 gap-3">
                   <div>
                     <Label>Subject</Label>
-                    <Input value={revSubject} onChange={(e) => setRevSubject(e.target.value)} />
+                    <Input
+                      value={revSubject}
+                      onChange={(e) => setRevSubject(e.target.value)}
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <Label>Topic</Label>
-                    <Input value={revTopic} onChange={(e) => setRevTopic(e.target.value)} />
+                    <Input
+                      value={revTopic}
+                      onChange={(e) => setRevTopic(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label>Date</Label>
-                    <Input type="date" value={revDate} onChange={(e) => setRevDate(e.target.value)} />
+                    <Input
+                      type="date"
+                      value={revDate}
+                      onChange={(e) => setRevDate(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label>Teacher</Label>
@@ -395,7 +408,11 @@ export function AdminSchedulesContent() {
                       Cancel
                     </Button>
                   )}
-                  <Button onClick={upsertRevision} disabled={saving} className="gap-2">
+                  <Button
+                    onClick={upsertRevision}
+                    disabled={saving}
+                    className="gap-2"
+                  >
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     <Plus className="w-4 h-4" />
                     {revEditingId ? "Update Revision" : "Add Revision"}
@@ -407,7 +424,9 @@ export function AdminSchedulesContent() {
                 <h3 className="font-semibold mb-3">Revisions</h3>
                 <div className="space-y-2">
                   {revisions.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No revisions yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      No revisions yet.
+                    </p>
                   )}
                   {revisions.map((r) => (
                     <div
@@ -420,7 +439,8 @@ export function AdminSchedulesContent() {
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {r.revision_date} • Teacher:{" "}
-                          {teachers.find((t) => t.id === r.teacher_id)?.name || "—"}
+                          {teachers.find((t) => t.id === r.teacher_id)?.name ||
+                            "—"}
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -464,7 +484,9 @@ export function AdminSchedulesContent() {
                       className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                       disabled={subjects.length === 0}
                     >
-                      {subjects.length === 0 && <option value="">No subjects</option>}
+                      {subjects.length === 0 && (
+                        <option value="">No subjects</option>
+                      )}
                       {subjects.map((s) => (
                         <option key={s.id} value={s.name}>
                           {s.name}
@@ -474,11 +496,19 @@ export function AdminSchedulesContent() {
                   </div>
                   <div>
                     <Label>Start Date</Label>
-                    <Input type="date" value={examStart} onChange={(e) => setExamStart(e.target.value)} />
+                    <Input
+                      type="date"
+                      value={examStart}
+                      onChange={(e) => setExamStart(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label>End Date</Label>
-                    <Input type="date" value={examEnd} onChange={(e) => setExamEnd(e.target.value)} />
+                    <Input
+                      type="date"
+                      value={examEnd}
+                      onChange={(e) => setExamEnd(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label>Duration (minutes)</Label>
@@ -527,7 +557,11 @@ export function AdminSchedulesContent() {
                       Cancel
                     </Button>
                   )}
-                  <Button onClick={upsertExam} disabled={saving} className="gap-2">
+                  <Button
+                    onClick={upsertExam}
+                    disabled={saving}
+                    className="gap-2"
+                  >
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     <Plus className="w-4 h-4" />
                     {examEditingId ? "Update Exam" : "Add Exam"}
@@ -536,10 +570,14 @@ export function AdminSchedulesContent() {
               </Card>
 
               <div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">Series Exams</h3>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Series Exams
+                </h3>
                 {exams.length === 0 && (
                   <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">No exams yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      No exams yet.
+                    </p>
                   </Card>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -547,7 +585,9 @@ export function AdminSchedulesContent() {
                     <ExamCard
                       key={e.id}
                       exam={e}
-                      teacherName={teachers.find((t) => t.id === e.teacher_id)?.name}
+                      teacherName={
+                        teachers.find((t) => t.id === e.teacher_id)?.name
+                      }
                       className={classes.find((c) => c.id === e.class_id)?.name}
                       onEdit={(exam) => {
                         setExamEditingId(exam.id);
@@ -555,7 +595,8 @@ export function AdminSchedulesContent() {
                         setExamStart(exam.start_date);
                         setExamEnd(exam.end_date);
                         setExamDuration(
-                          exam.duration_minutes !== null && exam.duration_minutes !== undefined
+                          exam.duration_minutes !== null &&
+                            exam.duration_minutes !== undefined
                             ? String(exam.duration_minutes)
                             : "",
                         );
@@ -575,15 +616,25 @@ export function AdminSchedulesContent() {
                 <div className="grid md:grid-cols-4 gap-3">
                   <div>
                     <Label>Subject</Label>
-                    <Input value={quizSubject} onChange={(e) => setQuizSubject(e.target.value)} />
+                    <Input
+                      value={quizSubject}
+                      onChange={(e) => setQuizSubject(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label>Topic</Label>
-                    <Input value={quizTopic} onChange={(e) => setQuizTopic(e.target.value)} />
+                    <Input
+                      value={quizTopic}
+                      onChange={(e) => setQuizTopic(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label>Date</Label>
-                    <Input type="date" value={quizDate} onChange={(e) => setQuizDate(e.target.value)} />
+                    <Input
+                      type="date"
+                      value={quizDate}
+                      onChange={(e) => setQuizDate(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label>Duration (minutes)</Label>
@@ -616,7 +667,11 @@ export function AdminSchedulesContent() {
                       Cancel
                     </Button>
                   )}
-                  <Button onClick={upsertQuiz} disabled={saving} className="gap-2">
+                  <Button
+                    onClick={upsertQuiz}
+                    disabled={saving}
+                    className="gap-2"
+                  >
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     <Plus className="w-4 h-4" />
                     {quizEditingId ? "Update Quiz" : "Add Quiz"}
@@ -625,10 +680,14 @@ export function AdminSchedulesContent() {
               </Card>
 
               <div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">Quizzes</h3>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Quizzes
+                </h3>
                 {quizzes.length === 0 && (
                   <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">No quizzes yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      No quizzes yet.
+                    </p>
                   </Card>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -636,7 +695,9 @@ export function AdminSchedulesContent() {
                     <QuizCard
                       key={q.id}
                       quiz={q}
-                      teacherName={teachers.find((t) => t.id === q.teacher_id)?.name}
+                      teacherName={
+                        teachers.find((t) => t.id === q.teacher_id)?.name
+                      }
                       className={classes.find((c) => c.id === q.class_id)?.name}
                       onEdit={(quiz) => {
                         setQuizEditingId(quiz.id);
@@ -644,7 +705,8 @@ export function AdminSchedulesContent() {
                         setQuizTopic(quiz.topic);
                         setQuizDate(quiz.quiz_date);
                         setQuizDuration(
-                          quiz.duration_minutes !== null && quiz.duration_minutes !== undefined
+                          quiz.duration_minutes !== null &&
+                            quiz.duration_minutes !== undefined
                             ? String(quiz.duration_minutes)
                             : "",
                         );

@@ -25,7 +25,10 @@ interface AttendanceRecord {
 interface AttendanceGridProps {
   records: AttendanceRecord[];
   title: string;
-  onStatusChange: (date: string, status: "present" | "absent" | "leave") => void;
+  onStatusChange: (
+    date: string,
+    status: "present" | "absent" | "leave",
+  ) => void;
   daysToShow?: number;
   // If provided, the grid will start from this ISO date (YYYY-MM-DD)
   startDateIso?: string;
@@ -41,7 +44,11 @@ interface AttendanceGridProps {
   // Whether user can edit leave reasons
   canEditReasons?: boolean;
   // Callback when leave icon is clicked (for admin to open leave modal)
-  onLeaveIconClick?: (record: AttendanceRecord, type: "student" | "teacher", personName: string) => void;
+  onLeaveIconClick?: (
+    record: AttendanceRecord,
+    type: "student" | "teacher",
+    personName: string,
+  ) => void;
 }
 
 interface HolidayDate {
@@ -75,9 +82,8 @@ export function AttendanceGrid({
 
   // Leave reason modal state
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
-  const [selectedLeaveRecord, setSelectedLeaveRecord] = useState<
-    AttendanceRecord | null
-  >(null);
+  const [selectedLeaveRecord, setSelectedLeaveRecord] =
+    useState<AttendanceRecord | null>(null);
 
   // When props change, update startDate accordingly
   useEffect(() => {
@@ -371,7 +377,9 @@ export function AttendanceGrid({
                                 : "Rejected - Click to edit reason"
                             }
                           >
-                            {record.approval_status === "approved" ? "✅ Approved" : "❌ Rejected"}
+                            {record.approval_status === "approved"
+                              ? "✅ Approved"
+                              : "❌ Rejected"}
                           </button>
                         ) : (
                           // Show info icon for pending leave
@@ -432,7 +440,9 @@ export function AttendanceGrid({
           open={leaveModalOpen}
           onOpenChange={setLeaveModalOpen}
           recordId={selectedLeaveRecord.id || ""}
-          table={type === "student" ? "student_attendance" : "teacher_attendance"}
+          table={
+            type === "student" ? "student_attendance" : "teacher_attendance"
+          }
           type={type}
           name={personName}
           date={selectedLeaveRecord.date}
