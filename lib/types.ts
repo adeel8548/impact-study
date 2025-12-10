@@ -148,6 +148,7 @@ export interface DailyQuiz {
   topic: string;
   quiz_date: string;
   duration_minutes?: number | null;
+  total_marks?: number | null;
   teacher_id?: string | null;
   created_at?: string;
 }
@@ -217,4 +218,26 @@ export interface ExamResult {
   };
   created_at?: string;
   updated_at?: string;
+}
+
+// Quiz Results Management
+export interface QuizResult {
+  id: string;
+  student_id: string;
+  teacher_id: string;
+  quiz_name: string;
+  obtained_marks: number;
+  total_marks: number;
+  quiz_date: string;
+  quiz_duration: number; // in minutes
+  created_at?: string;
+  updated_at?: string;
+  student?: {
+    id: string;
+    name: string;
+  };
+  teacher?: {
+    id: string;
+    name: string;
+  };
 }

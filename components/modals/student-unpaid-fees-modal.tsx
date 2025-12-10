@@ -18,6 +18,12 @@ interface StudentUnpaidFeesModalProps {
   onOpenChange: (open: boolean) => void;
   studentId: string;
   studentName: string;
+  onPaid?: (payload: {
+    studentId: string;
+    month: number;
+    year: number;
+    paidDate: string;
+  }) => void;
 }
 
 interface Fee {
@@ -51,6 +57,7 @@ export function StudentUnpaidFeesModal({
   onOpenChange,
   studentId,
   studentName,
+  onPaid,
 }: StudentUnpaidFeesModalProps) {
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,7 +93,8 @@ export function StudentUnpaidFeesModal({
   ) => {
     setPayingId(feeId);
     try {
-      const paidDate = new Date(year, month - 1, 1).toISOString();
+      // Use the actual payment date (today) instead of the 1st of the fee month
+      const paidDate = new Date().toISOString();
 
       const result = await updateFeeStatus(feeId, "paid", paidDate);
 
@@ -99,6 +107,20 @@ export function StudentUnpaidFeesModal({
             f.id === feeId ? { ...f, status: "paid", paid_date: paidDate } : f,
           ),
         );
+
+        const isCurrentMonth =
+          month === currentMonth && year === currentYear && !!onPaid;
+        if (isCurrentMonth && onPaid) {
+          onPaid({
+            studentId,
+            month,
+            year,
+            paidDate,
+          });
+        }
+
+        // Close modal after successful update
+        onOpenChange(false);
       }
     } catch (error) {
       console.error("Error marking as paid:", error);
@@ -159,7 +181,7 @@ export function StudentUnpaidFeesModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden border border-border shadow-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600" />
@@ -174,7 +196,7 @@ export function StudentUnpaidFeesModal({
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto pr-1 max-h-[78vh]">
             {unpaidCount > 0 && (
               <Card className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
                 <div className="flex justify-between items-center">
@@ -258,11 +280,19 @@ export function StudentUnpaidFeesModal({
                           </div>
 
                           {isPaid ? (
-                            <div className="flex items-center justify-center gap-2 py-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-                              <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                                Paid
-                              </span>
+                            <div className="flex flex-col items-center justify-center gap-1 py-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                  Paid
+                                </span>
+                              </div>
+                              {fee?.paid_date && (
+                                <span className="text-xs text-muted-foreground">
+                                  Paid on{" "}
+                                  {new Date(fee.paid_date).toLocaleDateString()}
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <Button

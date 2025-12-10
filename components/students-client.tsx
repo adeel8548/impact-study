@@ -292,6 +292,9 @@ export function StudentsClientComponent({
                 <th className="text-center p-4 font-semibold text-foreground">
                   Current Fees Status
                 </th>
+                <th className="text-left p-4 font-semibold text-foreground">
+                  Paid Date (Current Month)
+                </th>
                 <th className="text-center p-4 font-semibold text-foreground">
                   All Month Fees
                 </th>
@@ -346,23 +349,30 @@ export function StudentsClientComponent({
                             feeId={student.currentFee.id}
                             studentId={student.id}
                             initialStatus={student.currentFee.status}
+                            initialPaidDate={student.currentFee.paid_date}
                             onStatusChange={() => {
-                              // Refresh the specific student's data
+                              const nowIso = new Date().toISOString();
+                              // Refresh the specific student's data with latest status + paid date when marked paid
                               setStudents(
-                                students.map((s) =>
-                                  s.id === student.id
-                                    ? {
-                                        ...s,
-                                        currentFee: {
-                                          ...s.currentFee,
-                                          status:
-                                            student.currentFee.status === "paid"
-                                              ? "unpaid"
-                                              : "paid",
-                                        },
-                                      }
-                                    : s,
-                                ),
+                                students.map((s) => {
+                                  if (s.id !== student.id || !s.currentFee)
+                                    return s;
+                                  const nextStatus =
+                                    student.currentFee.status === "paid"
+                                      ? "unpaid"
+                                      : "paid";
+                                  return {
+                                    ...s,
+                                    currentFee: {
+                                      ...s.currentFee,
+                                      status: nextStatus,
+                                      paid_date:
+                                        nextStatus === "paid"
+                                          ? nowIso
+                                          : null,
+                                    },
+                                  };
+                                }),
                               );
                             }}
                           />
@@ -372,6 +382,14 @@ export function StudentsClientComponent({
                           No fees set
                         </span>
                       )}
+                    </td>
+                    <td className="p-4 text-foreground whitespace-nowrap">
+                      {student.currentFee?.status === "paid" &&
+                      student.currentFee?.paid_date
+                        ? new Date(
+                            student.currentFee.paid_date,
+                          ).toLocaleDateString()
+                        : "—"}
                     </td>
                     <td className="p-4 text-center">
                       <Button
@@ -480,6 +498,27 @@ export function StudentsClientComponent({
           onOpenChange={setUnpaidFeesModalOpen}
           studentId={selectedStudentForUnpaidFees.id}
           studentName={selectedStudentForUnpaidFees.name}
+          onPaid={({ studentId, paidDate }) => {
+            // Update current-month fee in table state and close modal live
+            setStudents((prev) =>
+              prev.map((s) =>
+                s.id === studentId && s.currentFee
+                  ? {
+                      ...s,
+                      currentFee: {
+                        ...s.currentFee,
+                        status: "paid",
+                        paid_date: paidDate,
+                      },
+                    }
+                  : s,
+              ),
+            );
+            setUnpaidFeesModalOpen(false);
+            setSelectedStudentForUnpaidFees(null);
+            // Full page reload requested after marking paid
+            window.location.reload();
+          }}
         />
       )}
     </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
   const [chapterMaxDraft, setChapterMaxDraft] = useState<
     Record<string, number | "">
   >({});
+  const classesLoadedRef = useRef(false);
 
   const totalMaxMarks = chapters.reduce(
     (sum, ch) => sum + (ch.max_marks || 0),
@@ -110,23 +111,27 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
   // Load classes
   useEffect(() => {
-    // If classes were passed from the server (e.g., teacher limited classes), use them
-    if (prefetchedClasses && prefetchedClasses.length > 0) {
-      setClasses(prefetchedClasses);
-      setSelectedClass(defaultClassId || prefetchedClasses[0].id);
-      setLoading(false);
-      return;
-    }
+    if (classesLoadedRef.current) return;
+    classesLoadedRef.current = true;
 
     const loadClasses = async () => {
       setLoading(true);
       try {
+        let classList: Class[] = prefetchedClasses && prefetchedClasses.length > 0
+          ? prefetchedClasses
+          : [];
+
+        // Always fetch teacher-scoped classes to reflect latest assignments from profiles.class_ids
         const res = await fetch(classEndpoint);
         const data = await res.json();
-        const classList = data.classes || data.data || [];
+        const fetched = data.classes || data.data || [];
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          classList = fetched;
+        }
+
         setClasses(classList);
         if (classList.length > 0) {
-          setSelectedClass(classList[0].id);
+          setSelectedClass(defaultClassId || classList[0].id);
         }
       } catch (error) {
         console.error("Error loading classes:", error);
@@ -365,103 +370,113 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
   })(saveMaxMarks);
 
   const handleSaveAll = async () => {
+    console.log("=== SAVE BUTTON CLICKED ===");
+    console.log("selectedExam:", selectedExam);
+    console.log("students count:", students.length);
+    console.log("chapters count:", chapters.length);
+    
     if (!selectedExam || students.length === 0 || chapters.length === 0) {
+      console.log("Validation failed - missing selection");
       toast.error("Please select class, subject, and exam");
       return;
     }
 
-    // Group marks by student
-    const studentResultsMap = new Map<
-      string,
-      Array<{ chapter_id: string; marks: number }>
-    >();
-    const chapterMaxMap = chapters.reduce<Record<string, number | undefined>>(
-      (acc: Record<string, number | undefined>, chapter: ExamChapter) => {
-        acc[chapter.id] = chapter.max_marks;
-        return acc;
-      },
-      {},
-    );
-    const invalidMarks: string[] = [];
+    console.log("Current marks state:", marks);
+
+    // Prepare all results to save
+    const allResults: Array<{
+      student_id: string;
+      series_exam_id: string;
+      class_id: string;
+      chapter_results: Array<{ chapter_id: string; marks: number }>;
+    }> = [];
 
     students.forEach((student) => {
-      const studentMarks: Array<{ chapter_id: string; marks: number }> = [];
+      const chapterResults: Array<{ chapter_id: string; marks: number }> = [];
 
       chapters.forEach((chapter) => {
         const key = `${student.id}_${chapter.id}`;
         const markValue = marks[key];
-
-        if (markValue !== "" && markValue !== undefined) {
-          const numeric =
-            typeof markValue === "number"
-              ? markValue
-              : parseFloat(String(markValue));
-          const max = chapterMaxMap[chapter.id];
-          if (
-            isNaN(numeric) ||
-            numeric < 0 ||
-            (max !== undefined && numeric > max)
-          ) {
-            invalidMarks.push(`${student.name} - ${chapter.chapter_name}`);
-            return;
+        
+        // Convert to number - treat empty/undefined as 0
+        let markNum = 0;
+        if (markValue !== "" && markValue !== undefined && markValue !== null) {
+          const parsed = typeof markValue === "number" ? markValue : parseFloat(String(markValue));
+          if (Number.isFinite(parsed)) {
+            markNum = parsed;
           }
-          studentMarks.push({
-            chapter_id: chapter.id,
-            marks: numeric,
-          });
         }
+
+        chapterResults.push({
+          chapter_id: chapter.id,
+          marks: markNum,
+        });
       });
 
-      if (studentMarks.length > 0) {
-        studentResultsMap.set(student.id, studentMarks);
-      }
+      allResults.push({
+        student_id: student.id,
+        series_exam_id: selectedExam,
+        class_id: selectedClass,
+        chapter_results: chapterResults,
+      });
     });
 
-    if (invalidMarks.length > 0) {
-      toast.error(
-        `Invalid marks for: ${invalidMarks.slice(0, 3).join(", ")}${
-          invalidMarks.length > 3
-            ? " +" + (invalidMarks.length - 3) + " more"
-            : ""
-        }`,
-      );
-      return;
-    }
+    console.log("Prepared results to save:", allResults);
 
-    if (studentResultsMap.size === 0) {
-      toast.error("No marks entered to save");
+    if (allResults.length === 0) {
+      toast.error("No students to save");
       return;
     }
 
     setSaving(true);
     try {
-      // Save results for each student
-      const promises = Array.from(studentResultsMap.entries()).map(
-        ([studentId, chapterResults]) =>
-          fetch("/api/student-results", {
+      const failedSaves = [];
+      const successfulSaves = [];
+
+      // Save each student's results
+      for (const result of allResults) {
+        console.log(`Saving results for student ${result.student_id}...`);
+        try {
+          const response = await fetch("/api/student-results", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              student_id: studentId,
-              series_exam_id: selectedExam,
-              class_id: selectedClass,
-              chapter_results: chapterResults,
-            }),
-          }),
-      );
+            body: JSON.stringify(result),
+          });
 
-      const responses = await Promise.all(promises);
-      const allSuccess = responses.every((res) => res.ok);
+          console.log(`Response status: ${response.status}, ok: ${response.ok}`);
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`Error saving student ${result.student_id}:`, errorData);
+            failedSaves.push(result.student_id);
+            continue;
+          }
 
-      if (!allSuccess) {
-        throw new Error("Some results failed to save");
+          const responseData = await response.json();
+          console.log(`Successfully saved for student ${result.student_id}:`, responseData);
+          successfulSaves.push(result.student_id);
+        } catch (err) {
+          console.error(`Error saving student ${result.student_id}:`, err);
+          failedSaves.push(result.student_id);
+        }
       }
 
-      toast.success("All results saved successfully!");
-      setMarks({});
+      console.log(`Save complete: ${successfulSaves.length} successful, ${failedSaves.length} failed`);
+
+      if (successfulSaves.length > 0) {
+        toast.success(
+          `Saved results for ${successfulSaves.length} student(s)${
+            failedSaves.length > 0 ? ` (${failedSaves.length} failed)` : ""
+          }`
+        );
+      }
+
+      if (failedSaves.length > 0) {
+        toast.error(`Failed to save ${failedSaves.length} student(s)`);
+      }
     } catch (error) {
-      console.error("Error saving results:", error);
-      toast.error("Failed to save results");
+      console.error("Unexpected error during save:", error);
+      toast.error("An unexpected error occurred while saving");
     } finally {
       setSaving(false);
     }
@@ -744,7 +759,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                 <div className="flex justify-end gap-2">
                   <Button
                     onClick={handleSaveAll}
-                    disabled={saving || Object.keys(marks).length === 0}
+                    disabled={saving || chapters.length === 0 || students.length === 0}
                     className="gap-2"
                   >
                     {saving ? (

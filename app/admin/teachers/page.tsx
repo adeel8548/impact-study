@@ -20,6 +20,7 @@ import { TeacherModal } from "@/components/modals/teacher-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { TeacherSalaryListModal } from "@/components/modals/teacher-salary-list-modal";
 import { TeacherAttendanceViewModal } from "@/components/modals/teacher-attendance-view-modal";
+import { TeacherSalaryHistoryModal } from "@/components/modals/teacher-salary-history-modal";
 import { deleteTeacher } from "@/lib/actions/teacher";
 import { toast } from "sonner";
 import { sortByNewest } from "@/lib/utils";
@@ -106,7 +107,13 @@ export default function TeacherManagement() {
   const [salaryListStatus, setSalaryListStatus] = useState<"paid" | "unpaid">(
     "paid",
   );
+  const [allTeacherSalaries, setAllTeacherSalaries] = useState<
+    Record<string, TeacherSalary[]>
+  >({});
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [salaryHistoryModalOpen, setSalaryHistoryModalOpen] = useState(false);
+  const [selectedTeacherForHistory, setSelectedTeacherForHistory] =
+    useState<Teacher | null>(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -206,6 +213,14 @@ export default function TeacherManagement() {
         return false;
       });
 
+      if (current.length === 0) {
+        // No current-month rows yet; fall back to latest teacher snapshot to avoid zeroing out on month start
+        setSalarySummary(
+          teachers.length > 0 ? summarizeTeachers(teachers) : emptySummary(),
+        );
+        return;
+      }
+
       const summary = current.reduce<SalarySummary>((acc, salary) => {
         const amount = toNumericAmount(salary.amount);
         acc.totalAmount += amount;
@@ -241,6 +256,29 @@ export default function TeacherManagement() {
     } catch (error) {
       console.error("Failed to load salary data:", error);
       toast.error("Failed to load salary data");
+    }
+  };
+
+  const loadAllTeacherSalaries = async () => {
+    try {
+      const res = await fetch(`/api/salaries?allMonths=true`);
+      const json = await res.json();
+      const salaries: TeacherSalary[] = Array.isArray(json.salaries)
+        ? json.salaries
+        : [];
+
+      // Group by teacher_id
+      const grouped: Record<string, TeacherSalary[]> = {};
+      salaries.forEach((salary) => {
+        if (!grouped[salary.teacher_id]) {
+          grouped[salary.teacher_id] = [];
+        }
+        grouped[salary.teacher_id].push(salary);
+      });
+
+      setAllTeacherSalaries(grouped);
+    } catch (error) {
+      console.error("Failed to load all teacher salaries:", error);
     }
   };
 
@@ -515,6 +553,10 @@ export default function TeacherManagement() {
                         onStatusChange={({ status, amount }) =>
                           handleCardStatusChange(teacher.id, amount, status)
                         }
+                        onViewSalaryHistory={() => {
+                          setSelectedTeacherForHistory(teacher);
+                          setSalaryHistoryModalOpen(true);
+                        }}
                         onEdit={() => handleEditTeacher(teacher)}
                         onDelete={() => handleDeleteClick(teacher)}
                         onViewAttendance={() => {
@@ -585,10 +627,74 @@ export default function TeacherManagement() {
       {/* Salary List Modal */}
       <TeacherSalaryListModal
         open={salaryListModalOpen}
-        onOpenChange={setSalaryListModalOpen}
-        status={salaryListStatus}
-        teachers={teachers}
+        onOpenChange={(open) => {
+          setSalaryListModalOpen(open);
+          if (open) {
+            // Load all teacher salaries when modal opens
+            loadAllTeacherSalaries();
+          }
+        }}
+        teachers={teachers.map((t) => ({
+          id: t.id,
+          name: t.name,
+          email: t.email,
+          phone: t.phone,
+          salaries: allTeacherSalaries[t.id] || [],
+        }))}
+        isLoading={isLoading}
+        onTeacherSalaryPaid={async (data) => {
+          // Refresh salary data
+          await loadAllTeacherSalaries();
+          await loadSalaryData();
+          // Update card if current month
+          const teacher = teachers.find((t) => t.id === data.teacherId);
+          if (teacher && data.month === CURRENT_MONTH && data.year === CURRENT_YEAR) {
+            handleCardStatusChange(data.teacherId, teacher.salary?.amount || 0, "paid");
+          }
+        }}
       />
+
+      {selectedTeacherForHistory && (
+        <TeacherSalaryHistoryModal
+          open={salaryHistoryModalOpen}
+          onOpenChange={(open) => {
+            setSalaryHistoryModalOpen(open);
+            if (!open) {
+              setSelectedTeacherForHistory(null);
+            }
+          }}
+          teacherId={selectedTeacherForHistory.id}
+          teacherName={selectedTeacherForHistory.name}
+          onPaid={({ salaryId, paidDate }) => {
+            // Update local card state immediately
+            setTeacherSalaryMap((prev) => {
+              const next = { ...prev };
+              const teacherId = selectedTeacherForHistory.id;
+              const current = next[teacherId];
+              if (current) {
+                next[teacherId] = {
+                  ...current,
+                  status: "paid",
+                  paid_date: paidDate,
+                } as any;
+              }
+              return next;
+            });
+            setTeachers((prev) =>
+              prev.map((t) =>
+                t.id === selectedTeacherForHistory.id && t.salary
+                  ? {
+                      ...t,
+                      salary: { ...t.salary, status: "paid", paid_date: paidDate },
+                    }
+                  : t,
+              ),
+            );
+            // Refresh salary summary without a full page reload
+            loadSalaryData();
+          }}
+        />
+      )}
 
       {/* Attendance View Modal */}
       <TeacherAttendanceViewModal

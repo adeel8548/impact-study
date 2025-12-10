@@ -29,6 +29,14 @@ export async function upsertTeacherSalary({
   const targetYear = year ?? now().getFullYear();
   const targetMonthKey = monthKey(targetYear, targetMonthNum);
 
+  console.log("[upsertTeacherSalary] Input:", {
+    teacherId,
+    targetMonthNum,
+    targetYear,
+    targetMonthKey,
+    toggle,
+  });
+
   // Try to find existing salary row for this teacher and month.
   // Support both new format (month = "YYYY-MM") and older format (numeric month + year)
   const { data: possibleRows, error: fetchError } = await adminClient
@@ -41,6 +49,8 @@ export async function upsertTeacherSalary({
     return { error: fetchError.message };
   }
 
+  console.log("[upsertTeacherSalary] Found rows:", possibleRows);
+
   let existing = undefined as any | undefined;
   if (possibleRows && possibleRows.length > 0) {
     existing = possibleRows.find((r: any) => {
@@ -52,15 +62,24 @@ export async function upsertTeacherSalary({
     });
   }
 
+  console.log("[upsertTeacherSalary] Existing record:", existing);
+
   let nextStatus: SalaryStatus = status ?? existing?.status ?? "unpaid";
   if (toggle && existing) {
     nextStatus = existing.status === "paid" ? "unpaid" : "paid";
   }
 
+  console.log("[upsertTeacherSalary] Next status:", nextStatus);
+
   let error;
 
   if (existing && existing.id) {
-    // Update existing record (only change amount/status)
+    // Update existing record (only change amount/status, keep month/year unchanged)
+    console.log("[upsertTeacherSalary] Updating existing record:", {
+      id: existing.id,
+      newStatus: nextStatus,
+    });
+
     const updateResult = await adminClient
       .from("teacher_salary")
       .update({
@@ -71,8 +90,17 @@ export async function upsertTeacherSalary({
       .eq("id", existing.id);
 
     error = updateResult.error;
+    if (!error) {
+      console.log("[upsertTeacherSalary] Update successful");
+    }
   } else {
     // Insert new record using month key (YYYY-MM)
+    console.log("[upsertTeacherSalary] Creating new record:", {
+      month: targetMonthKey,
+      year: targetYear,
+      status: nextStatus,
+    });
+
     const insertResult = await adminClient.from("teacher_salary").insert({
       teacher_id: teacherId,
       amount,
@@ -83,9 +111,16 @@ export async function upsertTeacherSalary({
     });
 
     error = insertResult.error;
+    if (!error) {
+      console.log("[upsertTeacherSalary] Insert successful");
+    }
   }
 
   if (error) {
+    console.error(
+      `[upsertTeacherSalary] Error for teacher ${teacherId}:`,
+      error.message,
+    );
     return { error: error.message };
   }
 

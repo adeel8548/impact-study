@@ -39,7 +39,7 @@ export function TeacherHeader() {
               {(user.email || "Teacher")
                 .split("@")[0] // @ se pehle ka part
                 .split(" ") // words me split
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // capitalize
+                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)) // capitalize
                 .join(" ")}{" "}
             </h1>
 
@@ -98,17 +98,6 @@ export function TeacherHeader() {
         </Button>
         <Button
           variant="ghost"
-          onClick={() => router.push("/teacher/student-results")}
-          className={`rounded-none border-b-2 ${
-            isActiveStartsWith("/teacher/student-results")
-              ? "text-primary font-semibold border-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Results
-        </Button>
-        <Button
-          variant="ghost"
           onClick={() => router.push("/teacher/my-attendance")}
           className={`rounded-none border-b-2 ${
             isActive("/teacher/my-attendance")
@@ -128,6 +117,39 @@ export function TeacherHeader() {
           }`}
         >
           Quizzes
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/teacher/chapters")}
+          className={`rounded-none border-b-2 ${
+            isActive("/teacher/chapters")
+              ? "text-primary font-semibold border-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent"
+          }`}
+        >
+          Exams Schedule
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/teacher/student-results")}
+          className={`rounded-none border-b-2 ${
+            isActiveStartsWith("/teacher/student-results")
+              ? "text-primary font-semibold border-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent"
+          }`}
+        >
+          Results
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/teacher/quiz-results")}
+          className={`rounded-none border-b-2 ${
+            isActiveStartsWith("/teacher/quiz-results")
+              ? "text-primary font-semibold border-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent"
+          }`}
+        >
+          Quiz Results
         </Button>
       </div>
     </header>

@@ -278,6 +278,7 @@ export default function TeacherSchedulesPage() {
                       }
                       onEdit={undefined}
                       onDelete={undefined}
+                      showChaptersLink={true}
                     />
                   ))}
                 </div>

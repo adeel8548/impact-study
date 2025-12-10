@@ -124,6 +124,14 @@ export default function ExamManagementPage() {
     }
   }, [selectedClass]);
 
+  // reload exams whenever selectedSubject or teacherId changes (so teacher sees only exams
+  // for the selected subject assigned to them)
+  useEffect(() => {
+    if (selectedClass) {
+      loadExams();
+    }
+  }, [selectedSubject, teacherId]);
+
   const loadSubjects = async () => {
     try {
       const res = await fetch(`/api/classes/${selectedClass}/subjects`);
@@ -157,7 +165,12 @@ export default function ExamManagementPage() {
    */
   const loadExams = async () => {
     try {
-      const res = await fetch(`/api/series-exams?classId=${selectedClass}`);
+      // include teacherId and subject text filter so teachers only see relevant series exams
+      const subjectName = subjects.find((s) => s.id === selectedSubject)?.name;
+      const params = new URLSearchParams({ classId: selectedClass });
+      if (teacherId) params.set("teacherId", teacherId);
+      if (subjectName) params.set("subject", subjectName);
+      const res = await fetch(`/api/series-exams?${params.toString()}`);
       const data = await res.json();
       const examList = data.data || [];
       setExams(examList);
@@ -533,98 +546,113 @@ export default function ExamManagementPage() {
                     {selectedChapterData?.chapter_date}
                   </p>
 
-                  {/* Results Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left p-2 font-semibold">
-                            Student Name
-                          </th>
-                          <th className="text-center p-2 font-semibold">
-                            Marks
-                          </th>
-                          <th className="text-center p-2 font-semibold">
-                            Total
-                          </th>
-                          <th className="text-center p-2 font-semibold">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {students.map((student) => {
-                          const result = results.find(
-                            (r) => r.student_id === student.id,
-                          );
-                          const resultId = result?.id || `new_${student.id}`;
-                          const currentMarks =
-                            editingResults[resultId] ?? result?.marks ?? "";
+                  {/* Results Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {students.map((student) => {
+                      const result = results.find(
+                        (r) => r.student_id === student.id,
+                      );
+                      const resultId = result?.id || `new_${student.id}`;
+                      const currentMarks =
+                        editingResults[resultId] ?? result?.marks ?? "";
 
-                          return (
-                            <tr
-                              key={student.id}
-                              className="border-b border-border hover:bg-muted/50"
-                            >
-                              <td className="p-2">{student.name}</td>
-                              <td className="p-2 text-center">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max={selectedChapterData?.max_marks}
-                                  value={
-                                    typeof currentMarks === "number"
-                                      ? currentMarks
-                                      : ""
+                      return (
+                        <Card
+                          key={student.id}
+                          className="p-4 border border-border hover:shadow-md transition-shadow"
+                        >
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Student Name
+                              </p>
+                              <p className="font-semibold text-lg">
+                                {student.name}
+                              </p>
+                            </div>
+
+                            <div>
+                              <Label className="text-sm font-medium">
+                                Marks
+                              </Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max={selectedChapterData?.max_marks}
+                                value={
+                                  typeof currentMarks === "number"
+                                    ? currentMarks
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const newValue = e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : "";
+                                  setEditingResults({
+                                    ...editingResults,
+                                    [resultId]: newValue as number,
+                                  });
+                                }}
+                                onBlur={() => {
+                                  const marksValue = editingResults[resultId];
+                                  if (
+                                    typeof marksValue === "number" &&
+                                    marksValue !== result?.marks
+                                  ) {
+                                    handleSaveMarks(
+                                      student.id,
+                                      result?.id,
+                                      marksValue,
+                                    );
                                   }
-                                  onChange={(e) => {
-                                    const newValue = e.target.value
-                                      ? parseFloat(e.target.value)
-                                      : "";
-                                    setEditingResults({
-                                      ...editingResults,
-                                      [resultId]: newValue as number,
-                                    });
-                                  }}
-                                  onBlur={() => {
-                                    const marksValue = editingResults[resultId];
-                                    if (
-                                      typeof marksValue === "number" &&
-                                      marksValue !== result?.marks
-                                    ) {
-                                      handleSaveMarks(
-                                        student.id,
-                                        result?.id,
-                                        marksValue,
-                                      );
-                                    }
-                                  }}
-                                  className="w-20 text-center"
-                                  placeholder="0"
-                                />
-                              </td>
-                              <td className="p-2 text-center font-medium">
-                                {selectedChapterData?.max_marks}
-                              </td>
-                              <td className="p-2 text-center">
-                                {result && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                      handleDeleteResult(result.id)
-                                    }
-                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                                }}
+                                placeholder="0"
+                                className="w-full"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <p className="text-muted-foreground">
+                                  Total Marks
+                                </p>
+                                <p className="font-semibold text-base">
+                                  {selectedChapterData?.max_marks}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">
+                                  Percentage
+                                </p>
+                                <p className="font-semibold text-base">
+                                  {typeof currentMarks === "number" &&
+                                  selectedChapterData?.max_marks
+                                    ? (
+                                        (currentMarks /
+                                          selectedChapterData.max_marks) *
+                                        100
+                                      ).toFixed(1)
+                                    : "-"}
+                                  %
+                                </p>
+                              </div>
+                            </div>
+
+                            {result && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteResult(result.id)}
+                                className="w-full gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete Result
+                              </Button>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </Card>
               </>
@@ -656,6 +684,20 @@ export default function ExamManagementPage() {
                   <Card className="p-4 space-y-3">
                     <h3 className="font-semibold">New Chapter</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label>Subject</Label>
+                        <select
+                          value={selectedSubject}
+                          onChange={(e) => setSelectedSubject(e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
+                        >
+                          {subjects.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       <div>
                         <Label>Chapter Name</Label>
                         <Input
@@ -714,39 +756,52 @@ export default function ExamManagementPage() {
                         No chapters yet
                       </p>
                     ) : (
-                      chapters.map((chapter) => (
-                        <div
-                          key={chapter.id}
-                          className="flex items-center justify-between p-3 border border-border rounded"
-                        >
-                          <div>
-                            <p className="font-medium">
-                              {chapter.chapter_name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Date: {chapter.chapter_date} | Max Marks:{" "}
-                              {chapter.max_marks}
-                            </p>
+                      chapters.map((chapter) => {
+                        const subjectName =
+                          subjects.find((s) => s.id === (chapter as any).subject_id)?.name ||
+                          selectedSubjectData?.name ||
+                          "—";
+                        return (
+                          <div
+                            key={chapter.id}
+                            className="p-3 border border-border rounded bg-white"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="font-medium text-lg">
+                                  {chapter.chapter_name}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Subject: <span className="font-medium">{subjectName}</span>
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Date: {chapter.chapter_date}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Max Marks: {chapter.max_marks}
+                                </p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setSelectedChapter(chapter.id)}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteChapter(chapter.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setSelectedChapter(chapter.id)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteChapter(chapter.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </Card>

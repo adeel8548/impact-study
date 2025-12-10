@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
@@ -36,6 +36,8 @@ export default function TeacherAttendance() {
   >({});
   const [teacherId, setTeacherId] = useState<string>("");
   const [teacherName, setTeacherName] = useState<string>("");
+  const classesFetchedRef = useRef(false);
+  const attendanceFetchKeyRef = useRef<string | null>(null);
 
   // Leave reason modal state
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
@@ -117,7 +119,10 @@ export default function TeacherAttendance() {
     } else {
       setTeacherId(user.id);
       setTeacherName(user.name || "Teacher");
-      loadTeacherClasses(user.id);
+      if (!classesFetchedRef.current) {
+        classesFetchedRef.current = true;
+        loadTeacherClasses(user.id);
+      }
     }
   }, [router]);
 
@@ -138,11 +143,13 @@ export default function TeacherAttendance() {
   };
 
   useEffect(() => {
-    if (selectedClass) {
-      loadClassStudents();
-      loadAttendance();
-    }
-  }, [selectedClass, selectedDate]);
+    if (!selectedClass || !teacherId) return;
+    const fetchKey = `${selectedClass}-${selectedDate}-${teacherId}`;
+    if (attendanceFetchKeyRef.current === fetchKey) return;
+    attendanceFetchKeyRef.current = fetchKey;
+    loadClassStudents();
+    loadAttendance();
+  }, [selectedClass, selectedDate, teacherId]);
 
   const loadClassStudents = async () => {
     try {

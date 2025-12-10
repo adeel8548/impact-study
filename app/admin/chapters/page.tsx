@@ -44,6 +44,7 @@ export default function ChaptersPage() {
 
   const [chapterName, setChapterName] = useState("");
   const [chapterDate, setChapterDate] = useState("");
+  const [maxMarks, setMaxMarks] = useState<string>("100");
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Check authentication
@@ -134,8 +135,8 @@ export default function ChaptersPage() {
 
   // Save chapter
   const handleSaveChapter = async () => {
-    if (!chapterName.trim() || !chapterDate) {
-      toast.error("Please enter chapter name and date");
+    if (!chapterName.trim() || !chapterDate || !maxMarks.trim()) {
+      toast.error("Please enter chapter name, date, and max marks");
       return;
     }
 
@@ -152,13 +153,14 @@ export default function ChaptersPage() {
             id: editingId,
             chapter_name: chapterName,
             chapter_date: chapterDate,
+            max_marks: Number(maxMarks),
           }
         : {
             exam_id: selectedExam,
             subject_id: selectedSubject,
             chapter_name: chapterName,
             chapter_date: chapterDate,
-            max_marks: 100,
+            max_marks: Number(maxMarks),
           };
 
       const res = await fetch("/api/chapters", {
@@ -203,12 +205,14 @@ export default function ChaptersPage() {
     setEditingId(chapter.id);
     setChapterName(chapter.chapter_name);
     setChapterDate(chapter.chapter_date);
+    setMaxMarks(chapter.max_marks.toString());
   };
 
   const resetForm = () => {
     setEditingId(null);
     setChapterName("");
     setChapterDate("");
+    setMaxMarks("100");
   };
 
   return (
@@ -306,7 +310,7 @@ export default function ChaptersPage() {
               <h3 className="text-lg font-semibold mb-4">
                 {editingId ? "Edit Chapter" : "Add New Chapter"}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <Label htmlFor="chapter-name">Chapter Name</Label>
                   <Input
@@ -324,6 +328,18 @@ export default function ChaptersPage() {
                     type="date"
                     value={chapterDate}
                     onChange={(e) => setChapterDate(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="max-marks">Max Marks</Label>
+                  <Input
+                    id="max-marks"
+                    type="number"
+                    min="1"
+                    value={maxMarks}
+                    onChange={(e) => setMaxMarks(e.target.value)}
+                    placeholder="e.g., 100"
                     className="mt-2"
                   />
                 </div>

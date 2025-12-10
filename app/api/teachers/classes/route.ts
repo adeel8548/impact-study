@@ -22,29 +22,13 @@ export async function GET(request: NextRequest) {
 
     if (profileError) throw profileError;
 
-    const classIds: string[] = (profile?.class_ids as string[]) || [];
+    const classIds: string[] = Array.isArray(profile?.class_ids)
+      ? (profile?.class_ids as string[])
+      : [];
 
+    // If no class assignments are present on the profile, return early
     if (classIds.length === 0) {
-      // Fallback: try to get from teacher_classes junction table
-      const { data: mapping, error } = await adminClient
-        .from("teacher_classes")
-        .select("class_id")
-        .eq("teacher_id", teacherId);
-
-      if (error) throw error;
-
-      const fallbackIds = (mapping || []).map((m) => m.class_id);
-      if (fallbackIds.length === 0) {
-        return NextResponse.json({ success: true, classes: [] });
-      }
-
-      const { data: classes, error: classError } = await adminClient
-        .from("classes")
-        .select("id, name")
-        .in("id", fallbackIds);
-
-      if (classError) throw classError;
-      return NextResponse.json({ success: true, classes: classes ?? [] });
+      return NextResponse.json({ success: true, classes: [] });
     }
 
     // Fetch full class objects with id and name

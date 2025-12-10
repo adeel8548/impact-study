@@ -40,7 +40,7 @@ export function QuizCard({
         </div>
 
         {/* Details Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
           {/* Class */}
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -66,6 +66,16 @@ export function QuizCard({
             </span>
             <span className="text-foreground font-medium">
               {quiz.duration_minutes ? `${quiz.duration_minutes} min` : "—"}
+            </span>
+          </div>
+
+          {/* Total Marks */}
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Marks
+            </span>
+            <span className="text-foreground font-medium">
+              {quiz.total_marks ? `${quiz.total_marks}` : "—"}
             </span>
           </div>
 

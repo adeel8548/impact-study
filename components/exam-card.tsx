@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, BookOpen } from "lucide-react";
 import { NotesDetailModal } from "@/components/modals/notes-detail-modal";
 import type { SeriesExam } from "@/lib/types";
 
@@ -11,8 +12,9 @@ interface ExamCardProps {
   exam: SeriesExam;
   teacherName?: string;
   className?: string;
-  onEdit: (exam: SeriesExam) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (exam: SeriesExam) => void;
+  onDelete?: (id: string) => void;
+  showChaptersLink?: boolean;
 }
 
 export function ExamCard({
@@ -21,6 +23,7 @@ export function ExamCard({
   className = "—",
   onEdit,
   onDelete,
+  showChaptersLink = false,
 }: ExamCardProps) {
   const [showNotesModal, setShowNotesModal] = useState(false);
 
@@ -125,25 +128,41 @@ export function ExamCard({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 justify-end pt-2 border-t border-border">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(exam)}
-              className="gap-2"
-            >
-              <Pencil className="w-4 h-4" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(exam.id)}
-              className="gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </Button>
+          <div className="flex gap-2 justify-end pt-2 border-t border-border flex-wrap">
+            {showChaptersLink && (
+              <Link href={`/teacher/series-exams/${exam.id}/chapters`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Add Chapters
+                </Button>
+              </Link>
+            )}
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(exam)}
+                className="gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(exam.id)}
+                className="gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </Button>
+            )}
           </div>
         </div>
       </Card>

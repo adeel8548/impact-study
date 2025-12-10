@@ -63,6 +63,7 @@ export function AdminSchedulesContent() {
   const [quizTopic, setQuizTopic] = useState("");
   const [quizDate, setQuizDate] = useState(today);
   const [quizDuration, setQuizDuration] = useState("");
+  const [quizTotalMarks, setQuizTotalMarks] = useState("");
   const [quizTeacher, setQuizTeacher] = useState("");
   const [quizEditingId, setQuizEditingId] = useState<string | null>(null);
 
@@ -189,6 +190,7 @@ export function AdminSchedulesContent() {
     setQuizTopic("");
     setQuizDate(today);
     setQuizDuration("");
+    setQuizTotalMarks("");
     setQuizTeacher("");
     setQuizEditingId(null);
   };
@@ -276,6 +278,7 @@ export function AdminSchedulesContent() {
         topic: quizTopic,
         quiz_date: quizDate,
         duration_minutes: quizDuration ? Number(quizDuration) : null,
+        total_marks: quizTotalMarks ? Number(quizTotalMarks) : null,
         teacher_id: quizTeacher || null,
       };
       const method = quizEditingId ? "PUT" : "POST";
@@ -613,13 +616,21 @@ export function AdminSchedulesContent() {
 
             <TabsContent value="quizzes" className="space-y-4">
               <Card className="p-4 space-y-3">
-                <div className="grid md:grid-cols-4 gap-3">
+                <div className="grid md:grid-cols-5 gap-3">
                   <div>
                     <Label>Subject</Label>
-                    <Input
+                    <select
                       value={quizSubject}
                       onChange={(e) => setQuizSubject(e.target.value)}
-                    />
+                      className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
+                    >
+                      <option value="">Select Subject</option>
+                      {subjects.map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <Label>Topic</Label>
@@ -643,6 +654,15 @@ export function AdminSchedulesContent() {
                       min={0}
                       value={quizDuration}
                       onChange={(e) => setQuizDuration(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Total Marks</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={quizTotalMarks}
+                      onChange={(e) => setQuizTotalMarks(e.target.value)}
                     />
                   </div>
                   <div>
@@ -708,6 +728,12 @@ export function AdminSchedulesContent() {
                           quiz.duration_minutes !== null &&
                             quiz.duration_minutes !== undefined
                             ? String(quiz.duration_minutes)
+                            : "",
+                        );
+                        setQuizTotalMarks(
+                          quiz.total_marks !== null &&
+                            quiz.total_marks !== undefined
+                            ? String(quiz.total_marks)
                             : "",
                         );
                         setQuizTeacher(quiz.teacher_id || "");

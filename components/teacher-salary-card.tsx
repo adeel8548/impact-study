@@ -10,6 +10,7 @@ import {
   Edit2,
   Trash2,
   Calendar,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ interface TeacherSalaryCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onViewAttendance?: () => void;
+  onViewSalaryHistory?: () => void;
 }
 
 export function TeacherSalaryCard({
@@ -39,6 +41,7 @@ export function TeacherSalaryCard({
   onEdit,
   onDelete,
   onViewAttendance,
+  onViewSalaryHistory,
 }: TeacherSalaryCardProps) {
   const [status, setStatus] = useState<"paid" | "unpaid">(
     teacher.salary?.status ?? "unpaid",
@@ -61,16 +64,27 @@ export function TeacherSalaryCard({
         body: JSON.stringify({
           teacherId: teacher.id,
           amount: teacher.salary?.amount ?? 0,
+          // Note: month/year should ideally be passed here as well
+          // but card doesn't have this info - it relies on current month
         }),
       });
 
       const json = await response.json();
       if (json?.success && json?.status) {
+        console.log("[TeacherSalaryCard] Status toggled:", {
+          teacherId: teacher.id,
+          newStatus: json.status,
+        });
         setStatus(json.status);
         onStatusChange?.({
           status: json.status,
           amount: salaryAmount,
         });
+      } else {
+        console.error(
+          "[TeacherSalaryCard] Toggle failed:",
+          json?.error || "Unknown error",
+        );
       }
     });
   };
@@ -146,6 +160,15 @@ export function TeacherSalaryCard({
         >
           {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
           Mark {status === "paid" ? "Unpaid" : "Paid"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onViewSalaryHistory}
+          className="p-2"
+          title="View salary history"
+        >
+          <DollarSign className="w-4 h-4" />
         </Button>
         <Button
           size="sm"

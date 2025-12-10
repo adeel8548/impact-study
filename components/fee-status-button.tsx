@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ interface FeeStatusButtonProps {
   feeId: string;
   studentId: string;
   initialStatus: "paid" | "unpaid";
+  initialPaidDate?: string | null;
   onStatusChange?: () => void;
 }
 
@@ -17,16 +18,43 @@ export function FeeStatusButton({
   feeId,
   studentId,
   initialStatus,
+  initialPaidDate = null,
   onStatusChange,
 }: FeeStatusButtonProps) {
   const [status, setStatus] = useState<"paid" | "unpaid">(initialStatus);
   const [loading, setLoading] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [isPaidExpired, setIsPaidExpired] = useState(false);
+  const hasInitializedRef = useRef(false);
 
+  // Initialize once from props to avoid repeated API hits
   useEffect(() => {
-    checkExpiration();
-  }, [feeId]);
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+    if (initialStatus === "paid" && initialPaidDate) {
+      setStatus("paid");
+      const paidDate = new Date(initialPaidDate);
+      const lastOfMonth = new Date(
+        paidDate.getFullYear(),
+        paidDate.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+      const now = new Date();
+      const remaining = Math.ceil(
+        (lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      setDaysRemaining(Math.max(0, remaining));
+      setIsPaidExpired(remaining <= 0);
+    } else {
+      setStatus(initialStatus);
+      setDaysRemaining(null);
+      setIsPaidExpired(false);
+    }
+  }, [initialStatus, initialPaidDate]);
 
   const checkExpiration = async () => {
     const { fee, isPaidExpired: expired } = await getStudentFeeStatus(feeId);
