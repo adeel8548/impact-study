@@ -21,7 +21,11 @@ interface TeacherSalaryCardProps {
     email: string;
     phone?: string;
     class_ids?: string[] | null;
-    salary?: { amount: number; status: "paid" | "unpaid" } | null;
+    salary?: {
+      amount: number;
+      status: "paid" | "unpaid";
+      paid_date?: string;
+    } | null;
   };
   assignedClasses?: Array<{ id: string; name: string }>;
   onStatusChange?: (details: {
@@ -44,7 +48,7 @@ export function TeacherSalaryCard({
   onViewSalaryHistory,
 }: TeacherSalaryCardProps) {
   const [status, setStatus] = useState<"paid" | "unpaid">(
-    teacher.salary?.status ?? "unpaid",
+    teacher.salary?.status ?? "unpaid"
   );
   const [isPending, startTransition] = useTransition();
   const salaryAmount = Number(teacher.salary?.amount ?? 0) || 0;
@@ -52,7 +56,7 @@ export function TeacherSalaryCard({
   useEffect(() => {
     console.log(
       `TeacherSalaryCard for ${teacher.name} received assignedClasses:`,
-      assignedClasses,
+      assignedClasses
     );
   }, [assignedClasses, teacher.name]);
 
@@ -83,7 +87,7 @@ export function TeacherSalaryCard({
       } else {
         console.error(
           "[TeacherSalaryCard] Toggle failed:",
-          json?.error || "Unknown error",
+          json?.error || "Unknown error"
         );
       }
     });
@@ -109,7 +113,7 @@ export function TeacherSalaryCard({
             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold",
             status === "paid"
               ? "bg-emerald-100 text-emerald-700"
-              : "bg-amber-100 text-amber-700",
+              : "bg-amber-100 text-amber-700"
           )}
         >
           {status === "paid" ? (
@@ -130,7 +134,35 @@ export function TeacherSalaryCard({
           PKR {salaryAmount.toLocaleString()}
         </p>
       </div>
+      <div>
+        {/* <div>
+          <p className="text-sm text-muted-foreground">Paid Date</p>
+          <p className="text-2xl font-semibold text-foreground">
+            {(() => {
+              const pd = teacher.salary?.paid_date;
 
+              if (!pd) return "-";
+
+              const paidDate = new Date(pd);
+              const now = new Date();
+
+              // Hide only if date is older than CURRENT month+year
+              const isOlderMonth =
+                paidDate.getFullYear() < now.getFullYear() ||
+                (paidDate.getFullYear() === now.getFullYear() &&
+                  paidDate.getMonth() < now.getMonth());
+
+              if (isOlderMonth) return "-";
+
+              return paidDate.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              });
+            })()}
+          </p>
+        </div> */}
+      </div>
       <div className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">Assigned Classes</p>
         {assignedClasses.length > 0 ? (

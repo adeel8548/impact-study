@@ -6,10 +6,6 @@ export async function GET() {
   const now = new Date();
   const currentMonthNum = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-  const currentMonthKey = `${currentYear}-${String(currentMonthNum).padStart(
-    2,
-    "0",
-  )}`;
 
   try {
     const [teachersRes, salariesRes] = await Promise.all([
@@ -23,7 +19,8 @@ export async function GET() {
         .select(
           "id, teacher_id, amount, status, month, year, updated_at, created_at",
         )
-        .in("month", [currentMonthKey, String(currentMonthNum)]),
+        .eq("month", currentMonthNum)
+        .eq("year", currentYear),
     ]);
 
     if (teachersRes.error) throw teachersRes.error;
@@ -31,14 +28,10 @@ export async function GET() {
 
     const currentMonthSalaries = (salariesRes.data ?? []).filter((row) => {
       if (!row) return false;
-      if (String(row.month) === currentMonthKey) return true;
-      if (
+      return (
         Number(row.month) === currentMonthNum &&
         Number(row.year) === currentYear
-      ) {
-        return true;
-      }
-      return false;
+      );
     });
 
     const salaryMap = new Map(
@@ -68,12 +61,12 @@ export async function GET() {
       (previousSalaries ?? []).forEach((row) => {
         if (!row) return;
         if (fallbackSalaryMap.has(row.teacher_id)) return;
-        // Use the latest known amount but reset status/payed date for the new month
+        // Use the latest known amount but reset status/paid date for the new month
         fallbackSalaryMap.set(row.teacher_id, {
           ...row,
           status: "unpaid",
           paid_date: null,
-          month: currentMonthKey,
+          month: currentMonthNum,
           year: currentYear,
         });
       });

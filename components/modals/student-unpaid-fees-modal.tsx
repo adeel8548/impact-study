@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,14 @@ import { Card } from "@/components/ui/card";
 import { AlertCircle, Loader2, Check, Clock } from "lucide-react";
 import { updateFeeStatus } from "@/lib/actions/fees";
 import { getStudentFees } from "@/lib/actions/fees";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface StudentUnpaidFeesModalProps {
   open: boolean;
@@ -62,6 +70,8 @@ export function StudentUnpaidFeesModal({
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(false);
   const [paying, setPayingId] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   // Fetch student fees when modal opens
   useEffect(() => {
@@ -78,6 +88,14 @@ export function StudentUnpaidFeesModal({
         console.error("Error fetching fees:", result.error);
       } else {
         setFees(result.fees || []);
+        const years = Array.from(
+          new Set((result.fees || []).map((f: Fee) => Number(f.year))),
+        ).sort((a, b) => b - a);
+        if (years.length > 0) {
+          setSelectedYear((current) =>
+            years.includes(current) ? current : Number(years[0]),
+          );
+        }
       }
     } catch (error) {
       console.error("Error fetching fees:", error);
@@ -129,38 +147,52 @@ export function StudentUnpaidFeesModal({
     }
   };
 
-  // Determine the year to display based on current date
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  // If we're in the last months of the year, we might want to show next year's fees
-  // Otherwise show current year
-  let displayYear = currentYear;
+  const allFeesByYear = useMemo(() => {
+    const map = new Map<number, Map<number, Fee>>();
+    fees.forEach((fee) => {
+      if (!map.has(Number(fee.year))) {
+        map.set(Number(fee.year), new Map());
+      }
+      map.get(Number(fee.year))!.set(Number(fee.month), fee);
+    });
+    return map;
+  }, [fees]);
 
-  // Create a map of existing fees for the display year (check both current and next year)
-  const allFeesByYear = new Map<number, Map<number, Fee>>();
-  fees.forEach((fee) => {
-    if (!allFeesByYear.has(fee.year)) {
-      allFeesByYear.set(fee.year, new Map());
+  useEffect(() => {
+    if (!open) return;
+    const yearMap = allFeesByYear.get(selectedYear);
+    if (!yearMap || yearMap.size === 0) {
+      setSelectedMonth(null);
+      return;
     }
-    allFeesByYear.get(fee.year)!.set(fee.month, fee);
-  });
 
-  // Check if we have fees for next year, if so, show next year by default
-  if (allFeesByYear.has(currentYear + 1) && currentMonth >= 11) {
-    displayYear = currentYear + 1;
-  } else if (!allFeesByYear.has(displayYear)) {
-    // If we have fees for current year, show it; otherwise check next year
-    if (allFeesByYear.has(currentYear)) {
-      displayYear = currentYear;
-    } else if (allFeesByYear.size > 0) {
-      // Use the year that has the most recent fees
-      displayYear = Math.max(...allFeesByYear.keys());
+    const unpaidForYear = Array.from(yearMap.values()).filter(
+      (fee) => fee.status === "unpaid",
+    );
+    if (unpaidForYear.length === 0) {
+      setSelectedMonth(null);
+      return;
     }
-  }
 
-  const feeMap = allFeesByYear.get(displayYear) || new Map();
+    const currentMonthFee = unpaidForYear.find(
+      (fee) => Number(fee.month) === currentMonth && Number(fee.year) === selectedYear,
+    );
+    if (currentMonthFee) {
+      setSelectedMonth(Number(currentMonthFee.month));
+      return;
+    }
+
+    const earliest = unpaidForYear
+      .slice()
+      .sort((a, b) => Number(a.month) - Number(b.month))[0];
+    setSelectedMonth(Number(earliest.month));
+  }, [allFeesByYear, selectedYear, open, currentMonth]);
+
+  const feeMap = allFeesByYear.get(selectedYear) || new Map();
 
   // Generate all 12 months for display year
   const monthsData = Array.from({ length: 12 }, (_, i) => {
@@ -168,7 +200,7 @@ export function StudentUnpaidFeesModal({
     const fee = feeMap.get(month);
     return {
       month,
-      year: displayYear,
+      year: selectedYear,
       fee,
       isPaid: fee?.status === "paid",
     };
@@ -179,6 +211,11 @@ export function StudentUnpaidFeesModal({
     .filter((m) => !m.isPaid && m.fee)
     .reduce((sum, m) => sum + (m.fee?.amount || 0), 0);
 
+  const unpaidOptions = monthsData.filter((m) => !m.isPaid && m.fee);
+  const selectedFee = unpaidOptions.find(
+    (m) => Number(m.month) === Number(selectedMonth ?? -1),
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden border border-border shadow-lg">
@@ -186,7 +223,7 @@ export function StudentUnpaidFeesModal({
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600" />
             <span>
-              Fees Overview {displayYear} - {studentName}
+              Fees Overview {selectedYear} - {studentName}
             </span>
           </DialogTitle>
         </DialogHeader>
@@ -197,6 +234,97 @@ export function StudentUnpaidFeesModal({
           </div>
         ) : (
           <div className="space-y-4 overflow-y-auto pr-1 max-h-[78vh]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label>Year</Label>
+                <Select
+                  value={String(selectedYear)}
+                  onValueChange={(val) => setSelectedYear(Number(val))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(allFeesByYear.keys())
+                      .sort((a, b) => b - a)
+                      .map((year) => (
+                        <SelectItem key={year} value={String(year)}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label>Pending Month</Label>
+                <Select
+                  value={selectedMonth ? String(selectedMonth) : ""}
+                  onValueChange={(val) => setSelectedMonth(Number(val))}
+                  disabled={unpaidOptions.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unpaidOptions.map((opt) => (
+                      <SelectItem key={opt.month} value={String(opt.month)}>
+                        {MONTHS[opt.month - 1]} {opt.year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label>Summary</Label>
+                <Card className="p-3 text-sm">
+                  {selectedFee ? (
+                    <>
+                      <div className="font-semibold">
+                        {MONTHS[selectedFee.month - 1]} {selectedFee.year}
+                      </div>
+                      <div className="text-muted-foreground">
+                        Amount: PKR{" "}
+                        {Number(selectedFee.fee?.amount || 0).toLocaleString()}
+                      </div>
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          size="sm"
+                          disabled={!selectedFee.fee || paying === selectedFee.fee?.id}
+                          onClick={() =>
+                            selectedFee.fee &&
+                            handleMarkAsPaid(
+                              selectedFee.fee.id,
+                              selectedFee.month,
+                              selectedFee.year,
+                            )
+                          }
+                          className="gap-2"
+                        >
+                          {paying === selectedFee.fee?.id ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Paying...
+                            </>
+                          ) : (
+                            <>
+                              <Check className="w-3 h-3" />
+                              Pay Selected
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      Select a pending month to pay
+                    </div>
+                  )}
+                </Card>
+              </div>
+            </div>
+
             {unpaidCount > 0 && (
               <Card className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
                 <div className="flex justify-between items-center">
@@ -231,7 +359,7 @@ export function StudentUnpaidFeesModal({
                   All Fees Paid!
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  All months are paid for {displayYear}
+                  All months are paid for {selectedYear}
                 </p>
               </Card>
             )}

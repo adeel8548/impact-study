@@ -44,7 +44,7 @@ export function StudentsClientComponent({
   const classOrderMap = useMemo(() => {
     const map = new Map<string, number>();
     preferredClassOrder.forEach((name, index) =>
-      map.set(normalizeClassName(name), index),
+      map.set(normalizeClassName(name), index)
     );
     return map;
   }, []);
@@ -67,7 +67,7 @@ export function StudentsClientComponent({
 
   const defaultClassId = useMemo(() => {
     const ten = sortedClasses.find(
-      (cls) => normalizeClassName(cls?.name) === normalizeClassName("10th"),
+      (cls) => normalizeClassName(cls?.name) === normalizeClassName("10th")
     )?.id;
     return ten ? String(ten) : "";
   }, [sortedClasses]);
@@ -98,7 +98,7 @@ export function StudentsClientComponent({
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
   const [feesListModalOpen, setFeesListModalOpen] = useState(false);
   const [feesListStatus, setFeesListStatus] = useState<"paid" | "unpaid">(
-    "paid",
+    "paid"
   );
   const [unpaidFeesModalOpen, setUnpaidFeesModalOpen] = useState(false);
   const [selectedStudentForUnpaidFees, setSelectedStudentForUnpaidFees] =
@@ -276,10 +276,10 @@ export function StudentsClientComponent({
                 <th className="text-left p-4 font-semibold text-foreground">
                   Name
                 </th>
-                <th className="text-left p-4 font-semibold text-foreground">
+                <th className="text-left p-4 font-semibold text-foreground whitespace-nowrap">
                   Father Name
                 </th>
-                <th className="text-left p-4 font-semibold text-foreground">
+                <th className="text-left p-4 font-semibold text-foreground whitespace-nowrap">
                   Roll No.
                 </th>
                 <th className="text-left p-4 font-semibold text-foreground">
@@ -289,16 +289,20 @@ export function StudentsClientComponent({
                 <th className="text-left p-4 font-semibold text-foreground">
                   Phone
                 </th>
-                <th className="text-center p-4 font-semibold text-foreground">
-                  Current Fees Status
+                <th className="text-center p-4 font-semibold text-foreground whitespace-nowrap">
+                  Fees Amount
                 </th>
-                <th className="text-left p-4 font-semibold text-foreground">
-                  Paid Date (Current Month)
+                <th className="text-center p-4 font-semibold text-foreground whitespace-nowrap">
+                  Pay Now
                 </th>
-                <th className="text-center p-4 font-semibold text-foreground">
+                <th className="text-left p-4 font-semibold text-foreground whitespace-nowrap">
+                  Paid Date
+                </th>
+
+                {/* <th className="text-center p-4 font-semibold text-foreground">
                   All Month Fees
-                </th>
-                <th className="text-center p-4 font-semibold text-foreground">
+                </th> */}
+                <th className="text-center p-4 font-semibold text-foreground ">
                   Attendance
                 </th>
                 <th className="text-center p-4 font-semibold text-foreground">
@@ -309,7 +313,7 @@ export function StudentsClientComponent({
             <tbody>
               {orderedStudents?.map((student) => {
                 const studentClass = classes?.find(
-                  (c) => c.id === student?.class_id,
+                  (c) => c.id === student?.class_id
                 );
                 return (
                   <tr
@@ -339,12 +343,15 @@ export function StudentsClientComponent({
                     <td className="p-4 text-foreground">
                       {student?.phone || "—"}
                     </td>
+                    <td className="p-4 text-foreground">
+                      {student?.currentFee?.amount || "—"}
+                    </td>
                     <td className="p-4">
                       {student.currentFee ? (
                         <div className="flex flex-col ">
-                          <span className="font-medium text-foreground">
+                          {/* <span className="font-medium text-foreground">
                             PKR {student.currentFee.amount}
-                          </span>
+                          </span> */}
                           <FeeStatusButton
                             feeId={student.currentFee.id}
                             studentId={student.id}
@@ -367,12 +374,10 @@ export function StudentsClientComponent({
                                       ...s.currentFee,
                                       status: nextStatus,
                                       paid_date:
-                                        nextStatus === "paid"
-                                          ? nowIso
-                                          : null,
+                                        nextStatus === "paid" ? nowIso : null,
                                     },
                                   };
-                                }),
+                                })
                               );
                             }}
                           />
@@ -387,11 +392,11 @@ export function StudentsClientComponent({
                       {student.currentFee?.status === "paid" &&
                       student.currentFee?.paid_date
                         ? new Date(
-                            student.currentFee.paid_date,
+                            student.currentFee.paid_date
                           ).toLocaleDateString()
                         : "—"}
                     </td>
-                    <td className="p-4 text-center">
+                    {/* <td className="p-4 text-center">
                       <Button
                         size="sm"
                         variant="outline"
@@ -404,7 +409,7 @@ export function StudentsClientComponent({
                       >
                         View Fees
                       </Button>
-                    </td>
+                    </td> */}
                     <td className="p-4 text-center">
                       <Button
                         size="sm"
@@ -487,7 +492,7 @@ export function StudentsClientComponent({
           studentId={selectedStudentForAttendance.id}
           studentName={selectedStudentForAttendance.name}
           studentClass={classes.find(
-            (c) => c.id === (selectedStudentForAttendance as any).class_id,
+            (c) => c.id === (selectedStudentForAttendance as any).class_id
           )}
         />
       )}
@@ -511,8 +516,8 @@ export function StudentsClientComponent({
                         paid_date: paidDate,
                       },
                     }
-                  : s,
-              ),
+                  : s
+              )
             );
             setUnpaidFeesModalOpen(false);
             setSelectedStudentForUnpaidFees(null);

@@ -13,9 +13,6 @@ interface UpsertTeacherSalaryOptions {
 
 const now = () => new Date();
 
-const monthKey = (year: number, month: number) =>
-  `${year}-${String(month).padStart(2, "0")}`;
-
 export async function upsertTeacherSalary({
   teacherId,
   amount,
@@ -27,23 +24,21 @@ export async function upsertTeacherSalary({
   const adminClient = await createAdminClient();
   const targetMonthNum = month ?? now().getMonth() + 1;
   const targetYear = year ?? now().getFullYear();
-  const targetMonthKey = monthKey(targetYear, targetMonthNum);
 
   console.log("[upsertTeacherSalary] Input:", {
     teacherId,
     targetMonthNum,
     targetYear,
-    targetMonthKey,
     toggle,
   });
 
-  // Try to find existing salary row for this teacher and month.
-  // Support both new format (month = "YYYY-MM") and older format (numeric month + year)
+  // Find existing salary row for this teacher and month
   const { data: possibleRows, error: fetchError } = await adminClient
     .from("teacher_salary")
     .select("id, month, year, status")
     .eq("teacher_id", teacherId)
-    .in("month", [targetMonthKey, String(targetMonthNum)]);
+    .eq("month", targetMonthNum)
+    .eq("year", targetYear);
 
   if (fetchError) {
     return { error: fetchError.message };
@@ -51,16 +46,7 @@ export async function upsertTeacherSalary({
 
   console.log("[upsertTeacherSalary] Found rows:", possibleRows);
 
-  let existing = undefined as any | undefined;
-  if (possibleRows && possibleRows.length > 0) {
-    existing = possibleRows.find((r: any) => {
-      if (!r) return false;
-      if (String(r.month) === targetMonthKey) return true;
-      if (Number(r.month) === targetMonthNum && Number(r.year) === targetYear)
-        return true;
-      return false;
-    });
-  }
+  const existing = possibleRows && possibleRows.length > 0 ? possibleRows[0] : undefined;
 
   console.log("[upsertTeacherSalary] Existing record:", existing);
 
@@ -74,7 +60,7 @@ export async function upsertTeacherSalary({
   let error;
 
   if (existing && existing.id) {
-    // Update existing record (only change amount/status, keep month/year unchanged)
+    // Update existing record
     console.log("[upsertTeacherSalary] Updating existing record:", {
       id: existing.id,
       newStatus: nextStatus,
@@ -94,10 +80,9 @@ export async function upsertTeacherSalary({
       console.log("[upsertTeacherSalary] Update successful");
     }
   } else {
-    // Insert new record using month key (YYYY-MM)
+    // Insert new record
     console.log("[upsertTeacherSalary] Creating new record:", {
-      month: targetMonthKey,
-      year: targetYear,
+      month: targetMonthNum,
       status: nextStatus,
     });
 
@@ -106,7 +91,7 @@ export async function upsertTeacherSalary({
       amount,
       status: nextStatus,
       paid_date: nextStatus === "paid" ? now().toISOString() : null,
-      month: targetMonthKey,
+      month: targetMonthNum,
       year: targetYear,
     });
 
@@ -132,13 +117,13 @@ export async function resetTeacherSalariesToUnpaid(
   year = now().getFullYear(),
 ) {
   const adminClient = await createAdminClient();
-  const targetMonthKey = monthKey(year, month);
 
-  // Find rows that match new month key or legacy numeric month+year
+  // Find rows that match this month/year
   const { data: rows, error: fetchErr } = await adminClient
     .from("teacher_salary")
-    .select("id, month, year, status")
-    .in("month", [targetMonthKey, String(month)])
+    .select("id, status")
+    .eq("month", month)
+    .eq("year", year)
     .eq("status", "paid");
 
   if (fetchErr) {
@@ -149,11 +134,7 @@ export async function resetTeacherSalariesToUnpaid(
   if (rows && rows.length > 0) {
     for (const r of rows) {
       if (!r) continue;
-      if (String(r.month) === targetMonthKey) {
-        idsToReset.push(r.id);
-      } else if (Number(r.month) === month && Number(r.year) === year) {
-        idsToReset.push(r.id);
-      }
+      idsToReset.push(r.id);
     }
   }
 

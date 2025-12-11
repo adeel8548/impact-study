@@ -175,6 +175,7 @@ export default function TeacherManagement() {
             status: teacher.salary.status,
             month: CURRENT_MONTH,
             year: CURRENT_YEAR,
+            paid_date: teacher.salary.paid_date,
           };
         }
       });
@@ -200,17 +201,12 @@ export default function TeacherManagement() {
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      const currentMonthKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
       const current = salaries.filter((salary) => {
         if (!salary) return false;
-        if (String(salary.month) === currentMonthKey) return true;
-        if (
+        return (
           Number(salary.month) === currentMonth &&
           Number(salary.year) === currentYear
-        ) {
-          return true;
-        }
-        return false;
+        );
       });
 
       if (current.length === 0) {
