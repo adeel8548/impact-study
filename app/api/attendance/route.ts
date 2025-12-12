@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
+import { isTeacherInchargeOfClass } from "@/lib/server/teacher-permissions";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -10,6 +11,17 @@ export async function GET(request: NextRequest) {
   const endDate = request.nextUrl.searchParams.get("endDate");
 
   try {
+    // If classId is provided and teacherId is provided, verify the teacher is incharge of this class
+    if (classId && teacherId) {
+      const isIncharge = await isTeacherInchargeOfClass(teacherId, classId);
+      if (!isIncharge) {
+        return NextResponse.json(
+          { error: "Unauthorized: Teacher is not incharge of this class", success: false },
+          { status: 403 }
+        );
+      }
+    }
+
     let query = supabase.from("student_attendance").select("*");
 
     if (studentId) {
@@ -50,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { records } = body;
+    const { records, teacherId } = body;
 
     if (!records || !Array.isArray(records)) {
       return NextResponse.json(
@@ -60,6 +72,20 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    // Verify teacher is incharge of the class being marked for attendance
+    if (records.length > 0 && teacherId) {
+      const firstRecord = records[0];
+      if (firstRecord.class_id) {
+        const isIncharge = await isTeacherInchargeOfClass(teacherId, firstRecord.class_id);
+        if (!isIncharge) {
+          return NextResponse.json(
+            { error: "Unauthorized: Teacher is not incharge of this class", success: false },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     // First, delete existing attendance records for these students/teachers on these dates

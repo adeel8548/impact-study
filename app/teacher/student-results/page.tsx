@@ -16,7 +16,7 @@ export default async function TeacherStudentResultsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, class_ids")
+    .select("role")
     .eq("id", user.id)
     .single();
 
@@ -24,7 +24,16 @@ export default async function TeacherStudentResultsPage() {
     redirect("/admin");
   }
 
-  const classIds = (profile?.class_ids || []) as string[];
+  // Get only classes where teacher has assigned subjects (for results marking)
+  const { data: assignments = [] } = await supabase
+    .from("assign_subjects")
+    .select("class_id")
+    .eq("teacher_id", user.id);
+
+  const classIds = Array.from(
+    new Set(assignments.map((a: any) => a.class_id))
+  ) as string[];
+
   const { data: classes = [] } = classIds.length
     ? await supabase.from("classes").select("id, name").in("id", classIds)
     : { data: [] };

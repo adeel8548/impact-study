@@ -5,8 +5,23 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const teacherId = searchParams.get("teacherId");
+  const ids = searchParams.get("ids");
 
   try {
+    // If specific ids are provided, fetch those classes
+    if (ids) {
+      const idArray = ids.split(",").filter(Boolean);
+      if (idArray.length > 0) {
+        const { data, error } = await supabase
+          .from("classes")
+          .select("*")
+          .in("id", idArray);
+
+        if (error) throw error;
+        return NextResponse.json({ classes: data || [], success: true });
+      }
+    }
+
     // If teacherId is provided, use the junction table `teacher_classes` to fetch assigned classes
     if (teacherId) {
       const { data: tcData, error: tcErr } = await supabase

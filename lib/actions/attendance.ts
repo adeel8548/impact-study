@@ -19,6 +19,39 @@ export async function markStudentAttendance(
     return { error: "Not authenticated" };
   }
 
+  // Only allow teachers to mark attendance for classes they are incharge of.
+  // Admins or other roles can bypass this check.
+  const { data: requesterProfile } = await supabase
+    .from("profiles")
+    .select("role, incharge_class_ids, incharge_class_id, class_ids")
+    .eq("id", user.id)
+    .single();
+
+  const role = requesterProfile?.role || null;
+  if (role === "teacher") {
+    const inchargeArr: string[] = Array.isArray(
+      requesterProfile?.incharge_class_ids,
+    )
+      ? (requesterProfile?.incharge_class_ids as string[])
+      : [];
+    const legacySingle = requesterProfile?.incharge_class_id
+      ? [String(requesterProfile.incharge_class_id)]
+      : [];
+    const legacyClassIds: string[] = Array.isArray(requesterProfile?.class_ids)
+      ? (requesterProfile?.class_ids as string[])
+      : [];
+
+    const allowed = new Set<string>([
+      ...inchargeArr,
+      ...legacySingle,
+      ...legacyClassIds,
+    ].filter(Boolean));
+
+    if (!allowed.has(classId)) {
+      return { error: "Not authorized to mark attendance for this class" };
+    }
+  }
+
   // If status is null, delete the record instead of upserting
   if (status === null) {
     const { error } = await supabase

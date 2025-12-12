@@ -25,6 +25,20 @@ export default async function TeacherQuizResultsPage() {
     redirect("/admin");
   }
 
+  // Get only classes where teacher has assigned subjects (for quiz results)
+  const { data: assignments = [] } = await supabase
+    .from("assign_subjects")
+    .select("class_id")
+    .eq("teacher_id", user.id);
+
+  const classIds = Array.from(
+    new Set(assignments.map((a: any) => a.class_id))
+  ) as string[];
+
+  const { data: classes = [] } = classIds.length
+    ? await supabase.from("classes").select("id, name").in("id", classIds)
+    : { data: [] };
+
   return (
     <div className="min-h-screen bg-background">
       <TeacherHeader />
@@ -41,7 +55,7 @@ export default async function TeacherQuizResultsPage() {
           </div>
         </div>
 
-        <QuizResultsClient teacherId={user.id} role="teacher" />
+        <QuizResultsClient teacherId={user.id} role="teacher" prefetchedClasses={classes} />
       </div>
     </div>
   );

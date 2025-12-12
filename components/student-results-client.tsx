@@ -150,9 +150,13 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     const loadSubjects = async () => {
       try {
         // Get unique subjects from series exams for this class
-        const res = await fetch(`/api/series-exams?classId=${selectedClass}`);
+        const teacherParam = teacherId ? `&teacherId=${teacherId}` : "";
+        const res = await fetch(
+          `/api/series-exams?classId=${selectedClass}${teacherParam}`,
+        );
         const data = await res.json();
         const examsData: SeriesExam[] = data.data || [];
+        console.debug("[StudentResultsClient] loadSubjects for class", selectedClass, "teacher", teacherId, "exams returned", examsData.length);
 
         // Extract unique subjects
         const uniqueSubjects = Array.from(

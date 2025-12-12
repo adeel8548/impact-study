@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  isTeacherAssignedToSubject,
+  getTeacherAssignedSubjects,
+} from "@/lib/server/teacher-permissions";
 
 /**
  * GET - Fetch student results
@@ -7,18 +11,20 @@ import { NextRequest, NextResponse } from "next/server";
  * - studentId: Filter results by student
  * - seriesExamId: Filter results by series exam
  * - classId: Filter results by class
+ * - teacherId: (optional) If provided, only return results for subjects teacher is assigned to
  */
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const studentId = request.nextUrl.searchParams.get("studentId");
   const seriesExamId = request.nextUrl.searchParams.get("seriesExamId");
   const classId = request.nextUrl.searchParams.get("classId");
+  const teacherId = request.nextUrl.searchParams.get("teacherId");
 
   try {
     let query = supabase.from("student_results").select(`
         *,
         student:students(id, name),
-        chapter:exam_chapters(id, chapter_name, max_marks)
+        chapter:exam_chapters(id, chapter_name, max_marks, subject_id)
       `);
 
     if (studentId) query = query.eq("student_id", studentId);
@@ -30,7 +36,17 @@ export async function GET(request: NextRequest) {
     });
     if (error) throw error;
 
-    return NextResponse.json({ data: data || [], success: true });
+    // If teacherId is provided, filter results to only those where teacher is assigned to the subject
+    let filteredData = data || [];
+    if (teacherId && filteredData.length > 0) {
+      const assignedSubjects = await getTeacherAssignedSubjects(teacherId);
+      filteredData = filteredData.filter((result: any) => {
+        const subjectId = result.chapter?.subject_id;
+        return subjectId && assignedSubjects.includes(subjectId);
+      });
+    }
+
+    return NextResponse.json({ data: filteredData, success: true });
   } catch (error) {
     console.error("Error fetching student results:", error);
     return NextResponse.json(
@@ -51,7 +67,8 @@ export async function GET(request: NextRequest) {
  *   student_id: string,
  *   series_exam_id: string,
  *   class_id: string,
- *   chapter_results: [{ chapter_id: string, marks: number }]
+ *   chapter_results: [{ chapter_id: string, marks: number }],
+ *   teacherId: string (optional) - for permission check
  * }
  */
 export async function POST(request: NextRequest) {

@@ -16,6 +16,7 @@ import type { ExamChapter, ExamResult, SeriesExam } from "@/lib/types";
 type ClassOption = { id: string; name: string };
 type StudentOption = { id: string; name: string };
 type SubjectOption = { id: string; name: string };
+type Assignment = { class_id: string; subject_id: string; subject_name?: string | null };
 
 /**
  * Exam Management Page
@@ -45,6 +46,7 @@ export default function ExamManagementPage() {
   // Dropdowns and selections
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [students, setStudents] = useState<StudentOption[]>([]);
@@ -87,6 +89,7 @@ export default function ExamManagementPage() {
     setTeacherId(user.id);
     setTeacherName(user.name || "Teacher");
     loadClasses(user.id);
+    loadAssignments(user.id);
   }, [router]);
 
   // ============================================
@@ -114,15 +117,35 @@ export default function ExamManagementPage() {
   };
 
   /**
+   * Load subject assignments for the teacher (class + subject pairs)
+   */
+  const loadAssignments = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/teachers/${userId}/assignments`);
+      const json = await res.json();
+      const list: Assignment[] = Array.isArray(json.assignments)
+        ? json.assignments.map((a: any) => ({
+            class_id: a.class_id,
+            subject_id: a.subject_id,
+            subject_name: a.subject_name,
+          }))
+        : [];
+      setAssignments(list);
+    } catch (error) {
+      console.error("Error loading assignments:", error);
+    }
+  };
+
+  /**
    * Load subjects for the selected class
    */
   useEffect(() => {
     if (selectedClass) {
       loadSubjects();
-      loadExams();
       loadStudents();
+      // exams are refreshed when subjects/teacher change
     }
-  }, [selectedClass]);
+  }, [selectedClass, assignments]);
 
   // reload exams whenever selectedSubject or teacherId changes (so teacher sees only exams
   // for the selected subject assigned to them)
@@ -134,11 +157,26 @@ export default function ExamManagementPage() {
 
   const loadSubjects = async () => {
     try {
-      const res = await fetch(`/api/classes/${selectedClass}/subjects`);
-      const data = await res.json();
-      setSubjects(data.subjects || []);
-      if (data.subjects && data.subjects.length > 0) {
-        setSelectedSubject(data.subjects[0].id);
+      // Restrict to subjects assigned to this teacher for the selected class
+      const assignedForClass = assignments.filter(
+        (a) => a.class_id === selectedClass,
+      );
+
+      const uniqueSubjects: SubjectOption[] = Array.from(
+        new Map(
+          assignedForClass.map((a) => [
+            a.subject_id,
+            { id: a.subject_id, name: a.subject_name || "Subject" },
+          ]),
+        ).values(),
+      );
+
+      setSubjects(uniqueSubjects);
+
+      if (uniqueSubjects.length > 0) {
+        setSelectedSubject(uniqueSubjects[0].id);
+      } else {
+        setSelectedSubject("");
       }
     } catch (error) {
       console.error("Error loading subjects:", error);
@@ -164,6 +202,12 @@ export default function ExamManagementPage() {
    * Load series exams for the class
    */
   const loadExams = async () => {
+    if (!selectedClass || !selectedSubject) {
+      setExams([]);
+      setSelectedExam("");
+      return;
+    }
+
     try {
       // include teacherId and subject text filter so teachers only see relevant series exams
       const subjectName = subjects.find((s) => s.id === selectedSubject)?.name;
@@ -176,6 +220,8 @@ export default function ExamManagementPage() {
       setExams(examList);
       if (examList.length > 0) {
         setSelectedExam(examList[0].id);
+      } else {
+        setSelectedExam("");
       }
     } catch (error) {
       console.error("Error loading exams:", error);

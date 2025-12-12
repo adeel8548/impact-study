@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { TeacherModal } from "@/components/modals/teacher-modal";
+import { TeacherAssignmentsModal } from "@/components/modals/teacher-assignments-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { TeacherSalaryListModal } from "@/components/modals/teacher-salary-list-modal";
 import { TeacherAttendanceViewModal } from "@/components/modals/teacher-attendance-view-modal";
@@ -113,6 +114,9 @@ export default function TeacherManagement() {
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [salaryHistoryModalOpen, setSalaryHistoryModalOpen] = useState(false);
   const [selectedTeacherForHistory, setSelectedTeacherForHistory] =
+    useState<Teacher | null>(null);
+  const [assignmentsModalOpen, setAssignmentsModalOpen] = useState(false);
+  const [selectedTeacherForAssignments, setSelectedTeacherForAssignments] =
     useState<Teacher | null>(null);
 
   useEffect(() => {
@@ -541,11 +545,18 @@ export default function TeacherManagement() {
                       ? { ...teacher, salary: resolvedSalary }
                       : teacher;
 
+                    const inchargeClasses = (teacher as any).incharge_class_ids && Array.isArray((teacher as any).incharge_class_ids)
+                      ? classes.filter((c) => (teacher as any).incharge_class_ids.includes(c.id))
+                      : (teacher as any).incharge_class_id
+                      ? [(classes.find((c) => c.id === (teacher as any).incharge_class_id) || null)].filter(Boolean)
+                      : [];
+
                     return (
                       <TeacherSalaryCard
                         key={teacher.id}
                         teacher={teacherWithResolvedSalary}
                         assignedClasses={getAssignedClasses(teacher)}
+                        inchargeClasses={inchargeClasses}
                         onStatusChange={({ status, amount }) =>
                           handleCardStatusChange(teacher.id, amount, status)
                         }
@@ -558,6 +569,10 @@ export default function TeacherManagement() {
                         onViewAttendance={() => {
                           setSelectedTeacher(teacher);
                           setAttendanceModalOpen(true);
+                        }}
+                        onViewAssignments={() => {
+                          setSelectedTeacherForAssignments(teacher);
+                          setAssignmentsModalOpen(true);
                         }}
                       />
                     );
@@ -689,6 +704,18 @@ export default function TeacherManagement() {
             // Refresh salary summary without a full page reload
             loadSalaryData();
           }}
+        />
+      )}
+
+      {selectedTeacherForAssignments && (
+        <TeacherAssignmentsModal
+          open={assignmentsModalOpen}
+          onOpenChange={(open) => {
+            setAssignmentsModalOpen(open);
+            if (!open) setSelectedTeacherForAssignments(null);
+          }}
+          teacherId={selectedTeacherForAssignments.id}
+          teacherName={selectedTeacherForAssignments.name}
         />
       )}
 

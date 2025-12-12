@@ -4,9 +4,49 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Bell } from "lucide-react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
+import { useEffect, useState } from "react";
+
 export function TeacherHeader() {
   const router = useRouter();
   const pathname = usePathname();
+  const [hasInchargeClasses, setHasInchargeClasses] = useState(false);
+  const [hasAssignedSubjects, setHasAssignedSubjects] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const user =
+          typeof window !== "undefined"
+            ? JSON.parse(localStorage.getItem("currentUser") || "{}")
+            : {};
+
+        if (!user.id) {
+          setLoading(false);
+          return;
+        }
+
+        // Fetch teacher's incharge_class_ids and assigned subjects
+        const res = await fetch(`/api/teachers/${user.id}/permissions`);
+        const json = await res.json();
+
+        setHasInchargeClasses(
+          Array.isArray(json.incharge_class_ids) &&
+            json.incharge_class_ids.length > 0
+        );
+        setHasAssignedSubjects(
+          Array.isArray(json.assigned_subjects) &&
+            json.assigned_subjects.length > 0
+        );
+      } catch (err) {
+        console.error("Failed to fetch teacher permissions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
@@ -74,28 +114,36 @@ export function TeacherHeader() {
         >
           Dashboard
         </Button>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/teacher/classes")}
-          className={`rounded-none border-b-2 ${
-            isActive("/teacher/classes")
-              ? "text-primary font-semibold border-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Classes
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/teacher/attendance")}
-          className={`rounded-none border-b-2 ${
-            isActive("/teacher/attendance")
-              ? "text-primary font-semibold border-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Attendance
-        </Button>
+
+        {/* Show Classes & Attendance only if teacher is incharge of classes */}
+        {hasInchargeClasses && (
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/teacher/classes")}
+              className={`rounded-none border-b-2 ${
+                isActive("/teacher/classes")
+                  ? "text-primary font-semibold border-primary"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
+              }`}
+            >
+              Classes
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/teacher/attendance")}
+              className={`rounded-none border-b-2 ${
+                isActive("/teacher/attendance")
+                  ? "text-primary font-semibold border-primary"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
+              }`}
+            >
+              Attendance
+            </Button>
+          </>
+        )}
+
+        {/* My Attendance - always visible */}
         <Button
           variant="ghost"
           onClick={() => router.push("/teacher/my-attendance")}
@@ -107,50 +155,56 @@ export function TeacherHeader() {
         >
           My Attendance
         </Button>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/teacher/schedules?tab=quizzes")}
-          className={`rounded-none border-b-2 ${
-            isActiveStartsWith("/teacher/schedules")
-              ? "text-primary font-semibold border-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Quizzes
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/teacher/chapters")}
-          className={`rounded-none border-b-2 ${
-            isActive("/teacher/chapters")
-              ? "text-primary font-semibold border-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Exams Schedule
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/teacher/student-results")}
-          className={`rounded-none border-b-2 ${
-            isActiveStartsWith("/teacher/student-results")
-              ? "text-primary font-semibold border-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Results
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/teacher/quiz-results")}
-          className={`rounded-none border-b-2 ${
-            isActiveStartsWith("/teacher/quiz-results")
-              ? "text-primary font-semibold border-primary"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Quiz Results
-        </Button>
+
+        {/* Show Quizzes, Exams, Results only if teacher has assigned subjects */}
+        {hasAssignedSubjects && (
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/teacher/schedules?tab=quizzes")}
+              className={`rounded-none border-b-2 ${
+                isActiveStartsWith("/teacher/schedules")
+                  ? "text-primary font-semibold border-primary"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
+              }`}
+            >
+              Quizzes
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/teacher/chapters")}
+              className={`rounded-none border-b-2 ${
+                isActive("/teacher/chapters")
+                  ? "text-primary font-semibold border-primary"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
+              }`}
+            >
+              Exams Schedule
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/teacher/student-results")}
+              className={`rounded-none border-b-2 ${
+                isActiveStartsWith("/teacher/student-results")
+                  ? "text-primary font-semibold border-primary"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
+              }`}
+            >
+              Results
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/teacher/quiz-results")}
+              className={`rounded-none border-b-2 ${
+                isActiveStartsWith("/teacher/quiz-results")
+                  ? "text-primary font-semibold border-primary"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
+              }`}
+            >
+              Quiz Results
+            </Button>
+          </>
+        )}
       </div>
     </header>
   );

@@ -28,6 +28,9 @@ interface TeacherSalaryCardProps {
     } | null;
   };
   assignedClasses?: Array<{ id: string; name: string }>;
+  // new prop to open assignments modal
+  onViewAssignments?: () => void;
+  inchargeClasses?: Array<{ id: string; name: string }>;
   onStatusChange?: (details: {
     status: "paid" | "unpaid";
     amount: number;
@@ -41,11 +44,13 @@ interface TeacherSalaryCardProps {
 export function TeacherSalaryCard({
   teacher,
   assignedClasses = [],
+  inchargeClasses = [],
   onStatusChange,
   onEdit,
   onDelete,
   onViewAttendance,
   onViewSalaryHistory,
+  onViewAssignments,
 }: TeacherSalaryCardProps) {
   const [status, setStatus] = useState<"paid" | "unpaid">(
     teacher.salary?.status ?? "unpaid"
@@ -135,6 +140,16 @@ export function TeacherSalaryCard({
         </p>
       </div>
       <div>
+         <p className="text-sm text-muted-foreground">Assign Subjects</p>
+          <Button
+          size="sm"
+          variant="outline"
+          onClick={onViewAssignments}
+          className="p-2"
+          title="View assignments"
+        >
+          View
+        </Button>
         {/* <div>
           <p className="text-sm text-muted-foreground">Paid Date</p>
           <p className="text-2xl font-semibold text-foreground">
@@ -164,22 +179,17 @@ export function TeacherSalaryCard({
         </div> */}
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-sm text-muted-foreground">Assigned Classes</p>
-        {assignedClasses.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {assignedClasses.map((cls) => (
-              <span
-                key={cls.id}
-                className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded"
-              >
-                {cls.name}
+        <p className="text-sm text-muted-foreground">Incharge Class(es)</p>
+        {inchargeClasses && inchargeClasses.length > 0 ? (
+          <div className="flex gap-2">
+            {inchargeClasses.map((c) => (
+              <span key={c.id} className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                {c.name}
               </span>
             ))}
           </div>
         ) : (
-          <p className="text-xs text-red-600 dark:text-red-400">
-            No classes assigned
-          </p>
+          <p className="text-xs text-red-600 dark:text-red-400">No incharge class</p>
         )}
       </div>
 
@@ -202,6 +212,7 @@ export function TeacherSalaryCard({
         >
           <DollarSign className="w-4 h-4" />
         </Button>
+      
         <Button
           size="sm"
           variant="outline"

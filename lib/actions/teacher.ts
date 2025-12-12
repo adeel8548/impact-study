@@ -29,6 +29,8 @@ export async function createTeacher(teacherData: {
   password: string;
   class_ids: string[];
   salary?: number;
+  incharge_class_ids?: string[] | null;
+  assign_subjects?: Array<{ class_id: string; subject_id: string }>;
 }) {
   const adminClient = await createAdminClient();
   const supabase = await createClient();
@@ -62,6 +64,7 @@ export async function createTeacher(teacherData: {
       role: "teacher",
       school_id: "00000000-0000-0000-0000-000000000000",
       class_ids: teacherData.class_ids || [],
+      incharge_class_ids: teacherData.incharge_class_ids || null,
     })
     .select()
     .single();
@@ -84,6 +87,26 @@ export async function createTeacher(teacherData: {
     });
   }
 
+  // Persist assigned subjects if provided
+  if (
+    Array.isArray(teacherData.assign_subjects) &&
+    teacherData.assign_subjects.length > 0
+  ) {
+    const insertRows = teacherData.assign_subjects.map((s) => ({
+      teacher_id: teacherId,
+      class_id: s.class_id,
+      subject_id: s.subject_id,
+    }));
+
+    const { error: assignErr } = await adminClient
+      .from("assign_subjects")
+      .insert(insertRows);
+
+    if (assignErr) {
+      console.error("Failed to insert assign_subjects:", assignErr);
+    }
+  }
+
   revalidatePath("/admin/teachers");
   console.log("Returning teacher:", data);
   return { teacher: data, error: null };
@@ -97,6 +120,8 @@ export async function updateTeacher(
     phone: string;
     class_ids: string[]; // new field for class assignment
     salary: number;
+    incharge_class_ids?: string[] | null;
+    assign_subjects?: Array<{ class_id: string; subject_id: string }>;
   }>,
 ) {
   const supabase = await createClient();
@@ -137,6 +162,45 @@ export async function updateTeacher(
     }
 
     await persistTeacherClasses(adminClient, teacherId, updates.class_ids);
+  }
+
+  // Update incharge classes array if provided
+  if (Object.prototype.hasOwnProperty.call(updates, "incharge_class_ids")) {
+    const { incharge_class_ids } = updates as any;
+    const { error: inchargeErr } = await adminClient
+      .from("profiles")
+      .update({ incharge_class_ids: incharge_class_ids || [] })
+      .eq("id", teacherId);
+    if (inchargeErr) {
+      console.error("Failed to update incharge_class_ids:", inchargeErr);
+    }
+  }
+
+  // Replace assign_subjects if provided
+  if (Array.isArray(updates.assign_subjects)) {
+    // delete existing
+    const { error: delErr } = await adminClient
+      .from("assign_subjects")
+      .delete()
+      .eq("teacher_id", teacherId);
+    if (delErr) {
+      console.error("Failed to delete existing assign_subjects:", delErr);
+    }
+
+    if (updates.assign_subjects.length > 0) {
+      const insertRows = updates.assign_subjects.map((s) => ({
+        teacher_id: teacherId,
+        class_id: s.class_id,
+        subject_id: s.subject_id,
+      }));
+
+      const { error: insertErr } = await adminClient
+        .from("assign_subjects")
+        .insert(insertRows);
+      if (insertErr) {
+        console.error("Failed to insert assign_subjects:", insertErr);
+      }
+    }
   }
 
   if (typeof updates.salary === "number" && updates.salary > 0) {

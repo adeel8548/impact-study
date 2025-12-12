@@ -128,11 +128,41 @@ export default function TeacherAttendance() {
 
   const loadTeacherClasses = async (userId: string) => {
     try {
-      const response = await fetch(`/api/teachers/classes?teacherId=${userId}`);
-      const data = await response.json();
-      setClasses(data.classes || []);
-      if (data.classes && data.classes.length > 0) {
-        setSelectedClass(data.classes[0].id);
+      // Fetch incharge classes via permissions
+      const permsResp = await fetch(`/api/teachers/${userId}/permissions`);
+      const permsData = await permsResp.json();
+
+      // Normalize incharge ids from permissions
+      const inchargeIds: string[] = Array.isArray(permsData?.incharge_class_ids)
+        ? permsData.incharge_class_ids
+        : permsData?.incharge_class_id
+        ? [String(permsData.incharge_class_id)]
+        : [];
+
+      // ONLY show incharge classes for attendance marking
+      const classesToShow = inchargeIds.filter(Boolean);
+
+      if (classesToShow.length === 0) {
+        setClasses([]);
+        setSelectedClass("");
+        setLoading(false);
+        return;
+      }
+
+      // Fetch full class details
+      const classesResp = await fetch(`/api/teachers/classes?teacherId=${userId}`);
+      const classesData = await classesResp.json();
+      const allClasses: any[] = classesData?.classes || [];
+
+      // Filter to show ONLY incharge classes
+      const selectedSet = new Set(classesToShow);
+      const filtered = allClasses.filter((c) => selectedSet.has(c.id));
+
+      setClasses(filtered);
+      if (filtered && filtered.length > 0) {
+        setSelectedClass(filtered[0].id);
+      } else {
+        setSelectedClass("");
       }
       setLoading(false);
     } catch (error) {

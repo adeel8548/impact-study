@@ -16,6 +16,7 @@ import { QuizCard } from "@/components/quiz-card";
 import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
+type Assignment = { class_id: string; subject_id: string; subject_name?: string | null };
 
 const toLocalDate = (d: Date) => {
   const y = d.getFullYear();
@@ -29,6 +30,7 @@ export default function TeacherSchedulesPage() {
   const searchParams = useSearchParams();
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [teacherId, setTeacherId] = useState<string>("");
   const [teacherName, setTeacherName] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,7 @@ export default function TeacherSchedulesPage() {
   const [quizTopic, setQuizTopic] = useState("");
   const [quizDate, setQuizDate] = useState(today);
   const [quizDuration, setQuizDuration] = useState("");
+  const [quizTotalMarks, setQuizTotalMarks] = useState("");
   const [quizEditingId, setQuizEditingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,6 +61,7 @@ export default function TeacherSchedulesPage() {
     setTeacherId(user.id);
     setTeacherName(user.name || "Teacher");
     loadClasses(user.id);
+    loadAssignments(user.id);
   }, [router]);
 
   // Sync tab with query param ?tab=revisions|exams|quizzes
@@ -70,9 +74,33 @@ export default function TeacherSchedulesPage() {
 
   const loadClasses = async (userId: string) => {
     try {
-      const res = await fetch(`/api/teachers/classes?teacherId=${userId}`);
+      // Get assigned subjects to determine which classes to show
+      const assignRes = await fetch(`/api/teachers/${userId}/assignments`);
+      const assignJson = await assignRes.json();
+      const assignments = Array.isArray(assignJson.assignments)
+        ? assignJson.assignments
+        : [];
+
+      // Extract unique class IDs from assignments
+      const uniqueClassIds = Array.from(
+        new Set(assignments.map((a: any) => a.class_id).filter(Boolean))
+      );
+
+      if (uniqueClassIds.length === 0) {
+        setClasses([]);
+        setSelectedClass("");
+        setLoading(false);
+        return;
+      }
+
+      // Fetch class details
+      const classIds = (uniqueClassIds as string[]).join(",");
+      const res = await fetch(
+        `/api/classes?ids=${encodeURIComponent(classIds)}`
+      );
       const data = await res.json();
-      const cls = data.classes || [];
+      const cls = Array.isArray(data.classes) ? data.classes : data.data || [];
+
       setClasses(cls);
       if (cls.length > 0) {
         setSelectedClass(cls[0].id);
@@ -85,13 +113,38 @@ export default function TeacherSchedulesPage() {
     }
   };
 
+  const loadAssignments = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/teachers/${userId}/assignments`);
+      const json = await res.json();
+      const list: Assignment[] = Array.isArray(json.assignments)
+        ? json.assignments.map((a: any) => ({
+            class_id: a.class_id,
+            subject_id: a.subject_id,
+            subject_name: a.subject_name,
+          }))
+        : [];
+      setAssignments(list);
+    } catch (error) {
+      console.error("Error loading assignments:", error);
+    }
+  };
+
   useEffect(() => {
     if (selectedClass) {
       loadRevisions();
       loadExams();
       loadQuizzes();
+      const subjectsForClass = assignments.filter(
+        (a) => a.class_id === selectedClass,
+      );
+      if (subjectsForClass.length > 0) {
+        setQuizSubject(subjectsForClass[0].subject_name || subjectsForClass[0].subject_id);
+      } else {
+        setQuizSubject("");
+      }
     }
-  }, [selectedClass]);
+  }, [selectedClass, assignments]);
 
   const loadRevisions = async () => {
     try {
@@ -117,7 +170,12 @@ export default function TeacherSchedulesPage() {
 
   const loadQuizzes = async () => {
     try {
-      const params = new URLSearchParams({ classId: selectedClass, teacherId });
+      // Just load quizzes for the selected class, no subject filtering needed
+      // (API will return all quizzes for the class regardless of subject)
+      const params = new URLSearchParams({ 
+        classId: selectedClass,
+        teacherId 
+      });
       const res = await fetch(`/api/daily-quizzes?${params}`);
       const json = await res.json();
       setQuizzes(json.data || []);
@@ -133,13 +191,21 @@ export default function TeacherSchedulesPage() {
     }
     setSaving(true);
     try {
+      // Find subject_id from assignments
+      const assignment = assignments.find(
+        (a) => a.class_id === selectedClass && 
+               (a.subject_name === quizSubject || a.subject_id === quizSubject)
+      );
+      
       const payload = {
         id: quizEditingId || undefined,
         class_id: selectedClass,
         subject: quizSubject,
+        subject_id: assignment?.subject_id || undefined,
         topic: quizTopic,
         quiz_date: quizDate,
         duration_minutes: quizDuration ? Number(quizDuration) : null,
+        total_marks: quizTotalMarks ? Number(quizTotalMarks) : null,
         teacher_id: teacherId,
       };
       const method = quizEditingId ? "PUT" : "POST";
@@ -155,6 +221,7 @@ export default function TeacherSchedulesPage() {
       setQuizTopic("");
       setQuizDate(today);
       setQuizDuration("");
+      setQuizTotalMarks("");
       loadQuizzes();
     } catch (e) {
       console.error(e);
@@ -290,10 +357,33 @@ export default function TeacherSchedulesPage() {
                 <div className="grid md:grid-cols-4 gap-3">
                   <div>
                     <Label>Subject</Label>
-                    <Input
+                    <select
                       value={quizSubject}
                       onChange={(e) => setQuizSubject(e.target.value)}
-                    />
+                      className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
+                    >
+                      {(assignments
+                        .filter((a) => a.class_id === selectedClass)
+                        .map((a) => ({
+                          id: a.subject_id,
+                          name: a.subject_name || a.subject_id,
+                        }))
+                        .filter(
+                          (v, idx, arr) =>
+                            arr.findIndex((x) => x.id === v.id) === idx,
+                        ) || []
+                      ).map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                      {assignments.filter((a) => a.class_id === selectedClass)
+                        .length === 0 && (
+                        <option value="">
+                          No subjects assigned to this class
+                        </option>
+                      )}
+                    </select>
                   </div>
                   <div>
                     <Label>Topic</Label>
@@ -317,6 +407,15 @@ export default function TeacherSchedulesPage() {
                       min={0}
                       value={quizDuration}
                       onChange={(e) => setQuizDuration(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Total Marks</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={quizTotalMarks}
+                      onChange={(e) => setQuizTotalMarks(e.target.value)}
                     />
                   </div>
                 </div>

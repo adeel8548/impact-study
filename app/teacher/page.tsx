@@ -21,7 +21,7 @@ export default async function TeacherDashboard() {
   // Check user role
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, incharge_class_ids")
     .eq("id", user.id)
     .single();
 
@@ -29,26 +29,35 @@ export default async function TeacherDashboard() {
     redirect("/admin");
   }
 
-  // Read assigned classes from profile.class_ids
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("class_ids")
-    .eq("id", user.id)
-    .single();
-
-  const classIds = (profileData?.class_ids || []) as string[];
-  const { data: classes = [] } = classIds.length
-    ? await supabase.from("classes").select("id, name").in("id", classIds)
-    : { data: [] };
-  const { data: students = [] } = classIds.length
-    ? await supabase.from("students").select("*").in("class_id", classIds)
+  // Get incharge classes (where teacher is incharge)
+  const inchargeClassIds = (profile?.incharge_class_ids || []) as string[];
+  const { data: inchargeClasses = [] } = inchargeClassIds.length
+    ? await supabase
+        .from("classes")
+        .select("id, name")
+        .in("id", inchargeClassIds)
     : { data: [] };
 
-  const { data: attendance = [] } = classIds.length
+  // Get assigned subjects
+  const { data: assignments = [] } = await supabase
+    .from("assign_subjects")
+    .select("class_id, subject_id, classes(id, name), subjects(id, name)")
+    .eq("teacher_id", user.id);
+
+  // Get all students in incharge classes
+  const { data: students = [] } = inchargeClassIds.length
+    ? await supabase
+        .from("students")
+        .select("*")
+        .in("class_id", inchargeClassIds)
+    : { data: [] };
+
+  // Get attendance for incharge classes
+  const { data: attendance = [] } = inchargeClassIds.length
     ? await supabase
         .from("student_attendance")
         .select("*")
-        .in("class_id", classIds)
+        .in("class_id", inchargeClassIds)
     : { data: [] };
 
   const todayAttendance = (attendance || []).filter(
@@ -63,10 +72,15 @@ export default async function TeacherDashboard() {
     { date: "Fri", present: 68, absent: 0 },
   ];
 
-  const classDistribution = (classes || []).map((c) => ({
+  const classDistribution = (inchargeClasses || []).map((c) => ({
     name: c.name,
     students: (students || []).filter((s) => s.class_id === c.id).length,
   }));
+
+  // Count unique assigned subjects
+  const uniqueAssignedSubjects = Array.from(
+    new Set((assignments || []).map((a: any) => a.subject_id))
+  ).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,98 +98,151 @@ export default async function TeacherDashboard() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="p-6 border-l-4 border-l-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm font-medium mb-1">
-                  My Classes
-                </p>
-                <p className="text-3xl font-bold text-foreground">
-                  {(classes || []).length}
-                </p>
+          {/* Incharge Classes (only if teacher is incharge of classes) */}
+          {inchargeClasses.length > 0 && (
+            <Card className="p-6 border-l-4 border-l-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm font-medium mb-1">
+                    My Classes (Incharge)
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
+                    {(inchargeClasses || []).length}
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                  <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
-          <Card className="p-6 border-l-4 border-l-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm font-medium mb-1">
-                  Total Students
-                </p>
-                <p className="text-3xl font-bold text-foreground">
-                  {(students || []).length}
-                </p>
+          {/* Assigned Subjects (only if teacher has assigned subjects) */}
+          {uniqueAssignedSubjects > 0 && (
+            <Card className="p-6 border-l-4 border-l-purple-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm font-medium mb-1">
+                    Assigned Subjects
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
+                    {uniqueAssignedSubjects}
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                  <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
               </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-                <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
-          <Card className="p-6 border-l-4 border-l-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm font-medium mb-1">
-                  Today's Present
-                </p>
-                <p className="text-3xl font-bold text-foreground">
-                  {todayAttendance.filter((a) => a.status === "present").length}
-                </p>
+          {/* Today's Present (only show if incharge of classes) */}
+          {inchargeClasses.length > 0 && (
+            <Card className="p-6 border-l-4 border-l-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm font-medium mb-1">
+                    Today's Present
+                  </p>
+                  <p className="text-3xl font-bold text-foreground">
+                    {todayAttendance.filter((a) => a.status === "present").length}
+                  </p>
+                </div>
+                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
               </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <CheckCircle2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-          </Card>
+            </Card>
+          )}
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <TeacherDashboardCharts
-            attendanceData={attendanceData}
-            classDistribution={classDistribution}
-          />
+          {classDistribution.length > 0 && (
+            <TeacherDashboardCharts
+              attendanceData={attendanceData}
+              classDistribution={classDistribution}
+            />
+          )}
         </div>
 
-        {/* My Classes */}
-        <Card className="p-6">
-          <h3 className="text-lg font-bold text-foreground mb-4">My Classes</h3>
-          <div className="space-y-3">
-            {(classes || []).map((cls) => {
-              const classStudents = (students || []).filter(
-                (s) => s.class_id === cls.id,
-              );
-              return (
+        {/* My Incharge Classes (only if teacher is incharge of classes) */}
+        {inchargeClasses.length > 0 && (
+          <Card className="p-6 mb-8">
+            <h3 className="text-lg font-bold text-foreground mb-4">My Classes (Incharge)</h3>
+            <div className="space-y-3">
+              {(inchargeClasses || []).map((cls) => {
+                const classStudents = (students || []).filter(
+                  (s) => s.class_id === cls.id,
+                );
+                return (
+                  <div
+                    key={cls.id}
+                    className="flex flex-col md:flex-row items-center justify-between p-4 bg-secondary rounded-lg hover:bg-opacity-80 transition-colors"
+                  >
+                    <div className="mb-3 md:mb-0">
+                      <p className="font-semibold text-foreground">{cls.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {classStudents.length} Students
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Link href={`/teacher/attendance`}>Mark Attendance</Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-primary text-primary-foreground"
+                      >
+                        <Link href={`/teacher/classes`}>View Students</Link>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {/* Assigned Subjects (only if teacher has assigned subjects) */}
+        {assignments.length > 0 && (
+          <Card className="p-6 mb-8">
+            <h3 className="text-lg font-bold text-foreground mb-4">My Assigned Subjects</h3>
+            <div className="space-y-3">
+              {Array.from(
+                new Map(
+                  (assignments || []).map((a: any) => [
+                    a.subject_id,
+                    { subject_id: a.subject_id, subject_name: (a as any).subjects?.name, class_id: a.class_id, class_name: (a as any).classes?.name },
+                  ])
+                ).values()
+              ).map((subj: any, idx: number) => (
                 <div
-                  key={cls.id}
+                  key={idx}
                   className="flex flex-col md:flex-row items-center justify-between p-4 bg-secondary rounded-lg hover:bg-opacity-80 transition-colors"
                 >
                   <div className="mb-3 md:mb-0">
-                    <p className="font-semibold text-foreground">{cls.name}</p>
+                    <p className="font-semibold text-foreground">{subj.subject_name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {classStudents.length} Students
+                      {(assignments || []).filter((a: any) => a.subject_id === subj.subject_id).length} Classes
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Link href={`/teacher/attendance`}>Mark Attendance</Link>
-                    </Button>
                     <Button
                       size="sm"
                       className="bg-primary text-primary-foreground"
                     >
-                      <Link href={`/teacher/classes`}>View Students</Link>
+                      <Link href={`/teacher/student-results`}>View Results</Link>
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Link href={`/teacher/quiz-results`}>Quiz Results</Link>
                     </Button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  isTeacherAssignedToSubject,
+  getTeacherAssignedSubjects,
+} from "@/lib/server/teacher-permissions";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -10,7 +14,9 @@ export async function GET(request: NextRequest) {
   const endDate = request.nextUrl.searchParams.get("endDate");
 
   try {
-    let query = supabase.from("daily_quizzes").select("*");
+    let query = supabase
+      .from("daily_quizzes")
+      .select("*, subjects(id, name)");
 
     if (classId) query = query.eq("class_id", classId);
     if (teacherId) query = query.eq("teacher_id", teacherId);
@@ -20,6 +26,10 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await query.order("quiz_date", { ascending: true });
     if (error) throw error;
+
+    // Note: Filtering by teacher's assigned subjects is handled by the client
+    // since daily_quizzes stores subject names (text), not subject_id (UUID)
+    // The client should filter quizzes based on assigned_subjects if needed
 
     return NextResponse.json({ data: data || [], success: true });
   } catch (error) {
@@ -39,6 +49,47 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const payload = Array.isArray(body) ? body : [body];
+    const teacherId = body.teacherId || (Array.isArray(body) ? null : body.teacher_id);
+
+    // If teacherId is provided and subject_id exists, verify teacher is assigned to the subject
+    if (teacherId && !Array.isArray(body)) {
+      const subjectId = body.subject_id;
+      if (subjectId) {
+        const isAssigned = await isTeacherAssignedToSubject(teacherId, subjectId);
+        if (!isAssigned) {
+          return NextResponse.json(
+            {
+              error:
+                "Unauthorized: Teacher is not assigned to this subject",
+              success: false,
+            },
+            { status: 403 },
+          );
+        }
+      }
+      
+      // If subject name is provided but subject_id is not, look up the subject_id
+      if (!body.subject_id && body.subject) {
+        try {
+          const { data: subjects, error: subjectError } = await supabase
+            .from("subjects")
+            .select("id")
+            .ilike("name", body.subject)
+            .single();
+          
+          if (subjectError) {
+            console.warn("Subject lookup warning:", subjectError);
+            // If subject not found, we'll just insert without subject_id
+          } else if (subjects?.id) {
+            body.subject_id = subjects.id;
+          }
+        } catch (err) {
+          console.warn("Error looking up subject:", err);
+          // Continue without subject_id if lookup fails
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from("daily_quizzes")
       .insert(payload)

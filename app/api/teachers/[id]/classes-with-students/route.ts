@@ -1,21 +1,20 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = await createClient();
   const adminClient = await createAdminClient();
   const { id: teacherId } = await params;
 
   try {
     console.log("Fetching classes and students for teacher:", teacherId);
 
-    // 1. Get teacher's class_ids from profiles table
+    // 1. Get teacher's class assignments (supports legacy + new fields)
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
-      .select("class_ids")
+      .select("class_ids, incharge_class_ids, incharge_class_id")
       .eq("id", teacherId)
       .maybeSingle();
 
@@ -27,15 +26,40 @@ export async function GET(
       );
     }
 
-    const classIds: string[] = (profile?.class_ids as string[]) || [];
-    console.log("Teacher class_ids from profiles:", classIds);
+    const classIdsFromProfile: string[] = Array.isArray(profile?.class_ids)
+      ? (profile?.class_ids as string[])
+      : [];
+    const inchargeArray: string[] = Array.isArray(profile?.incharge_class_ids)
+      ? (profile?.incharge_class_ids as string[])
+      : profile?.incharge_class_id
+      ? [String(profile.incharge_class_id)]
+      : [];
+
+    // Also include classes where the teacher has subject assignments
+    const { data: assignedRows, error: assignedErr } = await adminClient
+      .from("assign_subjects")
+      .select("class_id")
+      .eq("teacher_id", teacherId);
+
+    if (assignedErr) {
+      console.error("Error fetching assigned subject classes:", assignedErr);
+    }
+
+    const assignedClassIds = Array.isArray(assignedRows)
+      ? assignedRows.map((r: any) => r.class_id).filter(Boolean)
+      : [];
+
+    const classIds: string[] = Array.from(
+      new Set([...classIdsFromProfile, ...inchargeArray, ...assignedClassIds]),
+    );
+    console.log("Teacher class_ids combined:", classIds);
 
     if (classIds.length === 0) {
       return NextResponse.json({ classes: [], students: [], success: true });
     }
 
     // 2. Fetch classes by IDs
-    const { data: classes, error: classesErr } = await supabase
+    const { data: classes, error: classesErr } = await adminClient
       .from("classes")
       .select("id, name")
       .in("id", classIds);
@@ -51,7 +75,7 @@ export async function GET(
     console.log("Fetched classes:", classes);
 
     // 3. Fetch all students for these classes
-    const { data: students, error: studentsErr } = await supabase
+    const { data: students, error: studentsErr } = await adminClient
       .from("students")
       .select("*")
       .in("class_id", classIds)

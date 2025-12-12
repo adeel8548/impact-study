@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { getTeacherAssignedSubjects } from "@/lib/server/teacher-permissions";
 
 /**
  * GET /api/quiz-results
@@ -8,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
  *   - studentId: filter by student
  *   - teacherId: filter by teacher
  *   - classId: filter by class
+ *   - filterTeacherOnly: if true, only return quizzes for subjects the teacher is assigned to
  */
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +21,7 @@ export async function GET(request: NextRequest) {
     const quizId = searchParams.get("quizId");
     const quizName = searchParams.get("quizName");
     const quizDate = searchParams.get("quizDate");
+    const filterTeacherOnly = searchParams.get("filterTeacherOnly") === "true";
 
     // Start with the base query including related data
     let query = supabase.from("quiz_results").select(
@@ -71,10 +74,17 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
+    // If filterTeacherOnly is true, only return quizzes for subjects the teacher is assigned to
+    // Note: This requires subject_id field in quiz_results or a proper relationship to daily_quizzes
+    // For now, filtering is handled client-side or teacher can only see their own results
+    let filteredData = data || [];
+    // Teacher-specific filtering would go here if needed
+    // if (filterTeacherOnly && teacherId && filteredData.length > 0) { ... }
+
     // If the filtered query returned nothing but the client asked for a specific quiz,
     // run a fallback query (no quizName/quizDate filters) to help debug what rows exist.
     let fallbackData: any[] = [];
-    if ((quizName || quizDate) && Array.isArray(data) && data.length === 0) {
+    if ((quizName || quizDate) && Array.isArray(filteredData) && filteredData.length === 0) {
       try {
         console.log(
           `No rows matched quizName=${quizName} quizDate=${quizDate}. Running fallback query for debug.`

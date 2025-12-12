@@ -33,10 +33,11 @@ interface MarkInput {
 type QuizResultsClientProps = {
   teacherId?: string;
   role?: "admin" | "teacher";
+  prefetchedClasses?: Class[];
 };
 
 export function QuizResultsClient(props: QuizResultsClientProps = {}) {
-  const { teacherId, role = "admin" } = props;
+  const { teacherId, role = "admin", prefetchedClasses } = props;
 
   // ============================================
   // State Management
@@ -110,6 +111,15 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
   const loadClasses = async () => {
     try {
       setLoading(true);
+      
+      // Use prefetched classes if available (from server-side)
+      if (prefetchedClasses && prefetchedClasses.length > 0) {
+        setClasses(prefetchedClasses);
+        setSelectedClass(prefetchedClasses[0].id);
+        setLoading(false);
+        return;
+      }
+
       const url = teacherId
         ? `/api/teachers/classes?teacherId=${teacherId}`
         : "/api/classes";

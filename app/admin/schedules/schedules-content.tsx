@@ -18,6 +18,12 @@ import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
 type ClassOption = { id: string; name: string };
 type TeacherOption = { id: string; name: string };
 type SubjectOption = { id: string; name: string };
+type Assignment = {
+  subject_id: string;
+  subject_name?: string | null;
+  teacher_id: string;
+  teacher_name?: string | null;
+};
 
 const toLocalDate = (d: Date) => {
   const y = d.getFullYear();
@@ -32,6 +38,7 @@ export function AdminSchedulesContent() {
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [tab, setTab] = useState<string>("revisions");
   const [loading, setLoading] = useState(true);
@@ -90,6 +97,7 @@ export function AdminSchedulesContent() {
       loadExams();
       loadQuizzes();
       loadSubjects();
+      loadAssignments();
     }
   }, [selectedClass]);
 
@@ -135,6 +143,81 @@ export function AdminSchedulesContent() {
     }
   };
 
+  const loadAssignments = async () => {
+    try {
+      const res = await fetch(`/api/classes/${selectedClass}/assignments`);
+      const json = await res.json();
+      const list: Assignment[] = Array.isArray(json.assignments)
+        ? json.assignments
+        : [];
+      setAssignments(list);
+    } catch (e) {
+      console.error("Failed to load assignments", e);
+      setAssignments([]);
+    }
+  };
+
+  const teachersForSubject = (subjectName: string) => {
+    const matches = assignments.filter(
+      (a) =>
+        a.subject_name === subjectName ||
+        (!a.subject_name && a.subject_id === subjectName),
+    );
+    // unique by teacher_id
+    const unique = matches.filter(
+      (v, idx, arr) => arr.findIndex((x) => x.teacher_id === v.teacher_id) === idx,
+    );
+    return unique;
+  };
+
+  // Auto-select first subject when list loads
+  useEffect(() => {
+    if (subjects.length > 0) {
+      if (!revSubject) setRevSubject(subjects[0].name);
+      if (!examSubject) setExamSubject(subjects[0].name);
+      if (!quizSubject) setQuizSubject(subjects[0].name);
+    } else {
+      setRevSubject("");
+      setExamSubject("");
+      setQuizSubject("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjects]);
+
+  // Auto-select teacher filtered by subject
+  useEffect(() => {
+    const list = teachersForSubject(revSubject);
+    if (list.length === 0) {
+      setRevTeacher("");
+      return;
+    }
+    if (!list.find((t) => t.teacher_id === revTeacher)) {
+      setRevTeacher(list[0].teacher_id);
+    }
+  }, [revSubject, assignments]);
+
+  useEffect(() => {
+    const list = teachersForSubject(examSubject);
+    if (list.length === 0) {
+      setExamTeacher("");
+      return;
+    }
+    if (!list.find((t) => t.teacher_id === examTeacher)) {
+      setExamTeacher(list[0].teacher_id);
+    }
+  }, [examSubject, assignments]);
+
+  useEffect(() => {
+    const list = teachersForSubject(quizSubject);
+    if (list.length === 0) {
+      setQuizTeacher("");
+      return;
+    }
+    if (!list.find((t) => t.teacher_id === quizTeacher)) {
+      setQuizTeacher(list[0].teacher_id);
+    }
+  }, [quizSubject, assignments]);
+
   const loadRevisions = async () => {
     try {
       const params = new URLSearchParams({ classId: selectedClass });
@@ -169,7 +252,7 @@ export function AdminSchedulesContent() {
   };
 
   const resetRevForm = () => {
-    setRevSubject("");
+    setRevSubject(subjects[0]?.name || "");
     setRevTopic("");
     setRevDate(today);
     setRevTeacher("");
@@ -202,10 +285,27 @@ export function AdminSchedulesContent() {
     }
     setSaving(true);
     try {
+      // Find subject_id from class subjects
+      let subjectId: string | undefined = undefined;
+      try {
+        const subRes = await fetch(`/api/classes/${selectedClass}/subjects`);
+        const subData = await subRes.json();
+        const subjects = Array.isArray(subData.subjects) ? subData.subjects : [];
+        const matching = subjects.find(
+          (s: any) => s.name === revSubject || s.id === revSubject
+        );
+        if (matching?.id) {
+          subjectId = matching.id;
+        }
+      } catch (err) {
+        console.warn("Failed to lookup subject_id:", err);
+      }
+
       const payload = {
         id: revEditingId || undefined,
         class_id: selectedClass,
         subject: revSubject,
+        subject_id: subjectId,
         topic: revTopic,
         revision_date: revDate,
         teacher_id: revTeacher || null,
@@ -235,10 +335,27 @@ export function AdminSchedulesContent() {
     }
     setSaving(true);
     try {
+      // Find subject_id from class subjects
+      let subjectId: string | undefined = undefined;
+      try {
+        const subRes = await fetch(`/api/classes/${selectedClass}/subjects`);
+        const subData = await subRes.json();
+        const subjects = Array.isArray(subData.subjects) ? subData.subjects : [];
+        const matching = subjects.find(
+          (s: any) => s.name === examSubject || s.id === examSubject
+        );
+        if (matching?.id) {
+          subjectId = matching.id;
+        }
+      } catch (err) {
+        console.warn("Failed to lookup subject_id:", err);
+      }
+
       const payload = {
         id: examEditingId || undefined,
         class_id: selectedClass,
         subject: examSubject,
+        subject_id: subjectId,
         start_date: examStart,
         end_date: examEnd,
         duration_minutes: examDuration ? Number(examDuration) : null,
@@ -271,10 +388,27 @@ export function AdminSchedulesContent() {
     }
     setSaving(true);
     try {
+      // Find subject_id from class subjects
+      let subjectId: string | undefined = undefined;
+      try {
+        const subRes = await fetch(`/api/classes/${selectedClass}/subjects`);
+        const subData = await subRes.json();
+        const subjects = Array.isArray(subData.subjects) ? subData.subjects : [];
+        const matching = subjects.find(
+          (s: any) => s.name === quizSubject || s.id === quizSubject
+        );
+        if (matching?.id) {
+          subjectId = matching.id;
+        }
+      } catch (err) {
+        console.warn("Failed to lookup subject_id:", err);
+      }
+      
       const payload = {
         id: quizEditingId || undefined,
         class_id: selectedClass,
         subject: quizSubject,
+        subject_id: subjectId,
         topic: quizTopic,
         quiz_date: quizDate,
         duration_minutes: quizDuration ? Number(quizDuration) : null,
@@ -369,10 +503,20 @@ export function AdminSchedulesContent() {
                 <div className="grid md:grid-cols-4 gap-3">
                   <div>
                     <Label>Subject</Label>
-                    <Input
+                    <select
                       value={revSubject}
                       onChange={(e) => setRevSubject(e.target.value)}
-                    />
+                      className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
+                    >
+                      {subjects.map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                      {subjects.length === 0 && (
+                        <option value="">No subjects</option>
+                      )}
+                    </select>
                   </div>
                   <div className="md:col-span-2">
                     <Label>Topic</Label>
@@ -397,9 +541,9 @@ export function AdminSchedulesContent() {
                       className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                     >
                       <option value="">Select</option>
-                      {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
+                      {teachersForSubject(revSubject).map((t) => (
+                        <option key={t.teacher_id} value={t.teacher_id}>
+                          {t.teacher_name || "Teacher"}
                         </option>
                       ))}
                     </select>
@@ -546,9 +690,9 @@ export function AdminSchedulesContent() {
                       className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                     >
                       <option value="">Select</option>
-                      {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
+                      {teachersForSubject(examSubject).map((t) => (
+                        <option key={t.teacher_id} value={t.teacher_id}>
+                          {t.teacher_name || "Teacher"}
                         </option>
                       ))}
                     </select>
@@ -673,9 +817,9 @@ export function AdminSchedulesContent() {
                       className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                     >
                       <option value="">Select</option>
-                      {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
+                      {teachersForSubject(quizSubject).map((t) => (
+                        <option key={t.teacher_id} value={t.teacher_id}>
+                          {t.teacher_name || "Teacher"}
                         </option>
                       ))}
                     </select>
