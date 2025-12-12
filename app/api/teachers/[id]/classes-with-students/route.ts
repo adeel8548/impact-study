@@ -32,8 +32,8 @@ export async function GET(
     const inchargeArray: string[] = Array.isArray(profile?.incharge_class_ids)
       ? (profile?.incharge_class_ids as string[])
       : profile?.incharge_class_id
-      ? [String(profile.incharge_class_id)]
-      : [];
+        ? [String(profile.incharge_class_id)]
+        : [];
 
     // Also include classes where the teacher has subject assignments
     const { data: assignedRows, error: assignedErr } = await adminClient

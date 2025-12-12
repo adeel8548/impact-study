@@ -32,6 +32,9 @@ export async function GET(
     return NextResponse.json({ success: true, assignments: items });
   } catch (err) {
     console.error("Error fetching assignments:", err);
-    return NextResponse.json({ success: false, error: "Failed to load" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to load" },
+      { status: 500 },
+    );
   }
 }

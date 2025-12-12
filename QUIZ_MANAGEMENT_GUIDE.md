@@ -13,6 +13,7 @@ The Quiz Management feature has been **enhanced** with new functionality. The fe
 ## 📍 Where to Access
 
 ### Admin Portal
+
 ```
 Navigate to: Admin Dashboard → Schedules → Quizzes Tab
 Path: /admin/schedules?tab=quizzes
@@ -23,6 +24,7 @@ Path: /admin/schedules?tab=quizzes
 ## 🎯 Key Features
 
 ### 1. **Subject Dropdown**
+
 ```
 Shows all available subjects for your school
 - Automatically populated from your subjects list
@@ -31,7 +33,9 @@ Shows all available subjects for your school
 ```
 
 ### 2. **Quiz Creation Form**
+
 Fields available:
+
 ```
 ✓ Subject (dropdown)         - Select from available subjects
 ✓ Topic/Chapter (text)       - Enter the quiz topic
@@ -42,7 +46,9 @@ Fields available:
 ```
 
 ### 3. **Quiz Display Card**
+
 Shows quiz information with:
+
 ```
 📖 Subject (bold heading)
 📝 Topic/Chapter (secondary heading)
@@ -66,6 +72,7 @@ Shows quiz information with:
 **Step 2:** Select your class from the "Class" dropdown at the top
 
 **Step 3:** Fill in the quiz form:
+
 ```
 Subject:      Click dropdown → Select "Biology" / "Mathematics" / etc.
 Topic:        Type "Photosynthesis" or "Algebra Basics"
@@ -128,6 +135,7 @@ Daily Quiz
 ## 🔄 Data Flow
 
 ### When Creating Quiz
+
 ```
 1. Select Class
    ↓
@@ -147,6 +155,7 @@ Daily Quiz
 ```
 
 ### When Updating Quiz
+
 ```
 1. Click "Edit" on quiz card
    ↓
@@ -164,6 +173,7 @@ Daily Quiz
 ## 🎨 Visual Layout
 
 ### Quizzes Tab Form
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Subject    │ Topic    │ Date    │ Duration │ Marks   │ Teacher
@@ -173,6 +183,7 @@ Daily Quiz
 ```
 
 ### Quiz Card Display
+
 ```
 ┌────────────────────────────────────┐
 │ Biology (Bold Heading)             │
@@ -192,23 +203,27 @@ Daily Quiz
 ## 📋 Important Notes
 
 ### Subject Dropdown
+
 - Shows all subjects added to your school
 - Subject must exist before quiz creation
 - Ensures consistency across quizzes
 - Easy to audit quiz coverage
 
 ### Total Marks Field
+
 - Used when entering student quiz results
 - Calculates student percentages
 - Determines pass/fail status
 - Should match your grading system
 
 ### Duration Field
+
 - In minutes (e.g., 30, 45, 60)
 - Informational (helps teachers plan)
 - Used for quiz results maximum marks if total_marks not set
 
 ### Teacher Assignment
+
 - Teacher responsible for quiz
 - Used for filtering in teacher portal
 - Optional (can be left empty for admin quizzes)
@@ -218,14 +233,16 @@ Daily Quiz
 ## 🔗 Integration Points
 
 ### Used By:
+
 1. **Quiz Results Page** - Uses quiz info for marking
 2. **Student Results** - Displays quiz marks
 3. **Teacher Dashboard** - Shows assigned quizzes
 4. **Revision Schedule** - References quiz topics
 
 ### Data Requirements:
+
 - ✅ Classes must exist
-- ✅ Subjects must exist  
+- ✅ Subjects must exist
 - ✅ Teachers must exist
 - ✅ Class must be selected to add quiz
 
@@ -268,15 +285,19 @@ Step 6: Teachers can now mark student results for this quiz
 ## 🐛 Troubleshooting
 
 ### Issue: Subject dropdown is empty
+
 **Solution:** Add subjects first in Admin → Subjects page
 
 ### Issue: Can't see quiz after creating
+
 **Solution:** Make sure class is selected at the top, quizzes filter by class
 
 ### Issue: Form fields won't save
+
 **Solution:** Ensure all required fields (Subject, Topic, Date) are filled
 
 ### Issue: Total Marks not showing on card
+
 **Solution:** Click Edit on quiz and check if total marks was saved
 
 ---
@@ -293,6 +314,7 @@ Step 6: Teachers can now mark student results for this quiz
 ## 🗄️ Database Schema
 
 ### daily_quizzes Table
+
 ```
 Column              Type      Purpose
 ──────────────────────────────────────
@@ -312,6 +334,7 @@ created_at          TIMESTAMP When created
 ## 🚀 Performance Tips
 
 ### Best Practices:
+
 1. **Define subjects first** - Before creating quizzes
 2. **Assign teachers** - For better organization
 3. **Set total marks** - Ensures accurate student percentages
@@ -319,6 +342,7 @@ created_at          TIMESTAMP When created
 5. **Update promptly** - Change quiz info if schedule changes
 
 ### To Avoid Issues:
+
 - ❌ Don't leave total marks as 0
 - ❌ Don't use future dates for past quizzes
 - ❌ Don't change subject mid-semester (confuses students)
@@ -329,6 +353,7 @@ created_at          TIMESTAMP When created
 ## 📝 Implementation Details
 
 ### Files Modified
+
 ```
 ✓ lib/types.ts                          - Added total_marks to DailyQuiz
 ✓ app/admin/schedules/schedules-content.tsx - Updated form with subject dropdown
@@ -337,12 +362,14 @@ created_at          TIMESTAMP When created
 ```
 
 ### New Fields
+
 ```
 ✓ quizTotalMarks state - Stores total marks value
 ✓ total_marks column  - Database field
 ```
 
 ### API Changes
+
 - POST/PUT `/api/daily-quizzes` - Now accepts total_marks parameter
 
 ---
@@ -350,6 +377,7 @@ created_at          TIMESTAMP When created
 ## 🎓 Usage Examples
 
 ### Example 1: English Quiz
+
 ```
 Subject:      English
 Topic:        Shakespeare's Hamlet
@@ -360,6 +388,7 @@ Teacher:      Mr. Ali Khan
 ```
 
 ### Example 2: Mathematics Quiz
+
 ```
 Subject:      Mathematics
 Topic:        Trigonometry Basics
@@ -370,6 +399,7 @@ Teacher:      Ms. Aisha Ahmed
 ```
 
 ### Example 3: Science Quiz
+
 ```
 Subject:      Biology
 Topic:        Photosynthesis
@@ -384,6 +414,7 @@ Teacher:      Dr. Hassan
 ## ✨ Summary
 
 The Quiz Management feature now provides:
+
 - ✅ Easy subject selection via dropdown
 - ✅ Complete quiz information storage
 - ✅ Total marks definition for accurate grading

@@ -3,16 +3,19 @@
 ## Access the Feature
 
 ### Admin
+
 - URL: `/admin/quiz-results`
 - Sidebar: Click "Quiz Results" menu item
 
-### Teacher  
+### Teacher
+
 - URL: `/teacher/quiz-results`
 - Header: Click "Quiz Results" button in navigation
 
 ## Step-by-Step Usage
 
 ### Step 1: Select Class
+
 ```
 1. Open Quiz Results page
 2. Click "Class" dropdown
@@ -21,6 +24,7 @@
 ```
 
 ### Step 2: Select Quiz
+
 ```
 1. Click "Quiz" dropdown
 2. See quizzes with dates: "Topic (YYYY-MM-DD)"
@@ -29,6 +33,7 @@
 ```
 
 ### Step 3: Enter Marks
+
 ```
 For each student:
 1. Find student name in grid
@@ -39,6 +44,7 @@ For each student:
 ```
 
 ### Step 4: Save All
+
 ```
 1. Review all marks
 2. Click "Save All Results"
@@ -50,6 +56,7 @@ For each student:
 ## Interface Guide
 
 ### Top Section
+
 ```
 ┌─────────────────────────────────────┐
 │ Select Quiz                         │
@@ -60,6 +67,7 @@ For each student:
 ```
 
 ### Marks Grid
+
 ```
 ┌──────────────┬──────────┬──────────┬──────┬────────┐
 │ Student Name │ Roll No. │ Marks    │ %    │ Status │
@@ -71,6 +79,7 @@ For each student:
 ```
 
 ### Summary Box
+
 ```
 Overall:
 - Total Obtained: 450 / 1000
@@ -82,6 +91,7 @@ Per Student:
 ```
 
 ### Buttons
+
 ```
 [Save All Results] ← Click to save all marks at once
 ```
@@ -89,12 +99,14 @@ Per Student:
 ## Common Tasks
 
 ### Add Marks for New Quiz
+
 1. Select Class
 2. Select Quiz (shows "Select Quiz")
 3. Enter marks for each student
 4. Click "Save All Results"
 
 ### Update Existing Marks
+
 1. Select Class
 2. Select same Quiz
 3. Marks pre-fill automatically
@@ -102,11 +114,13 @@ Per Student:
 5. Click "Save All Results"
 
 ### Check Student Performance
+
 - Look at % column (higher is better)
 - Look at Status column (Pass/Fail)
 - Red = Fail (<40%), Green = Pass (≥40%)
 
 ### See Class Statistics
+
 - Overall section shows class-wide stats
 - Average percentage
 - Total marks across all students
@@ -127,11 +141,11 @@ Per Student:
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| Tab | Move to next student mark input |
+| Key       | Action                              |
+| --------- | ----------------------------------- |
+| Tab       | Move to next student mark input     |
 | Shift+Tab | Move to previous student mark input |
-| Enter | Submit form (if implemented) |
+| Enter     | Submit form (if implemented)        |
 
 ## Validation Rules
 
@@ -142,11 +156,11 @@ Per Student:
 
 ## Error Messages
 
-| Message | Solution |
-|---------|----------|
+| Message                                          | Solution                   |
+| ------------------------------------------------ | -------------------------- |
 | "Please select a quiz and ensure students exist" | Select both class and quiz |
-| "Failed to save..." | Check internet, retry |
-| "Marks must be a non-negative number" | Enter 0 or positive number |
+| "Failed to save..."                              | Check internet, retry      |
+| "Marks must be a non-negative number"            | Enter 0 or positive number |
 
 ## Important Notes
 
@@ -161,17 +175,20 @@ Per Student:
 ## Data That Displays
 
 ### From Quiz
+
 - Quiz topic name
-- Subject  
+- Subject
 - Quiz date
 - Duration (used as max marks)
 
 ### From Students
+
 - Student name
 - Roll number (if available)
 
 ### Calculated
-- Percentage: (marks / max) * 100
+
+- Percentage: (marks / max) \* 100
 - Status: Pass or Fail based on percentage
 
 ## Troubleshooting
@@ -194,6 +211,7 @@ A: Refresh page or click different quiz then back
 ## Contact for Help
 
 If you encounter issues:
+
 1. Check error toast messages
 2. Verify class and quiz are selected
 3. Check internet connection

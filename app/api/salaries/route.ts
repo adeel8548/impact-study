@@ -24,9 +24,7 @@ export async function GET(request: NextRequest) {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    let query = supabase
-      .from("teacher_salary")
-      .select("*");
+    let query = supabase.from("teacher_salary").select("*");
 
     // Filter by teacher if provided
     if (teacherId) {
@@ -48,9 +46,7 @@ export async function GET(request: NextRequest) {
 
     // If neither month nor year provided and not allMonths, default to current month
     if (!month && !year && !allMonths) {
-      query = query
-        .eq("month", currentMonth)
-        .eq("year", currentYear);
+      query = query.eq("month", currentMonth).eq("year", currentYear);
     }
 
     const { data, error } = await query.order("month", { ascending: true });
@@ -91,7 +87,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateData: any = {};
-    
+
     // Amount update does NOT change status
     if (typeof amount !== "undefined") updateData.amount = amount;
 
@@ -152,7 +148,7 @@ export async function POST(request: NextRequest) {
     if (!teacher_id || !month || !year || !school_id) {
       return NextResponse.json(
         { error: "Missing required fields", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

@@ -17,7 +17,12 @@ interface Props {
   teacherName?: string;
 }
 
-export function TeacherAssignmentsModal({ open, onOpenChange, teacherId, teacherName }: Props) {
+export function TeacherAssignmentsModal({
+  open,
+  onOpenChange,
+  teacherId,
+  teacherName,
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [assignments, setAssignments] = useState<any[]>([]);
 
@@ -42,7 +47,9 @@ export function TeacherAssignmentsModal({ open, onOpenChange, teacherId, teacher
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Assigned Subjects — {teacherName || "Teacher"}</DialogTitle>
+          <DialogTitle>
+            Assigned Subjects — {teacherName || "Teacher"}
+          </DialogTitle>
         </DialogHeader>
 
         {loading ? (
@@ -52,13 +59,19 @@ export function TeacherAssignmentsModal({ open, onOpenChange, teacherId, teacher
         ) : (
           <div className="space-y-3 py-4">
             {assignments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No assignments found.</p>
+              <p className="text-sm text-muted-foreground">
+                No assignments found.
+              </p>
             ) : (
               <div className="grid grid-cols-1 gap-2">
                 {assignments.map((a) => (
                   <div key={a.id} className="p-3 border rounded">
-                    <p className="text-sm font-medium">{a.subject_name || "-"}</p>
-                    <p className="text-xs text-muted-foreground">Class: {a.class_name || "-"}</p>
+                    <p className="text-sm font-medium">
+                      {a.subject_name || "-"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Class: {a.class_name || "-"}
+                    </p>
                   </div>
                 ))}
               </div>

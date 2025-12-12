@@ -70,7 +70,9 @@ export function StudentUnpaidFeesModal({
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(false);
   const [paying, setPayingId] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear(),
+  );
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   // Fetch student fees when modal opens
@@ -179,7 +181,8 @@ export function StudentUnpaidFeesModal({
     }
 
     const currentMonthFee = unpaidForYear.find(
-      (fee) => Number(fee.month) === currentMonth && Number(fee.year) === selectedYear,
+      (fee) =>
+        Number(fee.month) === currentMonth && Number(fee.year) === selectedYear,
     );
     if (currentMonthFee) {
       setSelectedMonth(Number(currentMonthFee.month));
@@ -291,7 +294,9 @@ export function StudentUnpaidFeesModal({
                       <div className="mt-2 flex justify-end">
                         <Button
                           size="sm"
-                          disabled={!selectedFee.fee || paying === selectedFee.fee?.id}
+                          disabled={
+                            !selectedFee.fee || paying === selectedFee.fee?.id
+                          }
                           onClick={() =>
                             selectedFee.fee &&
                             handleMarkAsPaid(

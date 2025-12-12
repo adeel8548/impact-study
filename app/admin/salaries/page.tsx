@@ -30,9 +30,7 @@ export default function SalaryManagement() {
       const data = await response.json();
       setTeachers(data.teachers || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load teachers"
-      );
+      setError(err instanceof Error ? err.message : "Failed to load teachers");
       console.error("[Salaries] Error fetching teachers:", err);
     } finally {
       setLoading(false);
@@ -86,4 +84,3 @@ export default function SalaryManagement() {
     </div>
   );
 }
- 

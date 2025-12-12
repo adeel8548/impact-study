@@ -32,9 +32,7 @@ export default function FeesManagement() {
       const data = await response.json();
       setStudents(data.students || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load students"
-      );
+      setError(err instanceof Error ? err.message : "Failed to load students");
       console.error("[Fees] Error fetching students:", err);
     } finally {
       setLoading(false);

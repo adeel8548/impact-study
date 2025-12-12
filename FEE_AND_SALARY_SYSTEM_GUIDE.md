@@ -1,6 +1,7 @@
 # Complete Monthly Fee & Salary Management System
 
 ## Overview
+
 A comprehensive monthly fee management system for students and teachers with automated cron jobs, payment tracking, and yearly summaries.
 
 ---
@@ -19,6 +20,7 @@ A comprehensive monthly fee management system for students and teachers with aut
 ## Database Schema
 
 ### `student_fees` Table
+
 ```sql
 CREATE TABLE student_fees (
   id UUID PRIMARY KEY,
@@ -36,6 +38,7 @@ CREATE TABLE student_fees (
 ```
 
 ### `teacher_salary` Table
+
 ```sql
 CREATE TABLE teacher_salary (
   id UUID PRIMARY KEY,
@@ -59,13 +62,16 @@ CREATE TABLE teacher_salary (
 ### Student Fees API
 
 #### 1. **GET `/api/fees`** - Fetch Student Fees
+
 **Query Parameters:**
+
 - `studentId` (optional) - Filter by specific student
 - `month` (optional) - Filter by month (1-12)
 - `year` (optional) - Filter by year
 - `allMonths` (optional) - Set to 'true' to get all months (default: current month only)
 
 **Response:**
+
 ```json
 {
   "fees": [
@@ -84,12 +90,15 @@ CREATE TABLE teacher_salary (
 ```
 
 #### 2. **GET `/api/fees/monthly`** - Fetch Fee for Specific Month
+
 **Query Parameters:**
+
 - `studentId` (required) - Student UUID
 - `month` (required) - Month (1-12)
 - `year` (required) - Year
 
 **Response:**
+
 ```json
 {
   "fee": {
@@ -107,7 +116,9 @@ CREATE TABLE teacher_salary (
 ```
 
 #### 3. **PUT `/api/fees`** - Update Fee Status
+
 **Request Body:**
+
 ```json
 {
   "id": "fee-uuid",
@@ -118,7 +129,9 @@ CREATE TABLE teacher_salary (
 ```
 
 #### 4. **POST `/api/fees`** - Create/Upsert Fee
+
 **Request Body:**
+
 ```json
 {
   "student_id": "uuid",
@@ -134,7 +147,9 @@ CREATE TABLE teacher_salary (
 ### Teacher Salary API
 
 #### 1. **GET `/api/salaries`** - Fetch Teacher Salaries
+
 **Query Parameters:**
+
 - `teacherId` (optional) - Filter by specific teacher
 - `month` (optional) - Filter by month (1-12)
 - `year` (optional) - Filter by year
@@ -144,13 +159,17 @@ CREATE TABLE teacher_salary (
 **Response:** Same structure as fees
 
 #### 2. **GET `/api/salaries/monthly`** - Fetch Salary for Specific Month
+
 **Query Parameters:**
+
 - `teacherId` (required) - Teacher UUID
 - `month` (required) - Month (1-12)
 - `year` (required) - Year
 
 #### 3. **PUT `/api/salaries`** - Update Salary Status
+
 **Request Body:**
+
 ```json
 {
   "id": "salary-uuid",
@@ -161,7 +180,9 @@ CREATE TABLE teacher_salary (
 ```
 
 #### 4. **POST `/api/salaries`** - Create/Upsert Salary
+
 **Request Body:**
+
 ```json
 {
   "teacher_id": "uuid",
@@ -179,6 +200,7 @@ CREATE TABLE teacher_salary (
 ### Endpoint: `POST /api/cron/monthly-billing`
 
 #### Purpose
+
 Automatically creates monthly fee and salary entries on the 1st of each month.
 
 #### Setup Instructions
@@ -186,6 +208,7 @@ Automatically creates monthly fee and salary entries on the 1st of each month.
 **Option 1: Vercel Cron Jobs**
 
 Add to `vercel.json`:
+
 ```json
 {
   "crons": [
@@ -203,24 +226,27 @@ Add to `vercel.json`:
 2. Create new job:
    - URL: `https://yourdomain.com/api/cron/monthly-billing`
    - Method: POST
-   - Headers: 
+   - Headers:
      ```
      Authorization: Bearer YOUR_CRON_SECRET
      Content-Type: application/json
      ```
 
 **Option 3: Manual Trigger**
+
 ```bash
 curl -X POST https://yourdomain.com/api/cron/monthly-billing \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
 #### Environment Variables
+
 ```env
 CRON_SECRET=your-secret-key-here
 ```
 
 #### What It Does
+
 1. ✅ Fetches all students from the database
 2. ✅ Creates a `student_fees` entry for the current month if not exists
 3. ✅ Fetches all teachers from the database
@@ -229,6 +255,7 @@ CRON_SECRET=your-secret-key-here
 6. ✅ Sets status to 'unpaid' and paid_date to null by default
 
 #### Response
+
 ```json
 {
   "success": true,
@@ -245,9 +272,11 @@ CRON_SECRET=your-secret-key-here
 ## Frontend Components
 
 ### 1. **StudentFeesClient** Component
+
 **Location:** `components/student-fees-client.tsx`
 
 **Props:**
+
 ```typescript
 interface StudentFeesClientProps {
   students: Student[];
@@ -255,6 +284,7 @@ interface StudentFeesClientProps {
 ```
 
 **Features:**
+
 - Student selector with grid layout
 - Live payment status (Paid/Unpaid)
 - Current month highlighted card
@@ -264,18 +294,21 @@ interface StudentFeesClientProps {
 - Yearly summary modal
 
 **Usage:**
+
 ```tsx
 import { StudentFeesClient } from "@/components/student-fees-client";
 
-<StudentFeesClient students={students} />
+<StudentFeesClient students={students} />;
 ```
 
 ---
 
 ### 2. **TeacherSalaryClient** Component
+
 **Location:** `components/teacher-salary-client.tsx`
 
 **Props:**
+
 ```typescript
 interface TeacherSalaryClientProps {
   teachers: Teacher[];
@@ -283,6 +316,7 @@ interface TeacherSalaryClientProps {
 ```
 
 **Features:**
+
 - Teacher selector
 - Salary status tracking
 - Statistics cards
@@ -291,18 +325,21 @@ interface TeacherSalaryClientProps {
 - Yearly summary modal
 
 **Usage:**
+
 ```tsx
 import { TeacherSalaryClient } from "@/components/teacher-salary-client";
 
-<TeacherSalaryClient teachers={teachers} />
+<TeacherSalaryClient teachers={teachers} />;
 ```
 
 ---
 
 ### 3. **FeePaymentModal** Component
+
 **Location:** `components/modals/fee-payment-modal.tsx`
 
 **Props:**
+
 ```typescript
 interface FeePaymentModalProps {
   open: boolean;
@@ -314,6 +351,7 @@ interface FeePaymentModalProps {
 ```
 
 **Features:**
+
 - Month/Year dropdown selection
 - Auto-selects current month if all previous months paid
 - Shows paid/unpaid status with badges
@@ -324,9 +362,11 @@ interface FeePaymentModalProps {
 ---
 
 ### 4. **SalaryPaymentModal** Component
+
 **Location:** `components/modals/salary-payment-modal.tsx`
 
 **Props:**
+
 ```typescript
 interface SalaryPaymentModalProps {
   open: boolean;
@@ -338,14 +378,17 @@ interface SalaryPaymentModalProps {
 ```
 
 **Features:**
+
 - Same as FeePaymentModal but for salaries
 
 ---
 
 ### 5. **YearlySummaryModal** Component
+
 **Location:** `components/modals/yearly-summary-modal.tsx`
 
 **Props:**
+
 ```typescript
 interface YearlySummaryModalProps {
   open: boolean;
@@ -357,6 +400,7 @@ interface YearlySummaryModalProps {
 ```
 
 **Features:**
+
 - Year selector dropdown
 - Summary statistics (Total, Paid, Unpaid counts)
 - All 12 months in table format
@@ -369,6 +413,7 @@ interface YearlySummaryModalProps {
 ### 6. **Updated Admin Pages**
 
 #### Admin Fees Page
+
 **Location:** `app/admin/fees/page.tsx`
 
 - Fetches all students
@@ -376,6 +421,7 @@ interface YearlySummaryModalProps {
 - Shows loading and error states
 
 #### Admin Salaries Page
+
 **Location:** `app/admin/salaries/page.tsx`
 
 - Fetches all teachers
@@ -439,6 +485,7 @@ interface YearlySummaryModalProps {
 ## Configuration
 
 ### Utility Functions
+
 **Location:** `lib/utils.ts`
 
 ```typescript
@@ -460,6 +507,7 @@ isCurrentMonth(month: number, year: number) → boolean
 ```
 
 ### Types
+
 **Location:** `lib/types.ts`
 
 ```typescript
@@ -495,31 +543,37 @@ interface TeacherSalary {
 ## Key Features
 
 ✅ **Automated Monthly Billing**
+
 - Cron job runs automatically on 1st of month
 - Creates entries for all students and teachers
 - Preserves previous months' data
 
 ✅ **Month/Year Filtering**
+
 - Dropdown selectors in modals
 - Auto-selects current month if all previous paid
 - Supports viewing any past or future month
 
 ✅ **Payment Status Tracking**
+
 - Real-time status updates
 - Badges show paid/unpaid status
 - Payment dates stored for audit
 
 ✅ **Yearly Summaries**
+
 - View all 12 months at once
 - Statistics cards show summary
 - Only current month payment dates displayed
 
 ✅ **Dynamic for Multiple Users**
+
 - Works with any number of students/teachers
 - Responsive UI with grid selectors
 - Instant list updates on payment
 
 ✅ **Always-Enabled Buttons**
+
 - Payment buttons never disabled
 - Users can mark any month as paid
 - Works for past, present, and future months
@@ -529,21 +583,25 @@ interface TeacherSalary {
 ## Troubleshooting
 
 ### Cron Job Not Running
+
 - Check CRON_SECRET is set in environment
 - Verify Authorization header in requests
 - Check Vercel/external scheduler configuration
 
 ### Modal Not Opening
+
 - Ensure Dialog component is installed
 - Check open/onOpenChange props
 - Verify component is wrapped in client boundary ("use client")
 
 ### Fees/Salaries Not Showing
+
 - Confirm student_id/teacher_id is correct
 - Check month and year parameters
 - Verify API endpoint is accessible
 
 ### Payment Not Updating
+
 - Check network tab for API errors
 - Verify fee/salary record exists
 - Confirm status field is 'paid' or 'unpaid'
@@ -553,6 +611,7 @@ interface TeacherSalary {
 ## Files Created/Modified
 
 ### New Files
+
 - ✅ `app/api/cron/monthly-billing/route.ts`
 - ✅ `app/api/fees/monthly/route.ts`
 - ✅ `app/api/salaries/monthly/route.ts`
@@ -563,6 +622,7 @@ interface TeacherSalary {
 - ✅ `components/teacher-salary-client.tsx`
 
 ### Modified Files
+
 - ✅ `app/api/fees/route.ts` - Enhanced with better filtering
 - ✅ `app/api/salaries/route.ts` - Enhanced with better filtering
 - ✅ `app/admin/fees/page.tsx` - Complete redesign
@@ -574,6 +634,7 @@ interface TeacherSalary {
 ## Next Steps
 
 1. **Test Cron Job**
+
    ```bash
    curl -X POST http://localhost:3000/api/cron/monthly-billing \
      -H "Authorization: Bearer your-secret-key" \
@@ -599,6 +660,7 @@ interface TeacherSalary {
 ## Support
 
 For issues or questions:
+
 - Check the API response for error details
 - Review browser console for frontend errors
 - Verify database records exist

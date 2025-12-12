@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         updated_at,
         student:students(id, name, class_id),
         teacher:profiles(id, name)
-      `
+      `,
     );
 
     if (studentId) {
@@ -84,10 +84,14 @@ export async function GET(request: NextRequest) {
     // If the filtered query returned nothing but the client asked for a specific quiz,
     // run a fallback query (no quizName/quizDate filters) to help debug what rows exist.
     let fallbackData: any[] = [];
-    if ((quizName || quizDate) && Array.isArray(filteredData) && filteredData.length === 0) {
+    if (
+      (quizName || quizDate) &&
+      Array.isArray(filteredData) &&
+      filteredData.length === 0
+    ) {
       try {
         console.log(
-          `No rows matched quizName=${quizName} quizDate=${quizDate}. Running fallback query for debug.`
+          `No rows matched quizName=${quizName} quizDate=${quizDate}. Running fallback query for debug.`,
         );
         const { data: fb, error: fbErr } = await supabase
           .from("quiz_results")
@@ -105,7 +109,7 @@ export async function GET(request: NextRequest) {
     updated_at,
     student:students(id, name, class_id),
     teacher:profiles(id, name)
-            `
+            `,
           )
           .order("created_at", { ascending: false })
           .limit(100);
@@ -123,7 +127,7 @@ export async function GET(request: NextRequest) {
     let results = data || [];
     if (classId && results.length > 0) {
       results = results.filter(
-        (result: any) => result.student?.class_id === classId
+        (result: any) => result.student?.class_id === classId,
       );
     }
 
@@ -142,7 +146,7 @@ export async function GET(request: NextRequest) {
             ? error.message
             : "Failed to fetch quiz results",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -180,7 +184,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Missing required fields",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -273,7 +277,7 @@ export async function POST(request: NextRequest) {
         error:
           error instanceof Error ? error.message : "Failed to save quiz result",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -295,7 +299,7 @@ export async function PUT(request: NextRequest) {
           success: false,
           error: "Quiz result ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -329,7 +333,7 @@ export async function PUT(request: NextRequest) {
             ? error.message
             : "Failed to update quiz result",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -350,7 +354,7 @@ export async function DELETE(request: NextRequest) {
           success: false,
           error: "Quiz result ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -372,7 +376,7 @@ export async function DELETE(request: NextRequest) {
             ? error.message
             : "Failed to delete quiz result",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

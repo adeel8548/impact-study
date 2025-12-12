@@ -32,7 +32,7 @@ export default async function TeacherQuizResultsPage() {
     .eq("teacher_id", user.id);
 
   const classIds = Array.from(
-    new Set(assignments.map((a: any) => a.class_id))
+    new Set(assignments.map((a: any) => a.class_id)),
   ) as string[];
 
   const { data: classes = [] } = classIds.length
@@ -50,12 +50,17 @@ export default async function TeacherQuizResultsPage() {
               Quiz Results Management
             </h1>
             <p className="text-muted-foreground">
-              Manage and track quiz results for your classes with add, update, and delete operations
+              Manage and track quiz results for your classes with add, update,
+              and delete operations
             </p>
           </div>
         </div>
 
-        <QuizResultsClient teacherId={user.id} role="teacher" prefetchedClasses={classes} />
+        <QuizResultsClient
+          teacherId={user.id}
+          role="teacher"
+          prefetchedClasses={classes}
+        />
       </div>
     </div>
   );

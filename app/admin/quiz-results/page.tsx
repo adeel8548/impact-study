@@ -37,7 +37,8 @@ export default async function QuizResultsPage() {
                 Quiz Results Management
               </h1>
               <p className="text-muted-foreground">
-                Manage and track quiz results by class with add, update, and delete operations
+                Manage and track quiz results by class with add, update, and
+                delete operations
               </p>
             </div>
           </div>

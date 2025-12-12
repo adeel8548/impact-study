@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { examId: string } }
+  { params }: { params: { examId: string } },
 ) {
   const supabase = await createClient();
   // params may sometimes be undefined depending on how the request is routed.
@@ -24,7 +24,7 @@ export async function GET(
     if (!examId) {
       return NextResponse.json(
         { error: "Exam ID is required", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,7 +38,7 @@ export async function GET(
       if (error.code === "PGRST116") {
         return NextResponse.json(
           { error: "Exam not found", success: false },
-          { status: 404 }
+          { status: 404 },
         );
       }
       throw error;
@@ -49,11 +49,10 @@ export async function GET(
     console.error("Error fetching series exam:", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch exam",
+        error: error instanceof Error ? error.message : "Failed to fetch exam",
         success: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -32,11 +32,11 @@ export function TeacherHeader() {
 
         setHasInchargeClasses(
           Array.isArray(json.incharge_class_ids) &&
-            json.incharge_class_ids.length > 0
+            json.incharge_class_ids.length > 0,
         );
         setHasAssignedSubjects(
           Array.isArray(json.assigned_subjects) &&
-            json.assigned_subjects.length > 0
+            json.assigned_subjects.length > 0,
         );
       } catch (err) {
         console.error("Failed to fetch teacher permissions:", err);
@@ -79,7 +79,10 @@ export function TeacherHeader() {
               {(user.email || "Teacher")
                 .split("@")[0] // @ se pehle ka part
                 .split(" ") // words me split
-                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)) // capitalize
+                .map(
+                  (word: string) =>
+                    word.charAt(0).toUpperCase() + word.slice(1),
+                ) // capitalize
                 .join(" ")}{" "}
             </h1>
 

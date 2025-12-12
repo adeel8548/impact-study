@@ -41,11 +41,9 @@ export async function markStudentAttendance(
       ? (requesterProfile?.class_ids as string[])
       : [];
 
-    const allowed = new Set<string>([
-      ...inchargeArr,
-      ...legacySingle,
-      ...legacyClassIds,
-    ].filter(Boolean));
+    const allowed = new Set<string>(
+      [...inchargeArr, ...legacySingle, ...legacyClassIds].filter(Boolean),
+    );
 
     if (!allowed.has(classId)) {
       return { error: "Not authorized to mark attendance for this class" };

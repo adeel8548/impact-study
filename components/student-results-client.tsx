@@ -117,9 +117,10 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     const loadClasses = async () => {
       setLoading(true);
       try {
-        let classList: Class[] = prefetchedClasses && prefetchedClasses.length > 0
-          ? prefetchedClasses
-          : [];
+        let classList: Class[] =
+          prefetchedClasses && prefetchedClasses.length > 0
+            ? prefetchedClasses
+            : [];
 
         // Always fetch teacher-scoped classes to reflect latest assignments from profiles.class_ids
         const res = await fetch(classEndpoint);
@@ -156,7 +157,14 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         );
         const data = await res.json();
         const examsData: SeriesExam[] = data.data || [];
-        console.debug("[StudentResultsClient] loadSubjects for class", selectedClass, "teacher", teacherId, "exams returned", examsData.length);
+        console.debug(
+          "[StudentResultsClient] loadSubjects for class",
+          selectedClass,
+          "teacher",
+          teacherId,
+          "exams returned",
+          examsData.length,
+        );
 
         // Extract unique subjects
         const uniqueSubjects = Array.from(
@@ -378,7 +386,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     console.log("selectedExam:", selectedExam);
     console.log("students count:", students.length);
     console.log("chapters count:", chapters.length);
-    
+
     if (!selectedExam || students.length === 0 || chapters.length === 0) {
       console.log("Validation failed - missing selection");
       toast.error("Please select class, subject, and exam");
@@ -401,11 +409,14 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
       chapters.forEach((chapter) => {
         const key = `${student.id}_${chapter.id}`;
         const markValue = marks[key];
-        
+
         // Convert to number - treat empty/undefined as 0
         let markNum = 0;
         if (markValue !== "" && markValue !== undefined && markValue !== null) {
-          const parsed = typeof markValue === "number" ? markValue : parseFloat(String(markValue));
+          const parsed =
+            typeof markValue === "number"
+              ? markValue
+              : parseFloat(String(markValue));
           if (Number.isFinite(parsed)) {
             markNum = parsed;
           }
@@ -447,17 +458,25 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
             body: JSON.stringify(result),
           });
 
-          console.log(`Response status: ${response.status}, ok: ${response.ok}`);
-          
+          console.log(
+            `Response status: ${response.status}, ok: ${response.ok}`,
+          );
+
           if (!response.ok) {
             const errorData = await response.json();
-            console.error(`Error saving student ${result.student_id}:`, errorData);
+            console.error(
+              `Error saving student ${result.student_id}:`,
+              errorData,
+            );
             failedSaves.push(result.student_id);
             continue;
           }
 
           const responseData = await response.json();
-          console.log(`Successfully saved for student ${result.student_id}:`, responseData);
+          console.log(
+            `Successfully saved for student ${result.student_id}:`,
+            responseData,
+          );
           successfulSaves.push(result.student_id);
         } catch (err) {
           console.error(`Error saving student ${result.student_id}:`, err);
@@ -465,13 +484,15 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         }
       }
 
-      console.log(`Save complete: ${successfulSaves.length} successful, ${failedSaves.length} failed`);
+      console.log(
+        `Save complete: ${successfulSaves.length} successful, ${failedSaves.length} failed`,
+      );
 
       if (successfulSaves.length > 0) {
         toast.success(
           `Saved results for ${successfulSaves.length} student(s)${
             failedSaves.length > 0 ? ` (${failedSaves.length} failed)` : ""
-          }`
+          }`,
         );
       }
 
@@ -763,7 +784,9 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                 <div className="flex justify-end gap-2">
                   <Button
                     onClick={handleSaveAll}
-                    disabled={saving || chapters.length === 0 || students.length === 0}
+                    disabled={
+                      saving || chapters.length === 0 || students.length === 0
+                    }
                     className="gap-2"
                   >
                     {saving ? (

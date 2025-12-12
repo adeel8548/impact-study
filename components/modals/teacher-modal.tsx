@@ -49,7 +49,7 @@ export function TeacherModal({
     password: "",
     salary: "",
     incharge_class_ids: [] as string[],
-    assign_subjects: [] as Array<{ class_id: string; subject_id: string }> ,
+    assign_subjects: [] as Array<{ class_id: string; subject_id: string }>,
   });
 
   const isEditing = !!teacher;
@@ -71,19 +71,22 @@ export function TeacherModal({
         incharge_class_ids: (teacher as any).incharge_class_ids
           ? ((teacher as any).incharge_class_ids as string[])
           : (teacher as any).incharge_class_id
-          ? [ (teacher as any).incharge_class_id ]
-          : [],
+            ? [(teacher as any).incharge_class_id]
+            : [],
         assign_subjects: (teacher as any).assign_subjects || [],
       });
 
       // If assign_subjects not provided on teacher prop, fetch from API
       (async () => {
         try {
-            if (!(teacher as any).assign_subjects) {
+          if (!(teacher as any).assign_subjects) {
             const res = await fetch(`/api/teachers/${teacher.id}/assignments`);
             const json = await res.json();
             const assigns = Array.isArray(json.assignments)
-              ? json.assignments.map((a: any) => ({ class_id: a.class_id, subject_id: a.subject_id }))
+              ? json.assignments.map((a: any) => ({
+                  class_id: a.class_id,
+                  subject_id: a.subject_id,
+                }))
               : [];
             setFormData((prev) => ({ ...prev, assign_subjects: assigns }));
           }
@@ -201,7 +204,6 @@ export function TeacherModal({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.assign_subjects]);
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -335,8 +337,6 @@ export function TeacherModal({
             />
           </div>
 
-          
-
           {/* Class Incharge multi-select */}
           <div className="space-y-2">
             <Label>Class Incharge (select multiple)</Label>
@@ -392,9 +392,10 @@ export function TeacherModal({
                             } else {
                               setFormData({
                                 ...formData,
-                                incharge_class_ids: formData.incharge_class_ids.filter(
-                                  (id) => id !== cls.id
-                                ),
+                                incharge_class_ids:
+                                  formData.incharge_class_ids.filter(
+                                    (id) => id !== cls.id,
+                                  ),
                               });
                             }
                           }}
@@ -424,9 +425,10 @@ export function TeacherModal({
                           onClick={() => {
                             setFormData({
                               ...formData,
-                              incharge_class_ids: formData.incharge_class_ids.filter(
-                                (id) => id !== classId
-                              ),
+                              incharge_class_ids:
+                                formData.incharge_class_ids.filter(
+                                  (id) => id !== classId,
+                                ),
                             });
                           }}
                           className="hover:text-blue-900 dark:hover:text-blue-200 ml-1"
@@ -491,7 +493,9 @@ export function TeacherModal({
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const next = formData.assign_subjects.filter((_, i) => i !== idx);
+                      const next = formData.assign_subjects.filter(
+                        (_, i) => i !== idx,
+                      );
                       setFormData({ ...formData, assign_subjects: next });
                     }}
                   >

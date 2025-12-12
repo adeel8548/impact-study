@@ -21,7 +21,12 @@ import {
 } from "lucide-react";
 import { FeePaymentModal } from "@/components/modals/fee-payment-modal";
 import { YearlySummaryModal } from "@/components/modals/yearly-summary-modal";
-import { MONTHS_SHORT, getCurrentMonth, getCurrentYear, formatCurrency } from "@/lib/utils";
+import {
+  MONTHS_SHORT,
+  getCurrentMonth,
+  getCurrentYear,
+  formatCurrency,
+} from "@/lib/utils";
 
 interface Student {
   id: string;
@@ -45,7 +50,7 @@ interface StudentFeeRecord {
 
 export function StudentFeesClient({ students }: StudentFeesClientProps) {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(
-    students[0]?.id || null
+    students[0]?.id || null,
   );
   const [fees, setFees] = useState<StudentFeeRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,7 +74,7 @@ export function StudentFeesClient({ students }: StudentFeesClientProps) {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/fees?studentId=${selectedStudent}&allMonths=true`
+        `/api/fees?studentId=${selectedStudent}&allMonths=true`,
       );
 
       if (!response.ok) throw new Error("Failed to fetch fees");
@@ -92,7 +97,7 @@ export function StudentFeesClient({ students }: StudentFeesClientProps) {
 
   // Get current month fee
   const currentMonthFee = fees.find(
-    (f) => f.month === currentMonth && f.year === currentYear
+    (f) => f.month === currentMonth && f.year === currentYear,
   );
 
   // Calculate statistics
@@ -186,7 +191,8 @@ export function StudentFeesClient({ students }: StudentFeesClientProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
-                    Current Month ({MONTHS_SHORT[currentMonth - 1]} {currentYear})
+                    Current Month ({MONTHS_SHORT[currentMonth - 1]}{" "}
+                    {currentYear})
                   </h3>
                   <div className="flex items-center gap-3">
                     <Badge
@@ -267,7 +273,10 @@ export function StudentFeesClient({ students }: StudentFeesClientProps) {
                   </TableRow>
                 ) : fees.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No fee records found
                     </TableCell>
                   </TableRow>

@@ -154,7 +154,8 @@ export default function TeacherChaptersPage() {
         ) : (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">
-              Chapters for {exams.length > 0 ? "Your Subjects" : "Selected Class"}
+              Chapters for{" "}
+              {exams.length > 0 ? "Your Subjects" : "Selected Class"}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {chapters.map((chapter) => (
@@ -164,7 +165,9 @@ export default function TeacherChaptersPage() {
                 >
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm text-muted-foreground">Chapter Name</p>
+                      <p className="text-sm text-muted-foreground">
+                        Chapter Name
+                      </p>
                       <p className="text-lg font-semibold">
                         {chapter.chapter_name}
                       </p>
@@ -178,7 +181,9 @@ export default function TeacherChaptersPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Max Marks</p>
+                        <p className="text-sm text-muted-foreground">
+                          Max Marks
+                        </p>
                         <p className="font-medium text-base">
                           {chapter.max_marks}
                         </p>

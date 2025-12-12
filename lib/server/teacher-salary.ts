@@ -46,7 +46,8 @@ export async function upsertTeacherSalary({
 
   console.log("[upsertTeacherSalary] Found rows:", possibleRows);
 
-  const existing = possibleRows && possibleRows.length > 0 ? possibleRows[0] : undefined;
+  const existing =
+    possibleRows && possibleRows.length > 0 ? possibleRows[0] : undefined;
 
   console.log("[upsertTeacherSalary] Existing record:", existing);
 

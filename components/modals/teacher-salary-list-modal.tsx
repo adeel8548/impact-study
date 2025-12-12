@@ -236,7 +236,8 @@ export function TeacherSalaryListModal({
                                         {monthYear}
                                       </p>
                                       <p className="text-sm text-muted-foreground">
-                                        PKR {(salary.amount || 0).toLocaleString()}
+                                        PKR{" "}
+                                        {(salary.amount || 0).toLocaleString()}
                                       </p>
                                     </div>
                                   </div>
@@ -310,4 +311,3 @@ export function TeacherSalaryListModal({
     </Dialog>
   );
 }
-

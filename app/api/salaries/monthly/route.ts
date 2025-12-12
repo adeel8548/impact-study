@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!teacherId || !month || !year) {
       return NextResponse.json(
         { error: "teacherId, month, and year are required", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching monthly salary:", error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to fetch salary",
+        error:
+          error instanceof Error ? error.message : "Failed to fetch salary",
         success: false,
       },
       { status: 500 },

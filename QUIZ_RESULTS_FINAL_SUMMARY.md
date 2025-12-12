@@ -5,18 +5,21 @@
 A complete Quiz Results management system that mirrors the Student Results page functionality, allowing admins and teachers to:
 
 ### 1. **Select Class & Quiz**
+
 - Dropdown to select a class (all classes for admin, assigned classes for teachers)
 - Automatic loading of all available quizzes for that class
 - Quiz displays with subject, topic, date, and duration
 
 ### 2. **Enter Marks for All Students at Once**
+
 - Grid/table layout showing all students in the class
 - Input field for each student to enter quiz marks
-- Automatic percentage calculation (obtained/total * 100)
+- Automatic percentage calculation (obtained/total \* 100)
 - Pass/Fail status (red if <40%, green if ≥40%)
 - Decimal support (0.01 increments)
 
 ### 3. **Batch Save**
+
 - Single "Save All Results" button
 - Saves marks for all students simultaneously
 - Handles errors gracefully (shows success/fail counts)
@@ -24,6 +27,7 @@ A complete Quiz Results management system that mirrors the Student Results page 
 - Can update existing marks by selecting same quiz again
 
 ### 4. **Statistics**
+
 - Total results count
 - Average marks obtained
 - Average percentage across class
@@ -32,6 +36,7 @@ A complete Quiz Results management system that mirrors the Student Results page 
 ## 📁 Files Created/Modified
 
 ### Created Files
+
 1. **`/components/quiz-results-client.tsx`** (Complete rewrite)
    - Client-side React component
    - State management for class, quiz, students, marks
@@ -49,6 +54,7 @@ A complete Quiz Results management system that mirrors the Student Results page 
    - Renders QuizResultsClient component
 
 ### Modified Files
+
 1. **`/app/api/quiz-results/route.ts`**
    - Enhanced GET to support classId filtering
    - Updated POST to auto-assign teacherId
@@ -66,16 +72,19 @@ A complete Quiz Results management system that mirrors the Student Results page 
 ## 🎯 Key Features
 
 ### Class-Based Organization
+
 - Select class → see all quizzes for that class
 - Automatically loads students in class
 - All operations scoped to selected class
 
 ### Quiz Selection
+
 - Dropdown of available quizzes from `daily_quizzes` table
 - Shows quiz topic, date, subject, duration
 - Quiz duration used as max marks (default 100)
 
 ### Mark Entry Grid
+
 ```
 | Student Name | Roll No. | Quiz Marks (0-100) | % | Status |
 |---|---|---|---|---|
@@ -90,12 +99,14 @@ A complete Quiz Results management system that mirrors the Student Results page 
 - Supports decimal marks
 
 ### Batch Save
+
 - One click to save all marks
 - Shows: "Saved results for X student(s)"
 - Handles partial failures gracefully
 - Reloads data automatically
 
 ### Data Persistence
+
 - Detects existing marks
 - Shows green indicator: "Existing marks loaded"
 - Can update by entering new marks and saving
@@ -103,13 +114,13 @@ A complete Quiz Results management system that mirrors the Student Results page 
 
 ## 🔌 API Endpoints Used
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/classes` | GET | Load all classes |
-| `/api/daily-quizzes` | GET | Load quizzes for class |
-| `/api/students` | GET | Load students in class |
-| `/api/quiz-results` | GET | Load existing marks |
-| `/api/quiz-results` | POST | Save marks for student |
+| Endpoint             | Method | Purpose                |
+| -------------------- | ------ | ---------------------- |
+| `/api/classes`       | GET    | Load all classes       |
+| `/api/daily-quizzes` | GET    | Load quizzes for class |
+| `/api/students`      | GET    | Load students in class |
+| `/api/quiz-results`  | GET    | Load existing marks    |
+| `/api/quiz-results`  | POST   | Save marks for student |
 
 ## 📊 State Management
 
@@ -137,11 +148,13 @@ prefillLoaded: boolean;
 ## 🎨 UI/UX Elements
 
 ### Selection Panel
+
 - Class dropdown (required)
 - Quiz dropdown (disabled until class selected)
 - Quiz info display (subject, duration, date)
 
 ### Marks Grid
+
 - Student names and roll numbers
 - Input field per student
 - Percentage calculations
@@ -149,10 +162,12 @@ prefillLoaded: boolean;
 - Summary statistics
 
 ### Buttons
+
 - "Save All Results" - Batch save with spinner
 - Responsive layout (mobile/tablet/desktop)
 
 ### Feedback
+
 - Toast notifications (success/error)
 - Loading spinners
 - Status indicators
@@ -161,11 +176,13 @@ prefillLoaded: boolean;
 ## 🔒 Access Control
 
 ### Admin Access
+
 - Can manage quiz results for any class
 - Full access to all students
 - `/admin/quiz-results`
 
 ### Teacher Access
+
 - Only sees their assigned classes/quizzes
 - Filtered by teacherId automatically
 - `/teacher/quiz-results`
@@ -198,6 +215,7 @@ prefillLoaded: boolean;
 ## 🚀 How to Use
 
 ### For Admin
+
 1. Go to `/admin/quiz-results`
 2. Select a class from dropdown
 3. Select a quiz from dropdown
@@ -206,6 +224,7 @@ prefillLoaded: boolean;
 6. See success toast notification
 
 ### For Teacher
+
 1. Go to `/teacher/quiz-results`
 2. Select a class (only assigned classes)
 3. Select a quiz from dropdown
@@ -256,19 +275,20 @@ prefillLoaded: boolean;
 
 ## 🔄 Comparison with Old Version
 
-| Feature | Old | New |
-|---------|-----|-----|
-| Add marks | One student at a time form | Grid for all students |
-| Save | Single student save | Batch save all |
-| Edit | Edit button per result | Direct grid editing |
-| Delete | Delete button per result | Update & resave |
-| View | Results table list | Marks input grid |
-| Selection | Student search field | Class + Quiz dropdowns |
-| Quizzes | Hardcoded input | Loaded from database |
+| Feature   | Old                        | New                    |
+| --------- | -------------------------- | ---------------------- |
+| Add marks | One student at a time form | Grid for all students  |
+| Save      | Single student save        | Batch save all         |
+| Edit      | Edit button per result     | Direct grid editing    |
+| Delete    | Delete button per result   | Update & resave        |
+| View      | Results table list         | Marks input grid       |
+| Selection | Student search field       | Class + Quiz dropdowns |
+| Quizzes   | Hardcoded input            | Loaded from database   |
 
 ## 🎓 Educational Value
 
 This implementation teaches:
+
 - React state management patterns
 - Form handling with batch operations
 - API integration patterns

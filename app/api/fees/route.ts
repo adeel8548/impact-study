@@ -19,9 +19,7 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get("year");
     const allMonths = searchParams.get("allMonths") === "true";
 
-    let query = supabase
-      .from("student_fees")
-      .select("*");
+    let query = supabase.from("student_fees").select("*");
 
     // Filter by student if provided
     if (studentId) {
@@ -41,9 +39,7 @@ export async function GET(request: NextRequest) {
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      query = query
-        .eq("month", currentMonth)
-        .eq("year", currentYear);
+      query = query.eq("month", currentMonth).eq("year", currentYear);
     }
 
     const { data, error } = await query.order("month", { ascending: true });
@@ -80,7 +76,7 @@ export async function PUT(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "id is required", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -104,7 +100,7 @@ export async function PUT(request: NextRequest) {
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { error: "Nothing to update", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -147,7 +143,7 @@ export async function POST(request: NextRequest) {
     if (!student_id || !month || !year || !school_id) {
       return NextResponse.json(
         { error: "Missing required fields", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

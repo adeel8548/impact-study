@@ -32,16 +32,21 @@ export async function GET(request: NextRequest) {
       if (tcErr) throw tcErr;
 
       // Flatten to classes array
-      const classes = (tcData || []).map((row: any) => row.classes).filter(Boolean);
+      const classes = (tcData || [])
+        .map((row: any) => row.classes)
+        .filter(Boolean);
 
       return NextResponse.json({ classes: classes || [], success: true });
     }
 
     // Otherwise return all classes
-    const { data, error } = await supabase.from("classes").select("*").order("created_at", {
-      ascending: false,
-      nullsLast: true,
-    });
+    const { data, error } = await supabase
+      .from("classes")
+      .select("*")
+      .order("created_at", {
+        ascending: false,
+        nullsLast: true,
+      });
 
     if (error) throw error;
 

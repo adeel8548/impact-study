@@ -16,8 +16,11 @@ export async function GET(request: NextRequest) {
       const isIncharge = await isTeacherInchargeOfClass(teacherId, classId);
       if (!isIncharge) {
         return NextResponse.json(
-          { error: "Unauthorized: Teacher is not incharge of this class", success: false },
-          { status: 403 }
+          {
+            error: "Unauthorized: Teacher is not incharge of this class",
+            success: false,
+          },
+          { status: 403 },
         );
       }
     }
@@ -78,11 +81,17 @@ export async function POST(request: NextRequest) {
     if (records.length > 0 && teacherId) {
       const firstRecord = records[0];
       if (firstRecord.class_id) {
-        const isIncharge = await isTeacherInchargeOfClass(teacherId, firstRecord.class_id);
+        const isIncharge = await isTeacherInchargeOfClass(
+          teacherId,
+          firstRecord.class_id,
+        );
         if (!isIncharge) {
           return NextResponse.json(
-            { error: "Unauthorized: Teacher is not incharge of this class", success: false },
-            { status: 403 }
+            {
+              error: "Unauthorized: Teacher is not incharge of this class",
+              success: false,
+            },
+            { status: 403 },
           );
         }
       }

@@ -98,7 +98,7 @@ export function SalaryPaymentModal({
       let allPaid = true;
       for (const { month, year } of previousMonths) {
         const response = await fetch(
-          `/api/salaries/monthly?teacherId=${teacherId}&month=${month}&year=${year}`
+          `/api/salaries/monthly?teacherId=${teacherId}&month=${month}&year=${year}`,
         );
         const data = await response.json();
 
@@ -123,7 +123,7 @@ export function SalaryPaymentModal({
       setLoading(true);
       setError("");
       const response = await fetch(
-        `/api/salaries/monthly?teacherId=${teacherId}&month=${selectedMonth}&year=${selectedYear}`
+        `/api/salaries/monthly?teacherId=${teacherId}&month=${selectedMonth}&year=${selectedYear}`,
       );
 
       if (!response.ok) throw new Error("Failed to fetch salary");
@@ -169,8 +169,7 @@ export function SalaryPaymentModal({
 
   const isPaid = salary?.status === "paid";
   const isCurrentMonth =
-    selectedMonth === getCurrentMonth() &&
-    selectedYear === getCurrentYear();
+    selectedMonth === getCurrentMonth() && selectedYear === getCurrentYear();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

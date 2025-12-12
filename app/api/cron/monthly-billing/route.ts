@@ -5,7 +5,7 @@ import { type NextRequest, NextResponse } from "next/server";
  * Cron Job: Auto-create monthly fees and salaries
  * Runs on the first day of every month
  * Creates student_fees and teacher_salary entries if not already present
- * 
+ *
  * Call this endpoint: /api/cron/monthly-billing
  * Set up via Vercel Cron Job:
  * - Cron expression: "0 0 1 * *" (Every 1st of the month at 00:00)
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json(
       { error: "Unauthorized", success: false },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const currentYear = now.getFullYear();
 
     console.log(
-      `[Cron] Starting monthly billing process for ${currentMonth}/${currentYear}`
+      `[Cron] Starting monthly billing process for ${currentMonth}/${currentYear}`,
     );
 
     // Get all students
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       if (upsertTeacherError) {
         console.error(
           "[Cron] Teacher salary upsert error:",
-          upsertTeacherError
+          upsertTeacherError,
         );
         throw upsertTeacherError;
       }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `[Cron] Completed: ${students.length} students, ${teachersProcessed} teachers`
+      `[Cron] Completed: ${students.length} students, ${teachersProcessed} teachers`,
     );
 
     return NextResponse.json({
@@ -137,10 +137,11 @@ export async function POST(request: NextRequest) {
     console.error("[Cron] Monthly billing error:", error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to process billing",
+        error:
+          error instanceof Error ? error.message : "Failed to process billing",
         success: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -154,7 +155,7 @@ export async function GET(request: NextRequest) {
   if (secret !== cronSecret) {
     return NextResponse.json(
       { error: "Unauthorized", success: false },
-      { status: 401 }
+      { status: 401 },
     );
   }
 

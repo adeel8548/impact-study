@@ -63,13 +63,15 @@ export default function TeacherChaptersPage() {
       // Fetch subjects for the exam's class so we can resolve subject_id
       if (examData?.data?.class_id) {
         try {
-          const subjRes = await fetch(`/api/subjects?classId=${examData.data.class_id}`);
+          const subjRes = await fetch(
+            `/api/subjects?classId=${examData.data.class_id}`,
+          );
           if (subjRes.ok) {
             const subjJson = await subjRes.json();
             setSubjects(subjJson.subjects || []);
           }
         } catch (e) {
-          console.warn('Failed to load subjects for class', e);
+          console.warn("Failed to load subjects for class", e);
         }
       }
 
@@ -107,7 +109,9 @@ export default function TeacherChaptersPage() {
       const matchedSubject = subjects.find((s) => s.name === exam?.subject);
 
       if (!editingId && !matchedSubject) {
-        toast.error("Could not determine subject id for this exam. Please contact admin.");
+        toast.error(
+          "Could not determine subject id for this exam. Please contact admin.",
+        );
         setSaving(false);
         return;
       }
@@ -207,7 +211,9 @@ export default function TeacherChaptersPage() {
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Series Exam Chapters</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Series Exam Chapters
+            </h1>
             {exam && (
               <p className="text-muted-foreground mt-1">
                 {exam.subject} ({exam.start_date} to {exam.end_date})
@@ -224,7 +230,10 @@ export default function TeacherChaptersPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="chapter-name" className="text-sm font-medium mb-2 block">
+              <Label
+                htmlFor="chapter-name"
+                className="text-sm font-medium mb-2 block"
+              >
                 Chapter Name
               </Label>
               <Input
@@ -236,7 +245,10 @@ export default function TeacherChaptersPage() {
             </div>
 
             <div>
-              <Label htmlFor="chapter-date" className="text-sm font-medium mb-2 block">
+              <Label
+                htmlFor="chapter-date"
+                className="text-sm font-medium mb-2 block"
+              >
                 Chapter Date
               </Label>
               <Input
@@ -248,7 +260,10 @@ export default function TeacherChaptersPage() {
             </div>
 
             <div>
-              <Label htmlFor="max-marks" className="text-sm font-medium mb-2 block">
+              <Label
+                htmlFor="max-marks"
+                className="text-sm font-medium mb-2 block"
+              >
                 Max Marks
               </Label>
               <Input
@@ -281,11 +296,7 @@ export default function TeacherChaptersPage() {
             </Button>
 
             {editingId && (
-              <Button
-                variant="outline"
-                onClick={resetForm}
-                disabled={saving}
-              >
+              <Button variant="outline" onClick={resetForm} disabled={saving}>
                 Cancel
               </Button>
             )}
@@ -294,7 +305,9 @@ export default function TeacherChaptersPage() {
 
         {/* Chapters List */}
         <Card className="p-6 bg-white">
-          <h2 className="text-lg font-semibold mb-4">Chapters ({chapters.length})</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            Chapters ({chapters.length})
+          </h2>
 
           {chapters.length === 0 ? (
             <div className="p-8 text-center bg-muted/50 rounded-lg">
@@ -306,22 +319,38 @@ export default function TeacherChaptersPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {chapters.map((chapter) => {
                 const subjectName =
-                  subjects.find((s) => s.id === (chapter as any).subject_id)?.name ||
+                  subjects.find((s) => s.id === (chapter as any).subject_id)
+                    ?.name ||
                   exam?.subject ||
                   "—";
                 return (
-                  <div key={chapter.id} className="p-4 border border-border rounded bg-white">
+                  <div
+                    key={chapter.id}
+                    className="p-4 border border-border rounded bg-white"
+                  >
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-semibold text-lg">{chapter.chapter_name}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Subject: <span className="font-medium">{subjectName}</span>
+                        <p className="font-semibold text-lg">
+                          {chapter.chapter_name}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-1">Date: {chapter.chapter_date}</p>
-                        <p className="text-sm text-muted-foreground mt-1">Max Marks: {chapter.max_marks}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Subject:{" "}
+                          <span className="font-medium">{subjectName}</span>
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Date: {chapter.chapter_date}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Max Marks: {chapter.max_marks}
+                        </p>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(chapter)} className="gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(chapter)}
+                          className="gap-2"
+                        >
                           <Edit2 className="h-4 w-4" />
                           Edit
                         </Button>

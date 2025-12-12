@@ -165,7 +165,8 @@ export function AdminSchedulesContent() {
     );
     // unique by teacher_id
     const unique = matches.filter(
-      (v, idx, arr) => arr.findIndex((x) => x.teacher_id === v.teacher_id) === idx,
+      (v, idx, arr) =>
+        arr.findIndex((x) => x.teacher_id === v.teacher_id) === idx,
     );
     return unique;
   };
@@ -290,9 +291,11 @@ export function AdminSchedulesContent() {
       try {
         const subRes = await fetch(`/api/classes/${selectedClass}/subjects`);
         const subData = await subRes.json();
-        const subjects = Array.isArray(subData.subjects) ? subData.subjects : [];
+        const subjects = Array.isArray(subData.subjects)
+          ? subData.subjects
+          : [];
         const matching = subjects.find(
-          (s: any) => s.name === revSubject || s.id === revSubject
+          (s: any) => s.name === revSubject || s.id === revSubject,
         );
         if (matching?.id) {
           subjectId = matching.id;
@@ -340,9 +343,11 @@ export function AdminSchedulesContent() {
       try {
         const subRes = await fetch(`/api/classes/${selectedClass}/subjects`);
         const subData = await subRes.json();
-        const subjects = Array.isArray(subData.subjects) ? subData.subjects : [];
+        const subjects = Array.isArray(subData.subjects)
+          ? subData.subjects
+          : [];
         const matching = subjects.find(
-          (s: any) => s.name === examSubject || s.id === examSubject
+          (s: any) => s.name === examSubject || s.id === examSubject,
         );
         if (matching?.id) {
           subjectId = matching.id;
@@ -393,9 +398,11 @@ export function AdminSchedulesContent() {
       try {
         const subRes = await fetch(`/api/classes/${selectedClass}/subjects`);
         const subData = await subRes.json();
-        const subjects = Array.isArray(subData.subjects) ? subData.subjects : [];
+        const subjects = Array.isArray(subData.subjects)
+          ? subData.subjects
+          : [];
         const matching = subjects.find(
-          (s: any) => s.name === quizSubject || s.id === quizSubject
+          (s: any) => s.name === quizSubject || s.id === quizSubject,
         );
         if (matching?.id) {
           subjectId = matching.id;
@@ -403,7 +410,7 @@ export function AdminSchedulesContent() {
       } catch (err) {
         console.warn("Failed to lookup subject_id:", err);
       }
-      
+
       const payload = {
         id: quizEditingId || undefined,
         class_id: selectedClass,

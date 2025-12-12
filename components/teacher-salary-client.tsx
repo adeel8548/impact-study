@@ -21,7 +21,12 @@ import {
 } from "lucide-react";
 import { SalaryPaymentModal } from "@/components/modals/salary-payment-modal";
 import { YearlySummaryModal } from "@/components/modals/yearly-summary-modal";
-import { MONTHS_SHORT, getCurrentMonth, getCurrentYear, formatCurrency } from "@/lib/utils";
+import {
+  MONTHS_SHORT,
+  getCurrentMonth,
+  getCurrentYear,
+  formatCurrency,
+} from "@/lib/utils";
 
 interface Teacher {
   id: string;
@@ -45,7 +50,7 @@ interface TeacherSalaryRecord {
 
 export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
   const [selectedTeacher, setSelectedTeacher] = useState<string | null>(
-    teachers[0]?.id || null
+    teachers[0]?.id || null,
   );
   const [salaries, setSalaries] = useState<TeacherSalaryRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,7 +74,7 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/salaries?teacherId=${selectedTeacher}&allMonths=true`
+        `/api/salaries?teacherId=${selectedTeacher}&allMonths=true`,
       );
 
       if (!response.ok) throw new Error("Failed to fetch salaries");
@@ -92,7 +97,7 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
 
   // Get current month salary
   const currentMonthSalary = salaries.find(
-    (s) => s.month === currentMonth && s.year === currentYear
+    (s) => s.month === currentMonth && s.year === currentYear,
   );
 
   // Calculate statistics
@@ -186,7 +191,8 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
-                    Current Month ({MONTHS_SHORT[currentMonth - 1]} {currentYear})
+                    Current Month ({MONTHS_SHORT[currentMonth - 1]}{" "}
+                    {currentYear})
                   </h3>
                   <div className="flex items-center gap-3">
                     <Badge
@@ -267,7 +273,10 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
                   </TableRow>
                 ) : salaries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No salary records found
                     </TableCell>
                   </TableRow>

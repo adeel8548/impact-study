@@ -287,7 +287,9 @@ export function TeacherSalaryHistoryModal({
                         <Button
                           size="sm"
                           disabled={isUpdating}
-                          onClick={() => record?.id && handleMarkPaid(record.id, month)}
+                          onClick={() =>
+                            record?.id && handleMarkPaid(record.id, month)
+                          }
                           className="w-full gap-2"
                         >
                           {isUpdating ? (
@@ -318,4 +320,3 @@ export function TeacherSalaryHistoryModal({
     </Dialog>
   );
 }
-

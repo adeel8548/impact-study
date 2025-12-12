@@ -64,7 +64,7 @@ export function YearlySummaryModal({
       setError("");
 
       const response = await fetch(
-        `${apiEndpoint}?${queryParam}=${entityId}&year=${selectedYear}&allMonths=true`
+        `${apiEndpoint}?${queryParam}=${entityId}&year=${selectedYear}&allMonths=true`,
       );
 
       if (!response.ok) throw new Error("Failed to fetch yearly data");
@@ -130,7 +130,9 @@ export function YearlySummaryModal({
                 <div className="text-2xl font-bold text-primary">
                   {records.length}
                 </div>
-                <div className="text-xs text-muted-foreground">Total Months</div>
+                <div className="text-xs text-muted-foreground">
+                  Total Months
+                </div>
               </div>
               <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
                 <div className="text-2xl font-bold text-green-700">
@@ -215,7 +217,8 @@ export function YearlySummaryModal({
           {/* Empty State */}
           {!loading && records.length === 0 && !error && (
             <div className="rounded border border-dashed p-8 text-center text-sm text-muted-foreground">
-              No {type === "fees" ? "fee" : "salary"} records found for {selectedYear}
+              No {type === "fees" ? "fee" : "salary"} records found for{" "}
+              {selectedYear}
             </div>
           )}
         </div>

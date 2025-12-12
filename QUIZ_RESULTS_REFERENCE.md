@@ -3,16 +3,20 @@
 ## 📍 Access URLs
 
 ### For Admin Users
+
 ```
 https://yourdomain.com/admin/quiz-results
 ```
+
 - Access via Admin Sidebar → "Quiz Results"
 - Full access to all classes and quizzes
 
 ### For Teacher Users
+
 ```
 https://yourdomain.com/teacher/quiz-results
 ```
+
 - Access via Teacher Header → "Quiz Results" button
 - Limited to assigned classes
 
@@ -21,28 +25,33 @@ https://yourdomain.com/teacher/quiz-results
 ## 📁 File Locations
 
 ### Component Files
+
 ```
 /components/quiz-results-client.tsx          ← Main component (565 lines)
 ```
 
 ### Page Files
+
 ```
 /app/admin/quiz-results/page.tsx             ← Admin page
 /app/teacher/quiz-results/page.tsx           ← Teacher page
 ```
 
 ### API Files (Modified)
+
 ```
 /app/api/quiz-results/route.ts               ← Enhanced GET/POST
 ```
 
 ### Navigation Files (Modified)
+
 ```
 /components/admin-sidebar.tsx                ← Added menu item
 /components/teacher-header.tsx               ← Added nav button
 ```
 
 ### Documentation Files
+
 ```
 /QUIZ_RESULTS_COMPLETE.md                    ← This complete guide
 /QUIZ_RESULTS_FINAL_SUMMARY.md               ← Feature summary
@@ -56,6 +65,7 @@ https://yourdomain.com/teacher/quiz-results
 ## 🎯 Feature Breakdown by File
 
 ### quiz-results-client.tsx (565 lines)
+
 ```
 Lines 1-37:     Imports and type definitions
 Lines 38-45:    Component props and main function
@@ -73,6 +83,7 @@ Lines 416-565:  Render: Marks grid and summary
 ```
 
 ### Admin Page (page.tsx)
+
 ```
 Lines 1-5:      Imports
 Lines 6-11:     Authentication check
@@ -81,6 +92,7 @@ Lines 25-51:    JSX: Layout with sidebar and content
 ```
 
 ### Teacher Page (page.tsx)
+
 ```
 Lines 1-5:      Imports
 Lines 6-11:     Authentication check
@@ -94,6 +106,7 @@ Lines 25-47:    JSX: Layout with header and content
 ## 🔌 API Endpoints
 
 ### GET /api/classes
+
 ```
 Purpose:  Load all available classes
 Request:  GET /api/classes
@@ -101,6 +114,7 @@ Response: { classes: [...] }
 ```
 
 ### GET /api/daily-quizzes
+
 ```
 Purpose:  Load quizzes for a class
 Request:  GET /api/daily-quizzes?classId=X&teacherId=Y (optional)
@@ -109,6 +123,7 @@ Fields:   id, subject, topic, quiz_date, duration_minutes
 ```
 
 ### GET /api/students
+
 ```
 Purpose:  Load students in a class
 Request:  GET /api/students?classId=X
@@ -117,6 +132,7 @@ Fields:   id, name, roll_number
 ```
 
 ### GET /api/quiz-results
+
 ```
 Purpose:  Load existing quiz results
 Request:  GET /api/quiz-results?classId=X&teacherId=Y
@@ -125,6 +141,7 @@ Fields:   id, student_id, quiz_name, obtained_marks, total_marks, quiz_date
 ```
 
 ### POST /api/quiz-results
+
 ```
 Purpose:  Save new quiz result
 Request:  POST /api/quiz-results
@@ -145,6 +162,7 @@ Response: { success: true, data: {...} }
 ## 📊 Data Model
 
 ### Class
+
 ```typescript
 {
   id: string;
@@ -153,6 +171,7 @@ Response: { success: true, data: {...} }
 ```
 
 ### Student
+
 ```typescript
 {
   id: string;
@@ -162,6 +181,7 @@ Response: { success: true, data: {...} }
 ```
 
 ### Quiz
+
 ```typescript
 {
   id: string;
@@ -173,6 +193,7 @@ Response: { success: true, data: {...} }
 ```
 
 ### QuizResult
+
 ```typescript
 {
   id: string;
@@ -191,6 +212,7 @@ Response: { success: true, data: {...} }
 ## 🎨 UI Components Used
 
 ### From shadcn/ui
+
 ```
 <Card>              - Container component
 <Button>            - Action buttons
@@ -200,6 +222,7 @@ Response: { success: true, data: {...} }
 ```
 
 ### From lucide-react
+
 ```
 <Loader2>           - Loading spinner
 <Save>              - Save button icon
@@ -207,6 +230,7 @@ Response: { success: true, data: {...} }
 ```
 
 ### From sonner
+
 ```
 toast.success()     - Success notifications
 toast.error()       - Error notifications
@@ -291,6 +315,7 @@ loadQuizResultsForQuiz() → reload data
 ## 🧪 Test Scenarios
 
 ### Scenario 1: First Time Quiz Marking
+
 ```
 1. Open /admin/quiz-results
 2. Select Class: "10-A"
@@ -302,6 +327,7 @@ loadQuizResultsForQuiz() → reload data
 ```
 
 ### Scenario 2: Update Existing Marks
+
 ```
 1. Open /admin/quiz-results
 2. Select Class: "10-A"
@@ -314,6 +340,7 @@ loadQuizResultsForQuiz() → reload data
 ```
 
 ### Scenario 3: Teacher View
+
 ```
 1. Open /teacher/quiz-results
 2. Select Class: (only shows assigned classes)
@@ -327,20 +354,21 @@ loadQuizResultsForQuiz() → reload data
 
 ## 📈 Performance Metrics
 
-| Operation | Time |
-|-----------|------|
-| Load classes | < 500ms |
-| Load quizzes + students | < 500ms |
-| Load existing marks | < 300ms |
+| Operation                 | Time    |
+| ------------------------- | ------- |
+| Load classes              | < 500ms |
+| Load quizzes + students   | < 500ms |
+| Load existing marks       | < 300ms |
 | Render grid (10 students) | < 100ms |
-| Save 10 students | < 2s |
-| Save 100 students | < 5s |
+| Save 10 students          | < 2s    |
+| Save 100 students         | < 5s    |
 
 ---
 
 ## 🛠️ Troubleshooting Guide
 
 ### Issue: Quiz dropdown is empty
+
 ```
 Solution:
 1. Verify class is selected
@@ -349,6 +377,7 @@ Solution:
 ```
 
 ### Issue: Students not showing
+
 ```
 Solution:
 1. Verify class is selected
@@ -357,6 +386,7 @@ Solution:
 ```
 
 ### Issue: Marks not saving
+
 ```
 Solution:
 1. Check internet connection
@@ -366,6 +396,7 @@ Solution:
 ```
 
 ### Issue: Pre-filled marks don't show
+
 ```
 Solution:
 1. Try selecting quiz again
@@ -379,6 +410,7 @@ Solution:
 ## 🔐 Security Considerations
 
 ### Authentication
+
 ```
 ✅ Admin check on admin page
 ✅ Teacher check on teacher page
@@ -386,6 +418,7 @@ Solution:
 ```
 
 ### Authorization
+
 ```
 ✅ Teachers only see their students
 ✅ API filters by teacherId for teachers
@@ -393,6 +426,7 @@ Solution:
 ```
 
 ### Data Validation
+
 ```
 ✅ Marks must be numbers
 ✅ Marks must be non-negative
@@ -405,7 +439,9 @@ Solution:
 ## 📞 Contact Points
 
 ### For Issues
+
 Check files in order:
+
 1. QUIZ_RESULTS_QUICK_START.md - User guide
 2. QUIZ_RESULTS_COMPLETE.md - This file
 3. QUIZ_RESULTS_FINAL_SUMMARY.md - Technical details
@@ -413,7 +449,9 @@ Check files in order:
 5. Check API responses in Network tab
 
 ### For Customization
+
 Modify these files:
+
 - `/components/quiz-results-client.tsx` - Component logic
 - `/app/api/quiz-results/route.ts` - API logic
 - Update documentation files

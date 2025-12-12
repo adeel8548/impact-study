@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
     const supabase = await createClient();
@@ -17,10 +17,7 @@ export async function GET(
       .single();
 
     if (teacherErr) {
-      return NextResponse.json(
-        { error: teacherErr.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: teacherErr.message }, { status: 400 });
     }
 
     const inchargeArr = Array.isArray(teacher?.incharge_class_ids)
@@ -35,7 +32,9 @@ export async function GET(
 
     // Merge all possible incharge/class assignment fields (handles legacy data)
     const incharge_class_ids = Array.from(
-      new Set([...inchargeArr, ...legacySingle, ...legacyClassIds].filter(Boolean)),
+      new Set(
+        [...inchargeArr, ...legacySingle, ...legacyClassIds].filter(Boolean),
+      ),
     );
 
     // Get teacher's assigned subjects
@@ -45,14 +44,11 @@ export async function GET(
       .eq("teacher_id", teacherId);
 
     if (assignErr) {
-      return NextResponse.json(
-        { error: assignErr.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: assignErr.message }, { status: 400 });
     }
 
     const assigned_subjects = Array.from(
-      new Set((assignments || []).map((a: any) => a.subject_id))
+      new Set((assignments || []).map((a: any) => a.subject_id)),
     );
 
     return NextResponse.json({
@@ -63,7 +59,7 @@ export async function GET(
     console.error("Error fetching teacher permissions:", err);
     return NextResponse.json(
       { error: "Failed to fetch permissions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

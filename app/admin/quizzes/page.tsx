@@ -78,7 +78,7 @@ export default function QuizMarksPage() {
       // For teachers, load only their assigned students
       if (role === "teacher") {
         const classRes = await fetch(
-          `/api/teachers/classes?teacherId=${userId}`
+          `/api/teachers/classes?teacherId=${userId}`,
         );
         const classData = await classRes.json();
         const classIds = classData.classes?.map((c: any) => c.id) || [];
@@ -169,7 +169,7 @@ export default function QuizMarksPage() {
       toast.success(
         editingId
           ? "Quiz result updated successfully"
-          : "Quiz result saved successfully"
+          : "Quiz result saved successfully",
       );
 
       // Reset form
@@ -178,7 +178,7 @@ export default function QuizMarksPage() {
     } catch (error) {
       console.error("Error saving quiz result:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to save quiz result"
+        error instanceof Error ? error.message : "Failed to save quiz result",
       );
     } finally {
       setSaving(false);
@@ -201,7 +201,7 @@ export default function QuizMarksPage() {
     } catch (error) {
       console.error("Error deleting quiz result:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete quiz result"
+        error instanceof Error ? error.message : "Failed to delete quiz result",
       );
     }
   };
@@ -238,7 +238,7 @@ export default function QuizMarksPage() {
   const filteredStudents = useMemo(() => {
     if (!searchStudent) return students;
     return students.filter((s) =>
-      s.name.toLowerCase().includes(searchStudent.toLowerCase())
+      s.name.toLowerCase().includes(searchStudent.toLowerCase()),
     );
   }, [students, searchStudent]);
 
@@ -285,7 +285,7 @@ export default function QuizMarksPage() {
   }
 
   const selectedStudentName = students.find(
-    (s) => s.id === selectedStudent
+    (s) => s.id === selectedStudent,
   )?.name;
 
   return (
@@ -399,7 +399,7 @@ export default function QuizMarksPage() {
                                 <p className="text-muted-foreground">Date</p>
                                 <p className="font-medium text-xs">
                                   {new Date(
-                                    result.quiz_date
+                                    result.quiz_date,
                                   ).toLocaleDateString()}
                                 </p>
                               </div>
@@ -528,7 +528,7 @@ export default function QuizMarksPage() {
                           </div>
                         </div>
                       </Card>
-                    )
+                    ),
                   )}
                 </div>
               )}

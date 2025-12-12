@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/server";
  */
 export async function isTeacherInchargeOfClass(
   teacherId: string,
-  classId: string
+  classId: string,
 ): Promise<boolean> {
   const adminClient = await createAdminClient();
 
@@ -30,7 +30,7 @@ export async function isTeacherInchargeOfClass(
 export async function isTeacherAssignedToSubjectInClass(
   teacherId: string,
   classId: string,
-  subjectId: string
+  subjectId: string,
 ): Promise<boolean> {
   const adminClient = await createAdminClient();
 
@@ -56,7 +56,7 @@ export async function isTeacherAssignedToSubjectInClass(
  */
 export async function isTeacherAssignedToSubject(
   teacherId: string,
-  subjectId: string
+  subjectId: string,
 ): Promise<boolean> {
   const adminClient = await createAdminClient();
 
@@ -79,7 +79,7 @@ export async function isTeacherAssignedToSubject(
  * Get all classes a teacher is incharge of
  */
 export async function getTeacherInchargeClasses(
-  teacherId: string
+  teacherId: string,
 ): Promise<string[]> {
   const adminClient = await createAdminClient();
 
@@ -101,7 +101,7 @@ export async function getTeacherInchargeClasses(
  * Get all subjects a teacher is assigned to
  */
 export async function getTeacherAssignedSubjects(
-  teacherId: string
+  teacherId: string,
 ): Promise<string[]> {
   const adminClient = await createAdminClient();
 
@@ -115,7 +115,5 @@ export async function getTeacherAssignedSubjects(
     return [];
   }
 
-  return Array.from(
-    new Set((data || []).map((d: any) => d.subject_id))
-  );
+  return Array.from(new Set((data || []).map((d: any) => d.subject_id)));
 }

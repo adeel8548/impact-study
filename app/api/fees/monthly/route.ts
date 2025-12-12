@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!studentId || !month || !year) {
       return NextResponse.json(
         { error: "studentId, month, and year are required", success: false },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

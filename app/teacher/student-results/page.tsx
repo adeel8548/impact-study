@@ -31,7 +31,7 @@ export default async function TeacherStudentResultsPage() {
     .eq("teacher_id", user.id);
 
   const classIds = Array.from(
-    new Set(assignments.map((a: any) => a.class_id))
+    new Set(assignments.map((a: any) => a.class_id)),
   ) as string[];
 
   const { data: classes = [] } = classIds.length

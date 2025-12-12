@@ -16,7 +16,11 @@ import type { ExamChapter, ExamResult, SeriesExam } from "@/lib/types";
 type ClassOption = { id: string; name: string };
 type StudentOption = { id: string; name: string };
 type SubjectOption = { id: string; name: string };
-type Assignment = { class_id: string; subject_id: string; subject_name?: string | null };
+type Assignment = {
+  class_id: string;
+  subject_id: string;
+  subject_name?: string | null;
+};
 
 /**
  * Exam Management Page
@@ -804,7 +808,9 @@ export default function ExamManagementPage() {
                     ) : (
                       chapters.map((chapter) => {
                         const subjectName =
-                          subjects.find((s) => s.id === (chapter as any).subject_id)?.name ||
+                          subjects.find(
+                            (s) => s.id === (chapter as any).subject_id,
+                          )?.name ||
                           selectedSubjectData?.name ||
                           "—";
                         return (
@@ -818,7 +824,10 @@ export default function ExamManagementPage() {
                                   {chapter.chapter_name}
                                 </p>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                  Subject: <span className="font-medium">{subjectName}</span>
+                                  Subject:{" "}
+                                  <span className="font-medium">
+                                    {subjectName}
+                                  </span>
                                 </p>
                                 <p className="text-sm text-muted-foreground mt-1">
                                   Date: {chapter.chapter_date}
@@ -838,7 +847,9 @@ export default function ExamManagementPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDeleteChapter(chapter.id)}
+                                  onClick={() =>
+                                    handleDeleteChapter(chapter.id)
+                                  }
                                   className="text-destructive"
                                 >
                                   <Trash2 className="w-4 h-4" />

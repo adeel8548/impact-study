@@ -11,7 +11,9 @@ export async function GET() {
     const [teachersRes, salariesRes] = await Promise.all([
       adminClient
         .from("profiles")
-        .select("id, name, email, phone, class_ids, incharge_class_id, incharge_class_ids, created_at")
+        .select(
+          "id, name, email, phone, class_ids, incharge_class_id, incharge_class_ids, created_at",
+        )
         .eq("role", "teacher")
         .order("created_at", { ascending: false, nullsLast: true }),
       adminClient
@@ -75,9 +77,7 @@ export async function GET() {
     const teachersWithSalary = (teachersRes.data ?? []).map((teacher) => ({
       ...teacher,
       salary:
-        salaryMap.get(teacher.id) ??
-        fallbackSalaryMap.get(teacher.id) ??
-        null,
+        salaryMap.get(teacher.id) ?? fallbackSalaryMap.get(teacher.id) ?? null,
     }));
 
     return NextResponse.json({ success: true, teachers: teachersWithSalary });

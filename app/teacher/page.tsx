@@ -79,7 +79,7 @@ export default async function TeacherDashboard() {
 
   // Count unique assigned subjects
   const uniqueAssignedSubjects = Array.from(
-    new Set((assignments || []).map((a: any) => a.subject_id))
+    new Set((assignments || []).map((a: any) => a.subject_id)),
   ).length;
 
   return (
@@ -145,7 +145,10 @@ export default async function TeacherDashboard() {
                     Today's Present
                   </p>
                   <p className="text-3xl font-bold text-foreground">
-                    {todayAttendance.filter((a) => a.status === "present").length}
+                    {
+                      todayAttendance.filter((a) => a.status === "present")
+                        .length
+                    }
                   </p>
                 </div>
                 <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
@@ -169,7 +172,9 @@ export default async function TeacherDashboard() {
         {/* My Incharge Classes (only if teacher is incharge of classes) */}
         {inchargeClasses.length > 0 && (
           <Card className="p-6 mb-8">
-            <h3 className="text-lg font-bold text-foreground mb-4">My Classes (Incharge)</h3>
+            <h3 className="text-lg font-bold text-foreground mb-4">
+              My Classes (Incharge)
+            </h3>
             <div className="space-y-3">
               {(inchargeClasses || []).map((cls) => {
                 const classStudents = (students || []).filter(
@@ -181,14 +186,18 @@ export default async function TeacherDashboard() {
                     className="flex flex-col md:flex-row items-center justify-between p-4 bg-secondary rounded-lg hover:bg-opacity-80 transition-colors"
                   >
                     <div className="mb-3 md:mb-0">
-                      <p className="font-semibold text-foreground">{cls.name}</p>
+                      <p className="font-semibold text-foreground">
+                        {cls.name}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {classStudents.length} Students
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm">
-                        <Link href={`/teacher/attendance`}>Mark Attendance</Link>
+                        <Link href={`/teacher/attendance`}>
+                          Mark Attendance
+                        </Link>
                       </Button>
                       <Button
                         size="sm"
@@ -207,24 +216,38 @@ export default async function TeacherDashboard() {
         {/* Assigned Subjects (only if teacher has assigned subjects) */}
         {assignments.length > 0 && (
           <Card className="p-6 mb-8">
-            <h3 className="text-lg font-bold text-foreground mb-4">My Assigned Subjects</h3>
+            <h3 className="text-lg font-bold text-foreground mb-4">
+              My Assigned Subjects
+            </h3>
             <div className="space-y-3">
               {Array.from(
                 new Map(
                   (assignments || []).map((a: any) => [
                     a.subject_id,
-                    { subject_id: a.subject_id, subject_name: (a as any).subjects?.name, class_id: a.class_id, class_name: (a as any).classes?.name },
-                  ])
-                ).values()
+                    {
+                      subject_id: a.subject_id,
+                      subject_name: (a as any).subjects?.name,
+                      class_id: a.class_id,
+                      class_name: (a as any).classes?.name,
+                    },
+                  ]),
+                ).values(),
               ).map((subj: any, idx: number) => (
                 <div
                   key={idx}
                   className="flex flex-col md:flex-row items-center justify-between p-4 bg-secondary rounded-lg hover:bg-opacity-80 transition-colors"
                 >
                   <div className="mb-3 md:mb-0">
-                    <p className="font-semibold text-foreground">{subj.subject_name}</p>
+                    <p className="font-semibold text-foreground">
+                      {subj.subject_name}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {(assignments || []).filter((a: any) => a.subject_id === subj.subject_id).length} Classes
+                      {
+                        (assignments || []).filter(
+                          (a: any) => a.subject_id === subj.subject_id,
+                        ).length
+                      }{" "}
+                      Classes
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -232,7 +255,9 @@ export default async function TeacherDashboard() {
                       size="sm"
                       className="bg-primary text-primary-foreground"
                     >
-                      <Link href={`/teacher/student-results`}>View Results</Link>
+                      <Link href={`/teacher/student-results`}>
+                        View Results
+                      </Link>
                     </Button>
                     <Button variant="outline" size="sm">
                       <Link href={`/teacher/quiz-results`}>Quiz Results</Link>

@@ -16,7 +16,11 @@ import { QuizCard } from "@/components/quiz-card";
 import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
-type Assignment = { class_id: string; subject_id: string; subject_name?: string | null };
+type Assignment = {
+  class_id: string;
+  subject_id: string;
+  subject_name?: string | null;
+};
 
 const toLocalDate = (d: Date) => {
   const y = d.getFullYear();
@@ -83,7 +87,7 @@ export default function TeacherSchedulesPage() {
 
       // Extract unique class IDs from assignments
       const uniqueClassIds = Array.from(
-        new Set(assignments.map((a: any) => a.class_id).filter(Boolean))
+        new Set(assignments.map((a: any) => a.class_id).filter(Boolean)),
       );
 
       if (uniqueClassIds.length === 0) {
@@ -96,7 +100,7 @@ export default function TeacherSchedulesPage() {
       // Fetch class details
       const classIds = (uniqueClassIds as string[]).join(",");
       const res = await fetch(
-        `/api/classes?ids=${encodeURIComponent(classIds)}`
+        `/api/classes?ids=${encodeURIComponent(classIds)}`,
       );
       const data = await res.json();
       const cls = Array.isArray(data.classes) ? data.classes : data.data || [];
@@ -139,7 +143,9 @@ export default function TeacherSchedulesPage() {
         (a) => a.class_id === selectedClass,
       );
       if (subjectsForClass.length > 0) {
-        setQuizSubject(subjectsForClass[0].subject_name || subjectsForClass[0].subject_id);
+        setQuizSubject(
+          subjectsForClass[0].subject_name || subjectsForClass[0].subject_id,
+        );
       } else {
         setQuizSubject("");
       }
@@ -172,9 +178,9 @@ export default function TeacherSchedulesPage() {
     try {
       // Just load quizzes for the selected class, no subject filtering needed
       // (API will return all quizzes for the class regardless of subject)
-      const params = new URLSearchParams({ 
+      const params = new URLSearchParams({
         classId: selectedClass,
-        teacherId 
+        teacherId,
       });
       const res = await fetch(`/api/daily-quizzes?${params}`);
       const json = await res.json();
@@ -193,10 +199,11 @@ export default function TeacherSchedulesPage() {
     try {
       // Find subject_id from assignments
       const assignment = assignments.find(
-        (a) => a.class_id === selectedClass && 
-               (a.subject_name === quizSubject || a.subject_id === quizSubject)
+        (a) =>
+          a.class_id === selectedClass &&
+          (a.subject_name === quizSubject || a.subject_id === quizSubject),
       );
-      
+
       const payload = {
         id: quizEditingId || undefined,
         class_id: selectedClass,
@@ -362,16 +369,17 @@ export default function TeacherSchedulesPage() {
                       onChange={(e) => setQuizSubject(e.target.value)}
                       className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
                     >
-                      {(assignments
-                        .filter((a) => a.class_id === selectedClass)
-                        .map((a) => ({
-                          id: a.subject_id,
-                          name: a.subject_name || a.subject_id,
-                        }))
-                        .filter(
-                          (v, idx, arr) =>
-                            arr.findIndex((x) => x.id === v.id) === idx,
-                        ) || []
+                      {(
+                        assignments
+                          .filter((a) => a.class_id === selectedClass)
+                          .map((a) => ({
+                            id: a.subject_id,
+                            name: a.subject_name || a.subject_id,
+                          }))
+                          .filter(
+                            (v, idx, arr) =>
+                              arr.findIndex((x) => x.id === v.id) === idx,
+                          ) || []
                       ).map((s) => (
                         <option key={s.id} value={s.name}>
                           {s.name}

@@ -103,4 +103,3 @@ export function formatCurrency(amount: number): string {
     currency: "USD",
   }).format(amount);
 }
-

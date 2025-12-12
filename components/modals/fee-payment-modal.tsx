@@ -98,7 +98,7 @@ export function FeePaymentModal({
       let allPaid = true;
       for (const { month, year } of previousMonths) {
         const response = await fetch(
-          `/api/fees/monthly?studentId=${studentId}&month=${month}&year=${year}`
+          `/api/fees/monthly?studentId=${studentId}&month=${month}&year=${year}`,
         );
         const data = await response.json();
 
@@ -123,7 +123,7 @@ export function FeePaymentModal({
       setLoading(true);
       setError("");
       const response = await fetch(
-        `/api/fees/monthly?studentId=${studentId}&month=${selectedMonth}&year=${selectedYear}`
+        `/api/fees/monthly?studentId=${studentId}&month=${selectedMonth}&year=${selectedYear}`,
       );
 
       if (!response.ok) throw new Error("Failed to fetch fee");
@@ -169,8 +169,7 @@ export function FeePaymentModal({
 
   const isPaid = fee?.status === "paid";
   const isCurrentMonth =
-    selectedMonth === getCurrentMonth() &&
-    selectedYear === getCurrentYear();
+    selectedMonth === getCurrentMonth() && selectedYear === getCurrentYear();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

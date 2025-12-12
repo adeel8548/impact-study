@@ -545,11 +545,20 @@ export default function TeacherManagement() {
                       ? { ...teacher, salary: resolvedSalary }
                       : teacher;
 
-                    const inchargeClasses = (teacher as any).incharge_class_ids && Array.isArray((teacher as any).incharge_class_ids)
-                      ? classes.filter((c) => (teacher as any).incharge_class_ids.includes(c.id))
-                      : (teacher as any).incharge_class_id
-                      ? [(classes.find((c) => c.id === (teacher as any).incharge_class_id) || null)].filter(Boolean)
-                      : [];
+                    const inchargeClasses =
+                      (teacher as any).incharge_class_ids &&
+                      Array.isArray((teacher as any).incharge_class_ids)
+                        ? classes.filter((c) =>
+                            (teacher as any).incharge_class_ids.includes(c.id),
+                          )
+                        : (teacher as any).incharge_class_id
+                          ? [
+                              classes.find(
+                                (c) =>
+                                  c.id === (teacher as any).incharge_class_id,
+                              ) || null,
+                            ].filter(Boolean)
+                          : [];
 
                     return (
                       <TeacherSalaryCard
@@ -659,8 +668,16 @@ export default function TeacherManagement() {
           await loadSalaryData();
           // Update card if current month
           const teacher = teachers.find((t) => t.id === data.teacherId);
-          if (teacher && data.month === CURRENT_MONTH && data.year === CURRENT_YEAR) {
-            handleCardStatusChange(data.teacherId, teacher.salary?.amount || 0, "paid");
+          if (
+            teacher &&
+            data.month === CURRENT_MONTH &&
+            data.year === CURRENT_YEAR
+          ) {
+            handleCardStatusChange(
+              data.teacherId,
+              teacher.salary?.amount || 0,
+              "paid",
+            );
           }
         }}
       />
@@ -696,7 +713,11 @@ export default function TeacherManagement() {
                 t.id === selectedTeacherForHistory.id && t.salary
                   ? {
                       ...t,
-                      salary: { ...t.salary, status: "paid", paid_date: paidDate },
+                      salary: {
+                        ...t.salary,
+                        status: "paid",
+                        paid_date: paidDate,
+                      },
                     }
                   : t,
               ),

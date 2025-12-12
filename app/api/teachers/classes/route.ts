@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     const inchargeArray: string[] = Array.isArray(profile?.incharge_class_ids)
       ? (profile?.incharge_class_ids as string[])
       : profile?.incharge_class_id
-      ? [String(profile.incharge_class_id)]
-      : [];
+        ? [String(profile.incharge_class_id)]
+        : [];
 
     // Combine both arrays and remove duplicates
     const combined = Array.from(
@@ -43,7 +43,11 @@ export async function GET(request: NextRequest) {
       .select("class_id")
       .eq("teacher_id", teacherId);
 
-    if (!assignedErr && Array.isArray(assignedRows) && assignedRows.length > 0) {
+    if (
+      !assignedErr &&
+      Array.isArray(assignedRows) &&
+      assignedRows.length > 0
+    ) {
       const assignedClassIds = Array.from(
         new Set(assignedRows.map((r: any) => r.class_id).filter(Boolean)),
       );

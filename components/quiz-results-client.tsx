@@ -18,10 +18,10 @@ import type { QuizResult } from "@/lib/types";
 
 type Class = { id: string; name: string };
 type Student = { id: string; name: string; roll_number?: string };
-type Quiz = { 
-  id: string; 
-  subject: string; 
-  topic: string; 
+type Quiz = {
+  id: string;
+  subject: string;
+  topic: string;
   quiz_date: string;
   duration_minutes?: number;
 };
@@ -53,7 +53,9 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prefillLoaded, setPrefillLoaded] = useState(false);
-  const [selectedQuizDetails, setSelectedQuizDetails] = useState<Quiz | null>(null);
+  const [selectedQuizDetails, setSelectedQuizDetails] = useState<Quiz | null>(
+    null,
+  );
 
   // ============================================
   // Calculate totals
@@ -111,7 +113,7 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
   const loadClasses = async () => {
     try {
       setLoading(true);
-      
+
       // Use prefetched classes if available (from server-side)
       if (prefetchedClasses && prefetchedClasses.length > 0) {
         setClasses(prefetchedClasses);
@@ -206,14 +208,15 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
       const res = await fetch(`/api/quiz-results?${params.toString()}`);
       const data = await res.json();
       const allResults = data.data || [];
-        
+
       // Server should return results scoped to the provided quizId and classId (student.class_id).
       // Map returned results to marks for students in the selected class.
       if (Array.isArray(allResults) && allResults.length > 0) {
         setMarks((prev) => {
           const next = { ...prev };
           allResults.forEach((result: QuizResult) => {
-            if (result.student_id) next[result.student_id] = result.obtained_marks;
+            if (result.student_id)
+              next[result.student_id] = result.obtained_marks;
           });
           return next;
         });
@@ -282,7 +285,10 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
       if (markValue === "" || markValue === undefined || markValue === null) {
         return; // skip blank
       }
-      const parsed = typeof markValue === "number" ? markValue : parseFloat(String(markValue));
+      const parsed =
+        typeof markValue === "number"
+          ? markValue
+          : parseFloat(String(markValue));
       if (!Number.isFinite(parsed)) {
         return;
       }
@@ -319,7 +325,10 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
 
           if (!response.ok) {
             const errorData = await response.json();
-            console.error(`Error saving student ${result.studentId}:`, errorData);
+            console.error(
+              `Error saving student ${result.studentId}:`,
+              errorData,
+            );
             failedSaves.push(result.studentId);
             continue;
           }
@@ -335,7 +344,7 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
       if (successfulSaves.length > 0) {
         toast.success(
           `Saved results for ${successfulSaves.length} student(s)` +
-            (failedSaves.length > 0 ? ` (${failedSaves.length} failed)` : "")
+            (failedSaves.length > 0 ? ` (${failedSaves.length} failed)` : ""),
         );
       }
 
@@ -504,8 +513,12 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
                             placeholder="—"
                             min="0"
                             max={totalMaxMarks}
-                            value={marks[student.id] === "" ? "" : marks[student.id]}
-                            onChange={(e) => handleMarkChange(student.id, e.target.value)}
+                            value={
+                              marks[student.id] === "" ? "" : marks[student.id]
+                            }
+                            onChange={(e) =>
+                              handleMarkChange(student.id, e.target.value)
+                            }
                             className="w-full h-9 text-sm"
                           />
                           <div className="text-[11px] text-muted-foreground mt-1">

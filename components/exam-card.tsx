@@ -131,11 +131,7 @@ export function ExamCard({
           <div className="flex gap-2 justify-end pt-2 border-t border-border flex-wrap">
             {showChaptersLink && (
               <Link href={`/teacher/series-exams/${exam.id}/chapters`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                >
+                <Button variant="outline" size="sm" className="gap-2">
                   <BookOpen className="w-4 h-4" />
                   Add Chapters
                 </Button>

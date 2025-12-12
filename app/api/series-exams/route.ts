@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const payload = Array.isArray(body) ? body : [body];
-    
+
     // If not array, add subject_id lookup
     if (!Array.isArray(body) && body.subject && !body.subject_id) {
       try {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           .select("id")
           .ilike("name", body.subject)
           .single();
-        
+
         if (!subjectError && subjects?.id) {
           body.subject_id = subjects.id;
         }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         console.warn("Error looking up subject:", err);
       }
     }
-    
+
     const { data, error } = await supabase
       .from("series_exams")
       .insert(payload)
@@ -88,7 +88,7 @@ export async function PUT(request: NextRequest) {
         { status: 400 },
       );
     }
-    
+
     // If subject is provided but subject_id is not, lookup subject_id
     if (updates.subject && !updates.subject_id) {
       try {
@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest) {
           .select("id")
           .ilike("name", updates.subject)
           .single();
-        
+
         if (!subjectError && subjects?.id) {
           updates.subject_id = subjects.id;
         }
@@ -105,7 +105,7 @@ export async function PUT(request: NextRequest) {
         console.warn("Error looking up subject:", err);
       }
     }
-    
+
     const { data, error } = await supabase
       .from("series_exams")
       .update(updates)

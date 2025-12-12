@@ -136,8 +136,8 @@ export default function TeacherAttendance() {
       const inchargeIds: string[] = Array.isArray(permsData?.incharge_class_ids)
         ? permsData.incharge_class_ids
         : permsData?.incharge_class_id
-        ? [String(permsData.incharge_class_id)]
-        : [];
+          ? [String(permsData.incharge_class_id)]
+          : [];
 
       // ONLY show incharge classes for attendance marking
       const classesToShow = inchargeIds.filter(Boolean);
@@ -150,7 +150,9 @@ export default function TeacherAttendance() {
       }
 
       // Fetch full class details
-      const classesResp = await fetch(`/api/teachers/classes?teacherId=${userId}`);
+      const classesResp = await fetch(
+        `/api/teachers/classes?teacherId=${userId}`,
+      );
       const classesData = await classesResp.json();
       const allClasses: any[] = classesData?.classes || [];
 

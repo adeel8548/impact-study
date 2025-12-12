@@ -53,7 +53,7 @@ export function TeacherSalaryCard({
   onViewAssignments,
 }: TeacherSalaryCardProps) {
   const [status, setStatus] = useState<"paid" | "unpaid">(
-    teacher.salary?.status ?? "unpaid"
+    teacher.salary?.status ?? "unpaid",
   );
   const [isPending, startTransition] = useTransition();
   const salaryAmount = Number(teacher.salary?.amount ?? 0) || 0;
@@ -61,7 +61,7 @@ export function TeacherSalaryCard({
   useEffect(() => {
     console.log(
       `TeacherSalaryCard for ${teacher.name} received assignedClasses:`,
-      assignedClasses
+      assignedClasses,
     );
   }, [assignedClasses, teacher.name]);
 
@@ -92,7 +92,7 @@ export function TeacherSalaryCard({
       } else {
         console.error(
           "[TeacherSalaryCard] Toggle failed:",
-          json?.error || "Unknown error"
+          json?.error || "Unknown error",
         );
       }
     });
@@ -118,7 +118,7 @@ export function TeacherSalaryCard({
             "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold",
             status === "paid"
               ? "bg-emerald-100 text-emerald-700"
-              : "bg-amber-100 text-amber-700"
+              : "bg-amber-100 text-amber-700",
           )}
         >
           {status === "paid" ? (
@@ -140,8 +140,8 @@ export function TeacherSalaryCard({
         </p>
       </div>
       <div>
-         <p className="text-sm text-muted-foreground">Assign Subjects</p>
-          <Button
+        <p className="text-sm text-muted-foreground">Assign Subjects</p>
+        <Button
           size="sm"
           variant="outline"
           onClick={onViewAssignments}
@@ -183,13 +183,18 @@ export function TeacherSalaryCard({
         {inchargeClasses && inchargeClasses.length > 0 ? (
           <div className="flex gap-2">
             {inchargeClasses.map((c) => (
-              <span key={c.id} className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+              <span
+                key={c.id}
+                className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded"
+              >
                 {c.name}
               </span>
             ))}
           </div>
         ) : (
-          <p className="text-xs text-red-600 dark:text-red-400">No incharge class</p>
+          <p className="text-xs text-red-600 dark:text-red-400">
+            No incharge class
+          </p>
         )}
       </div>
 
@@ -212,7 +217,7 @@ export function TeacherSalaryCard({
         >
           <DollarSign className="w-4 h-4" />
         </Button>
-      
+
         <Button
           size="sm"
           variant="outline"

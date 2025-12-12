@@ -1,7 +1,9 @@
 # Quiz Results Management - Updated Implementation
 
 ## Overview
+
 Completely redesigned the Quiz Results Management page to match the Student Results page pattern. Now features:
+
 - Class selection dropdown
 - Quiz selection from available quizzes in the class
 - Grid/table view showing all students with input fields for marks
@@ -11,17 +13,21 @@ Completely redesigned the Quiz Results Management page to match the Student Resu
 ## Key Features Implemented
 
 ### 1. **Class Selection**
+
 - Dropdown to select a specific class
 - Automatically loads all quizzes available for that class
 - Loads all students in the selected class
 
 ### 2. **Quiz Selection**
+
 - After selecting a class, dropdown shows all available quizzes from `daily_quizzes` table
 - Quizzes display as: `{topic} ({quiz_date})`
 - Shows quiz information: subject, duration in minutes
 
 ### 3. **Marks Entry Grid**
+
 Similar to Student Results page, shows:
+
 - **Student Name column** - Full name of each student
 - **Roll No. column** - Student roll number
 - **Quiz Marks column** - Input field for quiz marks
@@ -29,10 +35,11 @@ Similar to Student Results page, shows:
   - Accepts decimal values
   - Real-time percentage calculation
 - **Percentage column** - Automatically calculated
-  - Formula: (obtained_marks / total_marks) * 100
+  - Formula: (obtained_marks / total_marks) \* 100
 - **Status column** - Fail (red) if < 40%, Pass (green) if ≥ 40%
 
 ### 4. **Batch Save**
+
 - Single "Save All Results" button
 - Saves marks for all students in the selected quiz at once
 - Handles multiple student saves with error tracking
@@ -41,7 +48,9 @@ Similar to Student Results page, shows:
 - Can update existing results by selecting same quiz again
 
 ### 5. **Statistics**
+
 When results exist, displays:
+
 - Total Results count
 - Average Marks Obtained
 - Average Percentage
@@ -49,6 +58,7 @@ When results exist, displays:
 - Overall class statistics
 
 ### 6. **Data Prefilling**
+
 - Detects if marks already exist for selected quiz
 - Pre-fills existing marks when quiz is selected
 - Green indicator shows "Existing marks loaded"
@@ -57,13 +67,17 @@ When results exist, displays:
 ## Page Structure
 
 ### Admin Page
+
 **Path:** `/admin/quiz-results`
+
 - Shows quiz results for all students in selected class
 - Requires admin authentication
 - No teacher filtering
 
-### Teacher Page  
+### Teacher Page
+
 **Path:** `/teacher/quiz-results`
+
 - Shows quiz results for students in their classes
 - Automatically filters quizzes by teacher
 - Requires teacher authentication
@@ -71,7 +85,9 @@ When results exist, displays:
 ## Component Architecture
 
 ### Component: `QuizResultsClient`
+
 **Props:**
+
 ```typescript
 {
   teacherId?: string;      // Optional - filters quizzes by teacher
@@ -80,6 +96,7 @@ When results exist, displays:
 ```
 
 **State Management:**
+
 - `classes` - List of available classes
 - `quizzes` - Quizzes in selected class
 - `students` - Students in selected class
@@ -93,22 +110,30 @@ When results exist, displays:
 ## API Integration
 
 ### GET `/api/daily-quizzes`
+
 Returns quizzes for a class:
+
 - Query params: `classId`, `teacherId` (optional)
 - Returns: List of quizzes with topic, subject, date, duration
 
 ### GET `/api/students`
+
 Returns students in a class:
+
 - Query params: `classId`
 - Returns: List of students with name, roll_number
 
 ### GET `/api/quiz-results`
+
 Fetches existing quiz results:
+
 - Query params: `classId`, `teacherId` (optional)
 - Returns: List of QuizResult objects
 
 ### POST `/api/quiz-results`
+
 Saves new or updates existing quiz result:
+
 - Body:
   ```json
   {
@@ -160,22 +185,26 @@ Saves new or updates existing quiz result:
 ## UI Patterns
 
 ### Responsive Design
+
 - Grid columns:
   - Mobile: 1 column (stacked)
   - Tablet: 2-3 columns
   - Desktop: Full width with horizontal scroll on tables
 
 ### Loading States
+
 - Spinner shown during initial class load
 - "Saving..." text with spinner during batch save
 - Loading disabled on save button
 
 ### Empty States
+
 - Message when no students in class
 - Message when no quizzes available
 - Statistics section only shows when results exist
 
 ### Success/Error Feedback
+
 - Toast notifications for all operations
 - Shows count of successful/failed saves
 - Success shows immediately, data reloads
@@ -184,14 +213,16 @@ Saves new or updates existing quiz result:
 ## Key Differences from Student Results Page
 
 ### Similarities
+
 - Class selection dropdown
 - Grid layout with student names
-- Batch save functionality  
+- Batch save functionality
 - Percentage and status calculations
 - Statistics panel
 - Data prefilling
 
 ### Differences
+
 1. Quiz selection instead of Subject → Exam hierarchy
 2. Single quiz column instead of multiple chapter columns
 3. Quiz duration used as max marks (configurable)
@@ -201,11 +232,13 @@ Saves new or updates existing quiz result:
 ## Navigation Integration
 
 ### Admin Sidebar
+
 - Added "Quiz Results" menu item
 - Linked to `/admin/quiz-results`
 - Uses Notebook icon for consistency
 
 ### Teacher Header
+
 - Added "Quiz Results" button in navigation bar
 - Linked to `/teacher/quiz-results`
 - Follows existing navigation pattern
@@ -215,10 +248,10 @@ Saves new or updates existing quiz result:
 ```typescript
 type Class = { id: string; name: string };
 type Student = { id: string; name: string; roll_number?: string };
-type Quiz = { 
-  id: string; 
-  subject: string; 
-  topic: string; 
+type Quiz = {
+  id: string;
+  subject: string;
+  topic: string;
   quiz_date: string;
   duration_minutes?: number;
 };
