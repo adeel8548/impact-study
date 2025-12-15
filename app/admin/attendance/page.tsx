@@ -237,21 +237,42 @@ export default function AttendanceManagement() {
 
   // Load students when class changes
   useEffect(() => {
-    if (selectedClass) {
-      fetchStudents();
-      // Load using selected student range
-      fetchStudentAttendance(studentRange);
+    if (!selectedClass) return;
+
+    fetchStudents();
+
+    // When using custom range, only fetch if both dates are set; otherwise default ranges apply.
+    if (studentRange === "custom") {
+      if (studentCustomStart && studentCustomEnd) {
+        fetchStudentAttendance("custom", {
+          start: studentCustomStart,
+          end: studentCustomEnd,
+        });
+      }
+      return;
     }
-  }, [selectedClass, studentRange]);
+
+    fetchStudentAttendance(studentRange);
+  }, [selectedClass, studentRange, studentCustomStart, studentCustomEnd]);
 
   // Load teachers attendance
   useEffect(() => {
-    if (activeTab === "teachers") {
-      fetchTeachers();
-      // Load using selected teacher range
-      fetchTeacherAttendance(teacherRange);
+    if (activeTab !== "teachers") return;
+
+    fetchTeachers();
+
+    if (teacherRange === "custom") {
+      if (teacherCustomStart && teacherCustomEnd) {
+        fetchTeacherAttendance("custom", {
+          start: teacherCustomStart,
+          end: teacherCustomEnd,
+        });
+      }
+      return;
     }
-  }, [activeTab, teacherRange]);
+
+    fetchTeacherAttendance(teacherRange);
+  }, [activeTab, teacherRange, teacherCustomStart, teacherCustomEnd]);
 
   const loadInitialData = async () => {
     await fetchClasses();
