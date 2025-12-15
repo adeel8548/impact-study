@@ -1,10 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
+import { resetTeacherSalariesToUnpaid } from "@/lib/server/teacher-salary";
+import { checkFeeExpiration } from "@/lib/actions/fees";
 
 /**
- * Cron Job: Auto-create monthly fees and salaries
+ * Combined Cron Job: Monthly billing + Reset fees/salaries
  * Runs on the first day of every month
- * Creates student_fees and teacher_salary entries if not already present
+ * 1. Creates student_fees and teacher_salary entries if not already present
+ * 2. Resets teacher salaries to unpaid
+ * 3. Checks and resets student fee expiration
  *
  * Call this endpoint: /api/cron/monthly-billing
  * Set up via Vercel Cron Job:
@@ -119,6 +123,22 @@ export async function POST(request: NextRequest) {
       }
 
       teachersProcessed = teachers.length;
+    }
+
+    // STEP 3: Reset teacher salaries to unpaid
+    console.log("[Cron] Resetting teacher salaries to unpaid...");
+    const { error: resetSalaryError } = await resetTeacherSalariesToUnpaid();
+
+    if (resetSalaryError) {
+      console.error("[Cron] Reset teacher salaries error:", resetSalaryError);
+    }
+
+    // STEP 4: Check and reset student fee expiration
+    console.log("[Cron] Checking student fee expiration...");
+    const { error: feeExpirationError } = await checkFeeExpiration();
+
+    if (feeExpirationError) {
+      console.error("[Cron] Fee expiration check error:", feeExpirationError);
     }
 
     console.log(

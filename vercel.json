@@ -1,11 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/cron/reset-teacher-salary",
-      "schedule": "0 0 1 * *"
-    },
-    {
-      "path": "/api/cron/reset-student-fees",
+      "path": "/api/cron/monthly-billing",
       "schedule": "0 0 1 * *"
     },
     {
