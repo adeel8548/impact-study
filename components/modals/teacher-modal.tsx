@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,24 +11,63 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Eye, EyeOff, X } from "lucide-react";
+import { Eye, EyeOff, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { createTeacher, updateTeacher } from "@/lib/actions/teacher";
+
+type SchoolClass = { id: string; name: string };
+type SubjectOption = { id: string; name: string; class_id: string };
+type AssignedSubject = { class_id: string; subject_id: string };
+type AssignmentRow = { class_id: string; subject_ids: string[] };
 
 interface TeacherModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  teacher?: {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    class_ids?: string[] | null;
-  } | null;
-  classes: { id: string; name: string }[];
+  teacher?: any | null;
+  classes: SchoolClass[];
   onSuccess?: () => void;
   initialSalary?: number;
 }
+
+interface FormState {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  salary: string;
+  joining_date: string;
+  incharge_class_ids: string[];
+  assign_subjects: AssignedSubject[];
+}
+
+const EMPTY_ROW: AssignmentRow = { class_id: "", subject_ids: [] };
+
+const toRows = (assignments: AssignedSubject[] = []) => {
+  const grouped = new Map<string, Set<string>>();
+
+  assignments.forEach(({ class_id, subject_id }) => {
+    if (!class_id) return;
+    if (!grouped.has(class_id)) grouped.set(class_id, new Set());
+    if (subject_id) grouped.get(class_id)!.add(subject_id);
+  });
+
+  if (grouped.size === 0) return [EMPTY_ROW];
+
+  return Array.from(grouped.entries()).map(([class_id, subjectIds]) => ({
+    class_id,
+    subject_ids: Array.from(subjectIds),
+  }));
+};
+
+const toAssignments = (rows: AssignmentRow[]) =>
+  rows
+    .filter((row) => row.class_id)
+    .flatMap((row) =>
+      (row.subject_ids || []).map((subject_id) => ({
+        class_id: row.class_id,
+        subject_id,
+      })),
+    );
 
 export function TeacherModal({
   open,
@@ -38,114 +77,215 @@ export function TeacherModal({
   onSuccess,
   initialSalary,
 }: TeacherModalProps) {
+  const isEditing = Boolean(teacher);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showInchargeDropdown, setShowInchargeDropdown] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [subjectsCache, setSubjectsCache] = useState<
+    Record<string, SubjectOption[]>
+  >({});
+
+  const [formData, setFormData] = useState<FormState>({
+    name: teacher?.name || "",
+    email: teacher?.email || "",
+    phone: teacher?.phone || "",
     password: "",
-    salary: "",
-    joining_date: "",
-    incharge_class_ids: [] as string[],
-    assign_subjects: [] as Array<{ class_id: string; subject_id: string }>,
+    salary:
+      typeof (teacher as any)?.salary?.amount === "number"
+        ? String((teacher as any).salary.amount)
+        : typeof initialSalary === "number"
+          ? String(initialSalary)
+          : "",
+    joining_date: (teacher as any)?.joining_date || "",
+    incharge_class_ids: Array.isArray((teacher as any)?.incharge_class_ids)
+      ? (teacher as any).incharge_class_ids
+      : [],
+    assign_subjects: Array.isArray((teacher as any)?.assign_subjects)
+      ? (teacher as any).assign_subjects
+      : [],
   });
 
-  const isEditing = !!teacher;
+  const [assignRows, setAssignRows] = useState<AssignmentRow[]>(() =>
+    toRows(
+      Array.isArray((teacher as any)?.assign_subjects)
+        ? (teacher as any).assign_subjects
+        : [],
+    ),
+  );
+
+  const fetchSubjectsForClass = async (classId: string) => {
+    if (!classId) return [] as SubjectOption[];
+    if (subjectsCache[classId]) return subjectsCache[classId];
+    try {
+      const res = await fetch(`/api/classes/${classId}/subjects`);
+      const json = await res.json();
+      const list = Array.isArray(json.subjects) ? json.subjects : [];
+      setSubjectsCache((prev) => ({ ...prev, [classId]: list }));
+      return list as SubjectOption[];
+    } catch (err) {
+      console.error("Failed to fetch subjects for class", err);
+      return [] as SubjectOption[];
+    }
+  };
 
   useEffect(() => {
-    if (teacher) {
-      const resolvedSalary =
-        typeof initialSalary === "number"
-          ? String(initialSalary)
-          : typeof (teacher as any)?.salary?.amount === "number"
-            ? String((teacher as any).salary.amount)
-            : "";
-      setFormData({
-        name: teacher.name,
-        email: teacher.email,
-        phone: teacher.phone || "",
-        password: "",
-        salary: resolvedSalary,
-        joining_date: (teacher as any).joining_date || "",
-        incharge_class_ids: (teacher as any).incharge_class_ids
-          ? ((teacher as any).incharge_class_ids as string[])
-          : (teacher as any).incharge_class_id
-            ? [(teacher as any).incharge_class_id]
-            : [],
-        assign_subjects: (teacher as any).assign_subjects || [],
-      });
+    if (!open) return;
 
-      // If assign_subjects not provided on teacher prop, fetch from API
-      (async () => {
-        try {
-          if (!(teacher as any).assign_subjects) {
-            const res = await fetch(`/api/teachers/${teacher.id}/assignments`);
-            const json = await res.json();
-            const assigns = Array.isArray(json.assignments)
-              ? json.assignments.map((a: any) => ({
-                  class_id: a.class_id,
-                  subject_id: a.subject_id,
-                }))
-              : [];
-            setFormData((prev) => ({ ...prev, assign_subjects: assigns }));
-          }
-        } catch (err) {
-          console.error("Failed to load teacher assign_subjects", err);
+    const initialAssign = Array.isArray((teacher as any)?.assign_subjects)
+      ? (teacher as any).assign_subjects.filter(
+          (row: AssignedSubject) => row.class_id && row.subject_id,
+        )
+      : [];
+
+    const salaryValue = (teacher as any)?.salary?.amount
+      ? String((teacher as any).salary.amount)
+      : typeof initialSalary === "number"
+        ? String(initialSalary)
+        : "";
+
+    setFormData({
+      name: teacher?.name || "",
+      email: teacher?.email || "",
+      phone: teacher?.phone || "",
+      password: "",
+      salary: salaryValue,
+      joining_date: (teacher as any)?.joining_date || "",
+      incharge_class_ids: Array.isArray((teacher as any)?.incharge_class_ids)
+        ? (teacher as any).incharge_class_ids
+        : [],
+      assign_subjects: initialAssign,
+    });
+
+    const rows = toRows(initialAssign);
+    setAssignRows(rows.length ? rows : [EMPTY_ROW]);
+  }, [open, teacher?.id, initialSalary]);
+
+  useEffect(() => {
+    if (!open || !teacher?.id) return;
+    if (
+      Array.isArray((teacher as any)?.assign_subjects) &&
+      (teacher as any).assign_subjects.length > 0
+    )
+      return;
+
+    const loadAssignments = async () => {
+      setAssignmentsLoading(true);
+      try {
+        const res = await fetch(`/api/teachers/${teacher.id}/assignments`);
+        const json = await res.json();
+        const normalized: AssignedSubject[] = Array.isArray(json.assignments)
+          ? json.assignments
+              .filter((row: any) => row.class_id && row.subject_id)
+              .map((row: any) => ({
+                class_id: row.class_id,
+                subject_id: row.subject_id,
+              }))
+          : [];
+
+        if (normalized.length > 0) {
+          setFormData((prev) => ({ ...prev, assign_subjects: normalized }));
+          const rows = toRows(normalized);
+          setAssignRows(rows.length ? rows : [EMPTY_ROW]);
         }
-      })();
-    } else {
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        password: "",
-        salary: "",
-        joining_date: "",
-        incharge_class_ids: [],
-        assign_subjects: [],
-      });
-    }
-  }, [teacher, open, initialSalary]);
+      } catch (err) {
+        console.error("Failed to load assignments", err);
+      } finally {
+        setAssignmentsLoading(false);
+      }
+    };
+
+    loadAssignments();
+  }, [open, teacher?.id]);
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      assign_subjects: toAssignments(assignRows),
+    }));
+  }, [assignRows]);
+
+  useEffect(() => {
+    const classIds = Array.from(
+      new Set(assignRows.map((row) => row.class_id).filter(Boolean)),
+    );
+
+    classIds.forEach((cid) => {
+      if (!subjectsCache[cid]) {
+        fetchSubjectsForClass(cid).catch(() => {});
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignRows]);
+
+  const updateRowClass = async (idx: number, classId: string) => {
+    const next = [...assignRows];
+    next[idx] = { class_id: classId, subject_ids: [] };
+    setAssignRows(next);
+    if (classId) await fetchSubjectsForClass(classId);
+  };
+
+  const toggleSubject = (idx: number, subjectId: string) => {
+    const next = [...assignRows];
+    const current = new Set(next[idx].subject_ids);
+    if (current.has(subjectId)) current.delete(subjectId);
+    else current.add(subjectId);
+    next[idx] = { ...next[idx], subject_ids: Array.from(current) };
+    setAssignRows(next);
+  };
+
+  const removeRow = (idx: number) => {
+    const next = assignRows.filter((_, i) => i !== idx);
+    setAssignRows(next.length ? next : [EMPTY_ROW]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
-    const salaryValue = Number(formData.salary);
-    if (!salaryValue || Number.isNaN(salaryValue) || salaryValue <= 0) {
-      setLoading(false);
-      setError("Salary must be greater than 0");
-      return toast.error("Salary must be greater than 0");
+    if (!formData.name || !formData.email) {
+      setError("Name and email are required");
+      return;
     }
 
+    if (!isEditing && !formData.password) {
+      setError("Password is required for a new teacher");
+      return;
+    }
+
+    const salaryValue = formData.salary ? Number(formData.salary) : undefined;
+    if (formData.salary && (Number.isNaN(salaryValue) || salaryValue <= 0)) {
+      setError("Salary must be greater than 0");
+      return;
+    }
+
+    const payloadAssignments = toAssignments(assignRows);
+
+    setLoading(true);
+
     try {
-      if (isEditing) {
-        const { error } = await updateTeacher(teacher.id, {
+      if (isEditing && teacher) {
+        const { error: updateError } = await updateTeacher(teacher.id, {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           salary: salaryValue,
+          incharge_class_ids: formData.incharge_class_ids,
+          assign_subjects: payloadAssignments,
           joining_date: formData.joining_date,
-          incharge_class_ids: formData.incharge_class_ids || null,
-          assign_subjects: formData.assign_subjects,
         });
-        if (error) {
-          setError(error);
-          return toast.error(error);
+
+        if (updateError) {
+          setError(updateError);
+          toast.error(updateError);
+          return;
         }
 
         toast.success("Teacher updated successfully");
       } else {
-        if (!formData.password) {
-          setError("Password is required for new teachers");
-          return toast.error("Password is required for new teachers");
-        }
-
-        const { teacher: newTeacher, error } = await createTeacher({
+        const { error: createError } = await createTeacher({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
@@ -154,12 +294,13 @@ export function TeacherModal({
           salary: salaryValue,
           joining_date: formData.joining_date,
           incharge_class_ids: formData.incharge_class_ids || null,
-          assign_subjects: formData.assign_subjects,
+          assign_subjects: payloadAssignments,
         });
 
-        if (error) {
-          setError(error);
-          return toast.error(error);
+        if (createError) {
+          setError(createError);
+          toast.error(createError);
+          return;
         }
 
         toast.success("Teacher created successfully");
@@ -177,42 +318,9 @@ export function TeacherModal({
     }
   };
 
-  // Subjects cache per class
-  const [subjectsCache, setSubjectsCache] = useState<Record<string, any[]>>({});
-
-  const fetchSubjectsForClass = async (classId: string) => {
-    if (!classId) return [];
-    if (subjectsCache[classId]) return subjectsCache[classId];
-    try {
-      const res = await fetch(`/api/classes/${classId}/subjects`);
-      const json = await res.json();
-      const list = Array.isArray(json.subjects) ? json.subjects : [];
-      setSubjectsCache((prev) => ({ ...prev, [classId]: list }));
-      return list;
-    } catch (err) {
-      console.error("Failed to fetch subjects for class", err);
-      return [];
-    }
-  };
-
-  // Ensure subjects cache is populated for existing assign_subjects entries
-  useEffect(() => {
-    const classIds = Array.from(
-      new Set(formData.assign_subjects.map((s) => s.class_id).filter(Boolean)),
-    );
-    if (classIds.length === 0) return;
-
-    classIds.forEach((cid) => {
-      if (!subjectsCache[cid]) {
-        fetchSubjectsForClass(cid).catch(() => {});
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.assign_subjects]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] h-[95vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1050px] h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Edit Teacher" : "Add New Teacher"}
@@ -250,6 +358,7 @@ export function TeacherModal({
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
+
           <div className="space-y-2">
             <Label htmlFor="name">Full Name *</Label>
             <Input
@@ -257,7 +366,7 @@ export function TeacherModal({
               placeholder="Enter teacher's name"
               value={formData.name}
               onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
               }
               required
               disabled={loading}
@@ -272,7 +381,7 @@ export function TeacherModal({
               placeholder="teacher@example.com"
               value={formData.email}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                setFormData((prev) => ({ ...prev, email: e.target.value }))
               }
               required
               disabled={loading}
@@ -287,7 +396,7 @@ export function TeacherModal({
               placeholder="+1234567890"
               value={formData.phone}
               onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
+                setFormData((prev) => ({ ...prev, phone: e.target.value }))
               }
               disabled={loading}
             />
@@ -303,7 +412,10 @@ export function TeacherModal({
                   placeholder="Enter initial password"
                   value={formData.password}
                   onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
+                    setFormData((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
                   }
                   required
                   disabled={loading}
@@ -333,7 +445,7 @@ export function TeacherModal({
               placeholder="Enter salary amount"
               value={formData.salary}
               onChange={(e) =>
-                setFormData({ ...formData, salary: e.target.value })
+                setFormData((prev) => ({ ...prev, salary: e.target.value }))
               }
               required
               disabled={loading}
@@ -349,13 +461,15 @@ export function TeacherModal({
               type="date"
               value={formData.joining_date}
               onChange={(e) =>
-                setFormData({ ...formData, joining_date: e.target.value })
+                setFormData((prev) => ({
+                  ...prev,
+                  joining_date: e.target.value,
+                }))
               }
               disabled={loading}
             />
           </div>
 
-          {/* Class Incharge multi-select */}
           <div className="space-y-2">
             <Label>Class Incharge (select multiple)</Label>
             <div className="relative">
@@ -400,21 +514,20 @@ export function TeacherModal({
                           checked={formData.incharge_class_ids.includes(cls.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setFormData({
-                                ...formData,
+                              setFormData((prev) => ({
+                                ...prev,
                                 incharge_class_ids: [
-                                  ...formData.incharge_class_ids,
+                                  ...prev.incharge_class_ids,
                                   cls.id,
                                 ],
-                              });
+                              }));
                             } else {
-                              setFormData({
-                                ...formData,
-                                incharge_class_ids:
-                                  formData.incharge_class_ids.filter(
-                                    (id) => id !== cls.id,
-                                  ),
-                              });
+                              setFormData((prev) => ({
+                                ...prev,
+                                incharge_class_ids: prev.incharge_class_ids.filter(
+                                  (id) => id !== cls.id,
+                                ),
+                              }));
                             }
                           }}
                           className="rounded"
@@ -427,7 +540,6 @@ export function TeacherModal({
                 </div>
               )}
 
-              {/* Show selected classes as tags */}
               {formData.incharge_class_ids.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {formData.incharge_class_ids.map((classId) => {
@@ -441,13 +553,12 @@ export function TeacherModal({
                         <button
                           type="button"
                           onClick={() => {
-                            setFormData({
-                              ...formData,
-                              incharge_class_ids:
-                                formData.incharge_class_ids.filter(
-                                  (id) => id !== classId,
-                                ),
-                            });
+                            setFormData((prev) => ({
+                              ...prev,
+                              incharge_class_ids: prev.incharge_class_ids.filter(
+                                (id) => id !== classId,
+                              ),
+                            }));
                           }}
                           className="hover:text-blue-900 dark:hover:text-blue-200 ml-1"
                           disabled={loading}
@@ -462,84 +573,110 @@ export function TeacherModal({
             </div>
           </div>
 
-          {/* Assign Subjects - dynamic list of class+subject pairs */}
           <div className="space-y-2">
             <Label>Assign Subjects</Label>
-            <div className="space-y-2">
-              {formData.assign_subjects.map((entry, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <select
-                    value={entry.class_id}
-                    onChange={async (e) => {
-                      const classId = e.target.value;
-                      const next = [...formData.assign_subjects];
-                      next[idx] = { class_id: classId, subject_id: "" };
-                      setFormData({ ...formData, assign_subjects: next });
-                      await fetchSubjectsForClass(classId);
-                    }}
-                    className="flex-1 px-2 py-1 border rounded"
-                    disabled={loading}
-                  >
-                    <option value="">Select class</option>
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {assignRows.map((row, idx) => {
+                const subjects = subjectsCache[row.class_id] || [];
+                const subjectsLoading = row.class_id && !subjectsCache[row.class_id];
 
-                  <select
-                    value={entry.subject_id}
-                    onChange={(e) => {
-                      const next = [...formData.assign_subjects];
-                      next[idx] = { ...next[idx], subject_id: e.target.value };
-                      setFormData({ ...formData, assign_subjects: next });
-                    }}
-                    className="flex-1 px-2 py-1 border rounded"
-                    disabled={loading || !entry.class_id}
+                return (
+                  <div
+                    key={`${row.class_id || "new"}-${idx}`}
+                    className="flex h-full flex-col gap-3 rounded border border-border p-3"
                   >
-                    <option value="">Select subject</option>
-                    {(subjectsCache[entry.class_id] || []).map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+                    <div className="flex items-center justify-between gap-2">
+                      <select
+                        value={row.class_id}
+                        onChange={(e) => updateRowClass(idx, e.target.value)}
+                        className="w-full px-3 py-2 border rounded"
+                        disabled={loading}
+                      >
+                        <option value="">Select class</option>
+                        {classes.map((cls) => (
+                          <option key={cls.id} value={cls.id}>
+                            {cls.name}
+                          </option>
+                        ))}
+                      </select>
 
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const next = formData.assign_subjects.filter(
-                        (_, i) => i !== idx,
-                      );
-                      setFormData({ ...formData, assign_subjects: next });
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={() => removeRow(idx)}
+                        disabled={loading}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </div>
 
-              <div>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() =>
-                    setFormData({
-                      ...formData,
-                      assign_subjects: [
-                        ...formData.assign_subjects,
-                        { class_id: "", subject_id: "" },
-                      ],
-                    })
-                  }
-                >
-                  + Add class & subject
-                </Button>
-              </div>
+                    {row.class_id ? (
+                      <div className="flex flex-1 flex-col gap-2">
+                        {assignmentsLoading || subjectsLoading ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading subjects...
+                          </div>
+                        ) : subjects.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            No subjects found for this class.
+                          </p>
+                        ) : (
+                          <div className="grid gap-2 sm:grid-cols-3">
+                            {subjects.map((subject) => (
+                              <label
+                                key={subject.id}
+                                className="flex items-center gap-2 rounded border border-border px-3 py-2 hover:bg-secondary/50 cursor-pointer transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={row.subject_ids.includes(subject.id)}
+                                  onChange={() => toggleSubject(idx, subject.id)}
+                                  className="rounded"
+                                  disabled={loading}
+                                />
+                                <span className="text-sm">{subject.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {row.subject_ids.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {row.subject_ids.map((sid) => {
+                              const subject = subjects.find((s) => s.id === sid);
+                              return (
+                                <span
+                                  key={sid}
+                                  className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-xs"
+                                >
+                                  {subject?.name || "Subject"}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Select a class to load its subjects.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+
+            <Button
+              type="button"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => setAssignRows((prev) => [...prev, EMPTY_ROW])}
+              disabled={loading}
+            >
+              + Add class & subjects
+            </Button>
           </div>
 
           <div className="flex gap-3 justify-end pt-4">

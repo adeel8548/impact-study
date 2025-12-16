@@ -45,7 +45,7 @@ export function TeacherAssignmentsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg h-[90vh]  overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             Assigned Subjects — {teacherName || "Teacher"}
@@ -63,7 +63,7 @@ export function TeacherAssignmentsModal({
                 No assignments found.
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {assignments.map((a) => (
                   <div key={a.id} className="p-3 border rounded">
                     <p className="text-sm font-medium">
