@@ -72,7 +72,7 @@ export function TeacherSalaryHistoryModal({
 }: TeacherSalaryHistoryModalProps) {
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear(),
+    new Date().getFullYear()
   );
   const [loading, setLoading] = useState(false);
 
@@ -87,7 +87,7 @@ export function TeacherSalaryHistoryModal({
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/salaries?teacherId=${teacherId}&allMonths=true`,
+        `/api/salaries?teacherId=${teacherId}&allMonths=true`
       );
       const data = await response.json();
       if (Array.isArray(data.salaries)) {
@@ -97,13 +97,13 @@ export function TeacherSalaryHistoryModal({
           new Set(
             data.salaries
               .map((s: SalaryRecord) => resolveMonthYear(s).year)
-              .filter(Boolean),
-          ),
+              .filter(Boolean)
+          )
         ).sort((a, b) => Number(b) - Number(a));
 
         if (years.length > 0) {
           setSelectedYear((current) =>
-            years.includes(current) ? current : Number(years[0]),
+            years.includes(current) ? current : Number(years[0])
           );
         }
       }
@@ -135,7 +135,7 @@ export function TeacherSalaryHistoryModal({
         const record = salaryMap.get(key);
         return { month, record };
       }),
-    [salaryMap, selectedYear],
+    [salaryMap, selectedYear]
   );
 
   const availableYears = useMemo(
@@ -145,10 +145,10 @@ export function TeacherSalaryHistoryModal({
           salaries
             .map((s) => resolveMonthYear(s).year)
             .filter(Boolean)
-            .concat(selectedYear),
-        ),
+            .concat(selectedYear)
+        )
       ).sort((a, b) => Number(b) - Number(a)),
-    [salaries, selectedYear],
+    [salaries, selectedYear]
   );
 
   return (
@@ -192,8 +192,8 @@ export function TeacherSalaryHistoryModal({
                     isPaid
                       ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20"
                       : record
-                        ? "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20"
-                        : "border-gray-200 dark:border-gray-800"
+                      ? "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20"
+                      : "border-gray-200 dark:border-gray-800"
                   }`}
                 >
                   <div className="flex flex-col items-center justify-between gap-3 mb-3">
@@ -246,11 +246,14 @@ export function TeacherSalaryHistoryModal({
                             Date:
                           </span>
                           <span className="font-semibold text-sm text-green-700 dark:text-green-400">
-                            {new Date(record.paid_date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "numeric",
-                              day: "numeric",
-                            })}
+                            {new Date(record.paid_date).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              }
+                            )}
                           </span>
                         </div>
                       )}
