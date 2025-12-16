@@ -23,6 +23,7 @@ interface TeacherSalaryCardProps {
     phone?: string;
     school_id?: string;
     class_ids?: string[] | null;
+    joining_date?: string;
     salary?: {
       amount: number;
       status: "paid" | "unpaid";
@@ -78,6 +79,13 @@ export function TeacherSalaryCard({
           <p className="text-sm text-muted-foreground">{teacher.email}</p>
           {teacher.phone && (
             <p className="text-xs text-muted-foreground">{teacher.phone}</p>
+          )}
+          {teacher.joining_date ? (
+            <p className="text-xs text-muted-foreground mt-1">
+              Joined: {new Date(teacher.joining_date).toLocaleDateString()}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">Joined: N/A</p>
           )}
         </div>
         <div

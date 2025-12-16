@@ -48,6 +48,7 @@ export function TeacherModal({
     phone: "",
     password: "",
     salary: "",
+    joining_date: "",
     incharge_class_ids: [] as string[],
     assign_subjects: [] as Array<{ class_id: string; subject_id: string }>,
   });
@@ -68,6 +69,7 @@ export function TeacherModal({
         phone: teacher.phone || "",
         password: "",
         salary: resolvedSalary,
+        joining_date: (teacher as any).joining_date || "",
         incharge_class_ids: (teacher as any).incharge_class_ids
           ? ((teacher as any).incharge_class_ids as string[])
           : (teacher as any).incharge_class_id
@@ -101,6 +103,7 @@ export function TeacherModal({
         phone: "",
         password: "",
         salary: "",
+        joining_date: "",
         incharge_class_ids: [],
         assign_subjects: [],
       });
@@ -126,6 +129,7 @@ export function TeacherModal({
           email: formData.email,
           phone: formData.phone,
           salary: salaryValue,
+          joining_date: formData.joining_date,
           incharge_class_ids: formData.incharge_class_ids || null,
           assign_subjects: formData.assign_subjects,
         });
@@ -148,6 +152,7 @@ export function TeacherModal({
           password: formData.password,
           class_ids: [],
           salary: salaryValue,
+          joining_date: formData.joining_date,
           incharge_class_ids: formData.incharge_class_ids || null,
           assign_subjects: formData.assign_subjects,
         });
@@ -334,6 +339,19 @@ export function TeacherModal({
               disabled={loading}
               min="0"
               step="0.01"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="joining_date">Joining Date</Label>
+            <Input
+              id="joining_date"
+              type="date"
+              value={formData.joining_date}
+              onChange={(e) =>
+                setFormData({ ...formData, joining_date: e.target.value })
+              }
+              disabled={loading}
             />
           </div>
 

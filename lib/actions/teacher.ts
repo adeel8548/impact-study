@@ -31,6 +31,7 @@ export async function createTeacher(teacherData: {
   salary?: number;
   incharge_class_ids?: string[] | null;
   assign_subjects?: Array<{ class_id: string; subject_id: string }>;
+  joining_date?: string;
 }) {
   const adminClient = await createAdminClient();
   const supabase = await createClient();
@@ -65,6 +66,7 @@ export async function createTeacher(teacherData: {
       school_id: "00000000-0000-0000-0000-000000000000",
       class_ids: teacherData.class_ids || [],
       incharge_class_ids: teacherData.incharge_class_ids || null,
+      joining_date: teacherData.joining_date || null,
     })
     .select()
     .single();
@@ -122,19 +124,22 @@ export async function updateTeacher(
     salary: number;
     incharge_class_ids?: string[] | null;
     assign_subjects?: Array<{ class_id: string; subject_id: string }>;
+    joining_date?: string;
   }>,
 ) {
   const supabase = await createClient();
   const adminClient = await createAdminClient();
 
   // Update profile
-  const { data, error } = await supabase
+  const updatePayload: any = {};
+  if (updates.name !== undefined) updatePayload.name = updates.name;
+  if (updates.email !== undefined) updatePayload.email = updates.email;
+  if (updates.phone !== undefined) updatePayload.phone = updates.phone;
+  if (updates.joining_date !== undefined) updatePayload.joining_date = updates.joining_date || null;
+
+  const { data, error } = await adminClient
     .from("profiles")
-    .update({
-      name: updates.name,
-      email: updates.email,
-      phone: updates.phone,
-    })
+    .update(updatePayload)
     .eq("id", teacherId)
     .select()
     .maybeSingle();

@@ -689,7 +689,7 @@ export default function TeacherAttendance() {
                         <td className="p-4 text-center">
                           <button
                             onClick={() => {
-                              if (!attendance[student.id]) return;
+                              if (attendance[student.id] !== "leave") return;
                               setSelectedStudentForReason({
                                 id: student.id,
                                 name: student.name,
@@ -699,7 +699,12 @@ export default function TeacherAttendance() {
                               });
                               setLeaveModalOpen(true);
                             }}
-                            className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded text-sm border border-border hover:bg-secondary transition-colors w-full"
+                            disabled={attendance[student.id] !== "leave"}
+                            className={`inline-flex items-center justify-center gap-2 px-3 py-2 rounded text-sm border border-border transition-colors w-full ${
+                              attendance[student.id] === "leave"
+                                ? "hover:bg-secondary cursor-pointer"
+                                : "opacity-50 cursor-not-allowed"
+                            }`}
                           >
                             <Info className="w-4 h-4" />
                             {leaveReasons[student.id]?.length

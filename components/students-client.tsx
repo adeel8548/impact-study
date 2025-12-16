@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ export function StudentsClientComponent({
   classes = [],
   feeSummary = { totalFees: 0, paidFees: 0, unpaidFees: 0 },
 }: StudentsClientComponentProps) {
+  const router = useRouter();
   const [students, setStudents] = useState(initialStudents);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -150,6 +152,7 @@ export function StudentsClientComponent({
       persistClassFilter(String(payload.classId));
     }
     setModalOpen(false);
+    router.refresh();
   };
 
   const handleDeleteClick = (studentId: string) => {
@@ -285,7 +288,9 @@ export function StudentsClientComponent({
                 <th className="text-left p-4 font-semibold text-foreground">
                   Class
                 </th>
-
+                <th className="text-left p-4 font-semibold text-foreground whitespace-nowrap">
+                  Join At
+                </th>
                 <th className="text-left p-4 font-semibold text-foreground">
                   Phone
                 </th>
@@ -338,6 +343,13 @@ export function StudentsClientComponent({
                     </td>
                     <td className="p-4 text-foreground">
                       {studentClass?.name}
+                    </td>
+                    <td className="p-4 text-foreground whitespace-nowrap">
+                      {(student as any)?.joining_date
+                        ? new Date(
+                            (student as any).joining_date,
+                          ).toLocaleDateString()
+                        : "—"}
                     </td>
 
                     <td className="p-4 text-foreground">

@@ -33,6 +33,7 @@ interface Teacher {
   phone?: string;
   school_id: string;
   created_at: string;
+  joining_date?: string;
   class_ids?: string[] | null;
   salary?: {
     amount: number;

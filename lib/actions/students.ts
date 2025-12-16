@@ -30,6 +30,7 @@ export async function createStudent(studentData: {
   phone?: string;
   guardian_name?: string;
   fees?: string | number;
+  joining_date?: string;
 }) {
   const supabase = await createClient();
 
@@ -43,6 +44,7 @@ export async function createStudent(studentData: {
       email: studentData.email,
       phone: studentData.phone,
       guardian_name: studentData.guardian_name,
+      joining_date: studentData.joining_date || null,
     })
     .select();
 
@@ -78,6 +80,7 @@ export async function updateStudent(
     phone: string;
     guardian_name: string;
     fees: string;
+    joining_date: string;
   }>,
 ) {
   const supabase = await createClient();

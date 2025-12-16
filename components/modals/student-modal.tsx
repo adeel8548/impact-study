@@ -48,6 +48,7 @@ export function StudentModal({
     phone: student?.phone || "",
     guardian_name: student?.guardian_name || "",
     current_fees: "",
+    joining_date: "",
   });
 
   // <-- Add this useEffect here
@@ -63,6 +64,7 @@ export function StudentModal({
       phone: student?.phone || "",
       guardian_name: student?.guardian_name || "",
       current_fees: feesAmount,
+      joining_date: (student as any)?.joining_date || "",
     });
   }, [open, student?.id]);
 
@@ -81,6 +83,7 @@ export function StudentModal({
           phone: formData.phone,
           guardian_name: formData.guardian_name,
           fees: formData.current_fees,
+          joining_date: formData.joining_date,
         });
         if (result.error) {
           setError(result.error);
@@ -92,6 +95,7 @@ export function StudentModal({
         const result = await createStudent({
           ...formData,
           fees: formData.current_fees,
+          joining_date: formData.joining_date,
         });
         if (result.error) {
           setError(result.error);
@@ -237,6 +241,19 @@ export function StudentModal({
                 PKR {Number(formData.current_fees).toLocaleString()}
               </p>
             )}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">
+              Joining Date
+            </label>
+            <Input
+              type="date"
+              value={formData.joining_date}
+              onChange={(e) =>
+                setFormData({ ...formData, joining_date: e.target.value })
+              }
+            />
           </div>
 
           <div className="flex gap-3 pt-4">
