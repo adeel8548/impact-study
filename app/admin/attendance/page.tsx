@@ -1067,7 +1067,7 @@ export default function AttendanceManagement() {
                           className="px-3 py-1 border border-border rounded text-sm"
                           onClick={() => setTeacherSummaryOpen(true)}
                         >
-                          View Summary
+                         <History className="w-4 h-4 mr-1 inline-block" />
                         </button>
                       )}
                     </div>
