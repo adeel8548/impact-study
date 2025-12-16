@@ -19,8 +19,9 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
-import { SalaryPaymentModal } from "@/components/modals/salary-payment-modal";
+import { TeacherSalaryHistoryModal } from "@/components/modals/teacher-salary-history-modal";
 import { YearlySummaryModal } from "@/components/modals/yearly-summary-modal";
+import { SalaryStatusButton } from "@/components/salary-status-button";
 import {
   MONTHS_SHORT,
   getCurrentMonth,
@@ -32,6 +33,7 @@ interface Teacher {
   id: string;
   name: string;
   email: string;
+  school_id?: string;
 }
 
 interface TeacherSalaryClientProps {
@@ -55,7 +57,7 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
   const [salaries, setSalaries] = useState<TeacherSalaryRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [summaryModalOpen, setSummaryModalOpen] = useState(false);
 
   const currentMonth = getCurrentMonth();
@@ -222,27 +224,37 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
                     )}
                   </div>
                 </div>
-                <Button
-                  onClick={() => setPaymentModalOpen(true)}
-                  className="gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  Pay Salary
-                </Button>
+                {/* Pay Now for pending months (modal like student fees) */}
+                {currentMonthSalary.status === "unpaid" ? (
+                  <SalaryStatusButton
+                    teacherId={selectedTeacher!}
+                    schoolId={selectedTeacherData?.school_id as any}
+                    onPaid={handlePaymentSuccess}
+                  />
+                ) : (
+                  <Button
+                    onClick={() => setHistoryModalOpen(true)}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    View History
+                  </Button>
+                )}
               </div>
             </Card>
           )}
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            <Button
-              onClick={() => setPaymentModalOpen(true)}
-              variant="default"
-              className="gap-2"
-            >
-              <DollarSign className="w-4 h-4" />
-              Record Payment
-            </Button>
+            {/* Pay Now (new modal like student fees) */}
+            {selectedTeacher && (
+              <SalaryStatusButton
+                teacherId={selectedTeacher}
+                schoolId={selectedTeacherData?.school_id as any}
+                onPaid={handlePaymentSuccess}
+              />
+            )}
             <Button
               onClick={() => setSummaryModalOpen(true)}
               variant="outline"
@@ -325,12 +337,15 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
           </Card>
 
           {/* Modals */}
-          <SalaryPaymentModal
-            open={paymentModalOpen}
-            onOpenChange={setPaymentModalOpen}
-            teacherId={selectedTeacher}
-            teacherName={selectedTeacherData?.name}
-            onPaymentSuccess={handlePaymentSuccess}
+          <TeacherSalaryHistoryModal
+            open={historyModalOpen}
+            onOpenChange={setHistoryModalOpen}
+            teacherId={selectedTeacher || ""}
+            teacherName={selectedTeacherData?.name || "Teacher"}
+            onPaid={() => {
+              // Refresh list after marking paid
+              handlePaymentSuccess();
+            }}
           />
 
           <YearlySummaryModal

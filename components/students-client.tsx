@@ -299,9 +299,9 @@ export function StudentsClientComponent({
                   Paid Date
                 </th>
 
-                {/* <th className="text-center p-4 font-semibold text-foreground">
-                  All Month Fees
-                </th> */}
+                <th className="text-center p-4 font-semibold text-foreground">
+                  Fees Status
+                </th>
                 <th className="text-center p-4 font-semibold text-foreground ">
                   Attendance
                 </th>
@@ -396,7 +396,7 @@ export function StudentsClientComponent({
                           ).toLocaleDateString()
                         : "—"}
                     </td>
-                    {/* <td className="p-4 text-center">
+                    <td className="p-4 text-center">
                       <Button
                         size="sm"
                         variant="outline"
@@ -409,7 +409,7 @@ export function StudentsClientComponent({
                       >
                         View Fees
                       </Button>
-                    </td> */}
+                    </td>
                     <td className="p-4 text-center">
                       <Button
                         size="sm"
@@ -503,27 +503,6 @@ export function StudentsClientComponent({
           onOpenChange={setUnpaidFeesModalOpen}
           studentId={selectedStudentForUnpaidFees.id}
           studentName={selectedStudentForUnpaidFees.name}
-          onPaid={({ studentId, paidDate }) => {
-            // Update current-month fee in table state and close modal live
-            setStudents((prev) =>
-              prev.map((s) =>
-                s.id === studentId && s.currentFee
-                  ? {
-                      ...s,
-                      currentFee: {
-                        ...s.currentFee,
-                        status: "paid",
-                        paid_date: paidDate,
-                      },
-                    }
-                  : s,
-              ),
-            );
-            setUnpaidFeesModalOpen(false);
-            setSelectedStudentForUnpaidFees(null);
-            // Full page reload requested after marking paid
-            window.location.reload();
-          }}
         />
       )}
     </>

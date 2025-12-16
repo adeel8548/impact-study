@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   AlertCircle,
   Check,
@@ -33,7 +32,6 @@ interface TeacherSalaryHistoryModalProps {
   onOpenChange: (open: boolean) => void;
   teacherId: string;
   teacherName: string;
-  onPaid?: (payload: { salaryId: string; paidDate: string }) => void;
 }
 
 const MONTHS = [
@@ -71,14 +69,12 @@ export function TeacherSalaryHistoryModal({
   onOpenChange,
   teacherId,
   teacherName,
-  onPaid,
 }: TeacherSalaryHistoryModalProps) {
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear(),
   );
   const [loading, setLoading] = useState(false);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && teacherId) {
@@ -142,38 +138,6 @@ export function TeacherSalaryHistoryModal({
     [salaryMap, selectedYear],
   );
 
-  const handleMarkPaid = async (salaryId: string, month: number) => {
-    setUpdatingId(salaryId);
-    try {
-      const paidDate = new Date(selectedYear, month - 1, 1).toISOString();
-      const response = await fetch("/api/salaries", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: salaryId,
-          status: "paid",
-          paid_date: paidDate,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error("Failed to update salary status");
-        return;
-      }
-
-      setSalaries((prev) =>
-        prev.map((s) =>
-          s.id === salaryId ? { ...s, status: "paid", paid_date: paidDate } : s,
-        ),
-      );
-      onPaid?.({ salaryId, paidDate });
-    } catch (error) {
-      console.error("Failed to mark salary as paid:", error);
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
   const availableYears = useMemo(
     () =>
       Array.from(
@@ -220,7 +184,6 @@ export function TeacherSalaryHistoryModal({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {monthsForYear.map(({ month, record }) => {
               const isPaid = record?.status === "paid";
-              const isUpdating = updatingId === record?.id;
 
               return (
                 <Card
@@ -233,7 +196,7 @@ export function TeacherSalaryHistoryModal({
                         : "border-gray-200 dark:border-gray-800"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col items-center justify-between gap-3 mb-3">
                     <div>
                       <p className="font-semibold text-foreground">
                         {MONTHS[month - 1]}
@@ -244,7 +207,7 @@ export function TeacherSalaryHistoryModal({
                     </div>
                     {record ? (
                       <div
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                           isPaid
                             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
                             : "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
@@ -261,54 +224,40 @@ export function TeacherSalaryHistoryModal({
                         )}
                       </div>
                     ) : (
-                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 whitespace-nowrap">
                         <Clock className="w-3 h-3" /> Not Added
                       </div>
                     )}
                   </div>
 
                   {record ? (
-                    <div className="mt-3 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Amount
-                        </span>
-                        <span className="text-lg font-semibold text-foreground">
+                    <div className="space-y-3 pt-2 border-t border-gray-200/50">
+                      <div className="flex justify-between items-center gap-2">
+                        {/* <span className="text-xs text-muted-foreground">
+                          Amount:
+                        </span> */}
+                        <span className="font-bold text-lg text-foreground">
                           PKR {Number(record.amount || 0).toLocaleString()}
                         </span>
                       </div>
                       {isPaid && record.paid_date && (
-                        <p className="text-xs text-muted-foreground">
-                          Paid on{" "}
-                          {new Date(record.paid_date).toLocaleDateString()}
-                        </p>
-                      )}
-                      {!isPaid && (
-                        <Button
-                          size="sm"
-                          disabled={isUpdating}
-                          onClick={() =>
-                            record?.id && handleMarkPaid(record.id, month)
-                          }
-                          className="w-full gap-2"
-                        >
-                          {isUpdating ? (
-                            <>
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                              Updating...
-                            </>
-                          ) : (
-                            <>
-                              <Check className="w-3 h-3" />
-                              Mark Paid
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex justify-between items-center gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            Date:
+                          </span>
+                          <span className="font-semibold text-sm text-green-700 dark:text-green-400">
+                            {new Date(record.paid_date).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "numeric",
+                              day: "numeric",
+                            })}
+                          </span>
+                        </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground mt-3">
-                      No salary record for this month.
+                    <p className="text-xs text-muted-foreground">
+                      No salary record
                     </p>
                   )}
                 </Card>

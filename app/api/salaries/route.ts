@@ -70,15 +70,18 @@ export async function GET(request: NextRequest) {
 /**
  * PUT: Update salary status and payment
  * Body:
- *   - id: Salary record ID
+ *   - id: Salary record ID (preferred)
  *   - status: 'paid' or 'unpaid'
  *   - paid_date: Optional ISO timestamp for payment date
  *   - amount: Optional amount update
+ *   - teacher_id, month, year, school_id: optional fallback fields to upsert if id not found
  */
 export async function PUT(request: NextRequest) {
   const supabase = await createClient();
   try {
-    const { id, amount, status, paid_date } = await request.json();
+    const { id, amount, status, paid_date, teacher_id, month, year, school_id } =
+      await request.json();
+
     if (!id) {
       return NextResponse.json(
         { success: false, error: "id is required" },
@@ -112,11 +115,109 @@ export async function PUT(request: NextRequest) {
       .from("teacher_salary")
       .update(updateData)
       .eq("id", id)
-      .select();
+      .select()
+      .maybeSingle();
 
-    if (error) throw error;
+    if (error && error.code !== "PGRST116") throw error;
 
-    return NextResponse.json({ salary: data?.[0], success: true });
+    if (data) {
+      return NextResponse.json({ salary: data, success: true });
+    }
+
+    // No row matched this id. Attempt fallback upsert if details provided.
+    if (!teacher_id || !month || !year) {
+      return NextResponse.json(
+        {
+          error: "Salary record not found for this id",
+          success: false,
+          hint: "Provide teacher_id, month, and year to create missing salary row",
+        },
+        { status: 404 },
+      );
+    }
+
+    // See if a row exists for teacher/month/year; if so, update it instead.
+    const { data: existingRow, error: existingErr } = await supabase
+      .from("teacher_salary")
+      .select("id, school_id")
+      .eq("teacher_id", teacher_id)
+      .eq("month", Number(month))
+      .eq("year", Number(year))
+      .maybeSingle();
+
+    if (existingErr && existingErr.code !== "PGRST116") throw existingErr;
+
+    const targetId = existingRow?.id ?? id;
+    let targetSchoolId = existingRow?.school_id ?? school_id;
+
+    if (!targetSchoolId) {
+      // Try to derive school_id from teacher profile first
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("school_id")
+        .eq("id", teacher_id)
+        .maybeSingle();
+      if (profileErr) throw profileErr;
+      targetSchoolId = profile?.school_id ?? targetSchoolId;
+    }
+
+    if (!targetSchoolId) {
+      // Fallback: use the acting admin's school_id (current auth user)
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
+      if (user?.id) {
+        const { data: adminProfile, error: adminErr } = await supabase
+          .from("profiles")
+          .select("school_id")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (adminErr) throw adminErr;
+        targetSchoolId = adminProfile?.school_id ?? targetSchoolId;
+      }
+    }
+
+    // If still missing, allow null; RLS admin policy permits admin users regardless of school_id.
+    updateData.school_id = targetSchoolId ?? null;
+
+    // If an existing row was found by teacher/month/year, update it; else insert.
+    if (existingRow?.id) {
+        const { data: updated, error: updErr } = await supabase
+          .from("teacher_salary")
+          .update(updateData)
+          .eq("id", existingRow.id)
+          .select()
+          .maybeSingle();
+
+        if (updErr && updErr.code !== "PGRST116") throw updErr;
+        if (updated) {
+          return NextResponse.json({ salary: updated, success: true, created: false });
+        }
+        // If no row returned even though id existed, continue to insert path to self-heal.
+    }
+
+    const insertPayload = {
+      id: targetId, // keep client id if provided
+      teacher_id,
+      month: Number(month),
+      year: Number(year),
+      amount: typeof amount !== "undefined" ? amount : 0,
+      status: updateData.status ?? "paid",
+      paid_date: updateData.paid_date ?? paid_date ?? new Date().toISOString(),
+      school_id: updateData.school_id ?? null,
+    } as any;
+
+    const { data: inserted, error: insErr } = await supabase
+      .from("teacher_salary")
+      .insert(insertPayload)
+      .select()
+      .single();
+
+    if (insErr) throw insErr;
+
+    return NextResponse.json({ salary: inserted, success: true, created: true });
   } catch (error) {
     console.error("Error updating salary:", error);
     return NextResponse.json(
@@ -159,7 +260,7 @@ export async function POST(request: NextRequest) {
       .eq("teacher_id", teacher_id)
       .eq("month", month)
       .eq("year", year)
-      .single();
+      .maybeSingle();
 
     if (checkError && checkError.code !== "PGRST116") {
       throw checkError;

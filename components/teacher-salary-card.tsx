@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SalaryStatusButton } from "@/components/salary-status-button";
 
 interface TeacherSalaryCardProps {
   teacher: {
@@ -20,6 +21,7 @@ interface TeacherSalaryCardProps {
     name: string;
     email: string;
     phone?: string;
+    school_id?: string;
     class_ids?: string[] | null;
     salary?: {
       amount: number;
@@ -55,7 +57,7 @@ export function TeacherSalaryCard({
   const [status, setStatus] = useState<"paid" | "unpaid">(
     teacher.salary?.status ?? "unpaid",
   );
-  const [isPending, startTransition] = useTransition();
+  const [isPending] = useState(false);
   const salaryAmount = Number(teacher.salary?.amount ?? 0) || 0;
 
   useEffect(() => {
@@ -65,41 +67,6 @@ export function TeacherSalaryCard({
     );
   }, [assignedClasses, teacher.name]);
 
-  const handleToggle = () => {
-    startTransition(async () => {
-      const response = await fetch("/api/teacher-salary/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teacherId: teacher.id,
-          amount: teacher.salary?.amount ?? 0,
-          // Note: month/year should ideally be passed here as well
-          // but card doesn't have this info - it relies on current month
-        }),
-      });
-
-      const json = await response.json();
-      if (json?.success && json?.status) {
-        console.log("[TeacherSalaryCard] Status toggled:", {
-          teacherId: teacher.id,
-          newStatus: json.status,
-        });
-        setStatus(json.status);
-        onStatusChange?.({
-          status: json.status,
-          amount: salaryAmount,
-        });
-      } else {
-        console.error(
-          "[TeacherSalaryCard] Toggle failed:",
-          json?.error || "Unknown error",
-        );
-      }
-    });
-  };
-
-  // Disable button if already paid (can only mark unpaid or mark paid if unpaid)
-  const isPaidDisabled = status === "paid";
 
   return (
     <Card className="p-6 flex flex-col gap-4">
@@ -199,15 +166,17 @@ export function TeacherSalaryCard({
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <Button
-          variant={status === "paid" ? "outline" : "default"}
-          onClick={handleToggle}
-          disabled={isPending || isPaidDisabled}
-          className="gap-2 flex-1"
-        >
-          {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-          Mark {status === "paid" ? "Unpaid" : "Paid"}
-        </Button>
+        <div className="flex-1">
+          <SalaryStatusButton
+            teacherId={teacher.id}
+            buttonClassName="w-full"
+            schoolId={teacher.school_id}
+            onPaid={() => {
+              setStatus("paid");
+              onStatusChange?.({ status: "paid", amount: salaryAmount });
+            }}
+          />
+        </div>
         <Button
           size="sm"
           variant="outline"
