@@ -4,6 +4,7 @@ import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TeacherDashboardCharts } from "@/components/teacher-dashboard-charts";
+import { TeacherAssignedSubjects } from "@/components/teacher-assigned-subjects";
 import { Users, BookOpen, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
@@ -43,6 +44,13 @@ export default async function TeacherDashboard() {
     .from("assign_subjects")
     .select("class_id, subject_id, classes(id, name), subjects(id, name)")
     .eq("teacher_id", user.id);
+
+  const assignmentMapped = (assignments || []).map((a: any) => ({
+    class_id: a.class_id,
+    class_name: (a as any).classes?.name || "",
+    subject_id: a.subject_id,
+    subject_name: (a as any).subjects?.name || "",
+  }));
 
   // Get all students in incharge classes
   const { data: students = [] } = inchargeClassIds.length
@@ -219,53 +227,7 @@ export default async function TeacherDashboard() {
             <h3 className="text-lg font-bold text-foreground mb-4">
               My Assigned Subjects
             </h3>
-            <div className="space-y-3">
-              {Array.from(
-                new Map(
-                  (assignments || []).map((a: any) => [
-                    a.subject_id,
-                    {
-                      subject_id: a.subject_id,
-                      subject_name: (a as any).subjects?.name,
-                      class_id: a.class_id,
-                      class_name: (a as any).classes?.name,
-                    },
-                  ]),
-                ).values(),
-              ).map((subj: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex flex-col md:flex-row items-center justify-between p-4 bg-secondary rounded-lg hover:bg-opacity-80 transition-colors"
-                >
-                  <div className="mb-3 md:mb-0">
-                    <p className="font-semibold text-foreground">
-                      {subj.subject_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {
-                        (assignments || []).filter(
-                          (a: any) => a.subject_id === subj.subject_id,
-                        ).length
-                      }{" "}
-                      Classes
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-primary text-primary-foreground"
-                    >
-                      <Link href={`/teacher/student-results`}>
-                        View Results
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Link href={`/teacher/quiz-results`}>Quiz Results</Link>
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TeacherAssignedSubjects assignments={assignmentMapped} />
           </Card>
         )}
       </div>

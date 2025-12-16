@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Bell } from "lucide-react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function TeacherHeader() {
   const router = useRouter();
@@ -48,8 +48,10 @@ export function TeacherHeader() {
     fetchPermissions();
   }, []);
 
+  const clearUser = () => localStorage.removeItem("currentUser");
+
   const handleLogout = () => {
-    localStorage.removeItem("currentUser");
+    clearUser();
     router.push("/");
   };
 
@@ -57,6 +59,25 @@ export function TeacherHeader() {
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("currentUser") || "{}")
       : {};
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onBeforeUnload = () => clearUser();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+
+  const displayName = useMemo(() => {
+    const metaName = (user as any)?.user_metadata?.name;
+    if (metaName) return metaName;
+    if (user?.name) return user.name;
+    const emailName = (user?.email || "Teacher").split("@")[0];
+    return emailName
+      .split(" ")
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }, [user]);
 
   const isActive = (path: string) => pathname === path;
   // treat paths that start with a base as active (e.g. /teacher/schedules?tab=quizzes)
@@ -75,16 +96,7 @@ export function TeacherHeader() {
             />
           </div>
           <div>
-            <h1 className="font-bold text-foreground">
-              {(user.email || "Teacher")
-                .split("@")[0] // @ se pehle ka part
-                .split(" ") // words me split
-                .map(
-                  (word: string) =>
-                    word.charAt(0).toUpperCase() + word.slice(1),
-                ) // capitalize
-                .join(" ")}{" "}
-            </h1>
+            <h1 className="font-bold text-foreground">{displayName}</h1>
 
             <p className="text-xs text-muted-foreground">Teacher Portal</p>
           </div>

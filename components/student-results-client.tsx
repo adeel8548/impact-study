@@ -33,6 +33,7 @@ interface MarkInput {
 type StudentResultsClientProps = {
   prefetchedClasses?: Class[];
   defaultClassId?: string;
+  defaultSubjectId?: string;
   classEndpoint?: string;
   teacherId?: string;
   role?: "admin" | "teacher";
@@ -42,6 +43,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
   const {
     prefetchedClasses,
     defaultClassId,
+    defaultSubjectId,
     classEndpoint = "/api/classes",
     teacherId,
     role = "admin",
@@ -179,7 +181,13 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         }));
 
         setSubjects(subjectsArray);
-        setSelectedSubject("");
+
+        const preferredSubject =
+          defaultSubjectId && subjectsArray.some((s) => s.id === defaultSubjectId)
+            ? defaultSubjectId
+            : subjectsArray[0]?.id || "";
+
+        setSelectedSubject(preferredSubject || "");
         setSelectedExam("");
         setChapters([]);
         setStudents([]);
@@ -191,7 +199,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     };
 
     loadSubjects();
-  }, [selectedClass]);
+  }, [selectedClass, defaultSubjectId]);
 
   // Load exams when subject changes
   useEffect(() => {

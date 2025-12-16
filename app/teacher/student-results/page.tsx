@@ -3,7 +3,16 @@ import { redirect } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { StudentResultsClient } from "@/components/student-results-client";
 
-export default async function TeacherStudentResultsPage() {
+type SearchParams = {
+  classId?: string | string[];
+  subjectId?: string | string[];
+};
+
+export default async function TeacherStudentResultsPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
   const supabase = await createClient();
 
   const {
@@ -38,6 +47,16 @@ export default async function TeacherStudentResultsPage() {
     ? await supabase.from("classes").select("id, name").in("id", classIds)
     : { data: [] };
 
+  const requestedClassId = Array.isArray(searchParams?.classId)
+    ? searchParams?.classId[0]
+    : searchParams?.classId;
+
+  const requestedSubjectId = Array.isArray(searchParams?.subjectId)
+    ? searchParams?.subjectId[0]
+    : searchParams?.subjectId;
+
+  const defaultClassId = requestedClassId || classes[0]?.id;
+
   return (
     <div className="min-h-screen bg-background">
       <TeacherHeader />
@@ -53,7 +72,8 @@ export default async function TeacherStudentResultsPage() {
 
         <StudentResultsClient
           prefetchedClasses={classes}
-          defaultClassId={classes[0]?.id}
+          defaultClassId={defaultClassId}
+          defaultSubjectId={requestedSubjectId}
           classEndpoint={`/api/teachers/classes?teacherId=${user.id}`}
           teacherId={user.id}
           role="teacher"
