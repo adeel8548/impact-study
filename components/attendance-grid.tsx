@@ -32,6 +32,11 @@ interface AttendanceGridProps {
   daysToShow?: number;
   // If provided, the grid will start from this ISO date (YYYY-MM-DD)
   startDateIso?: string;
+  // Optional min/max bounds (ISO). Prev/Next buttons disable at bounds.
+  minDateIso?: string;
+  maxDateIso?: string;
+  // Notify parent when navigation happens so it can fetch more data if needed
+  onNavigate?: (startIso: string, endIso: string) => void;
   // When true the grid will show a small timestamp under each day's cell
   // useful for admin views to see when attendance was marked.
   showTimestamps?: boolean;
@@ -62,6 +67,9 @@ export function AttendanceGrid({
   onStatusChange,
   daysToShow = 7,
   startDateIso,
+  minDateIso,
+  maxDateIso,
+  onNavigate,
   showTimestamps = false,
   isAdmin = false,
   type = "student",
@@ -208,19 +216,77 @@ export function AttendanceGrid({
   };
 
   const handlePrevWeek = () => {
+    if (disablePrev) return;
     const newDate = new Date(startDate);
     newDate.setDate(newDate.getDate() - daysToShow);
+    // Clamp to minDate if provided
+    if (minDateIso) {
+      const [y, m, d] = minDateIso.split("-").map(Number);
+      const minDate = new Date(y, m - 1, d);
+      if (newDate < minDate) {
+        setStartDate(minDate);
+        return;
+      }
+    }
     setStartDate(newDate);
+
+    if (onNavigate) {
+      const startIso = `${newDate.getFullYear()}-${String(
+        newDate.getMonth() + 1,
+      ).padStart(2, "0")}-${String(newDate.getDate()).padStart(2, "0")}`;
+      const end = new Date(newDate);
+      end.setDate(end.getDate() + daysToShow - 1);
+      const endIso = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+      onNavigate(startIso, endIso);
+    }
   };
 
   const handleNextWeek = () => {
+    if (disableNext) return;
     const newDate = new Date(startDate);
     newDate.setDate(newDate.getDate() + daysToShow);
+    // Clamp to maxDate if provided
+    if (maxDateIso) {
+      const [y, m, d] = maxDateIso.split("-").map(Number);
+      const maxDate = new Date(y, m - 1, d);
+      if (newDate > maxDate) {
+        setStartDate(maxDate);
+        return;
+      }
+    }
     setStartDate(newDate);
+
+    if (onNavigate) {
+      const startIso = `${newDate.getFullYear()}-${String(
+        newDate.getMonth() + 1,
+      ).padStart(2, "0")}-${String(newDate.getDate()).padStart(2, "0")}`;
+      const end = new Date(newDate);
+      end.setDate(end.getDate() + daysToShow - 1);
+      const endIso = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+      onNavigate(startIso, endIso);
+    }
   };
 
   const dates = generateDateRange();
   const today = now;
+
+  // Disable nav when hitting bounds
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + daysToShow - 1);
+
+  let disablePrev = false;
+  if (minDateIso) {
+    const [y, m, d] = minDateIso.split("-").map(Number);
+    const minDate = new Date(y, m - 1, d);
+    disablePrev = startDate <= minDate;
+  }
+
+  let disableNext = false;
+  if (maxDateIso) {
+    const [y, m, d] = maxDateIso.split("-").map(Number);
+    const maxDate = new Date(y, m - 1, d);
+    disableNext = endDate >= maxDate;
+  }
 
   return (
     <Card className="p-6">
@@ -231,6 +297,7 @@ export function AttendanceGrid({
             variant="outline"
             size="sm"
             onClick={handlePrevWeek}
+            disabled={disablePrev}
             className="gap-1"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -240,6 +307,7 @@ export function AttendanceGrid({
             variant="outline"
             size="sm"
             onClick={handleNextWeek}
+            disabled={disableNext}
             className="gap-1"
           >
             Next
@@ -284,7 +352,7 @@ export function AttendanceGrid({
             return (
               <div
                 key={dateStr}
-                className="flex flex-col items-center gap-2 min-w-[80px]"
+                className="flex flex-col items-center gap-2 min-w-20"
               >
                 {/* Date Header */}
                 <div className="text-center text-xs font-semibold">

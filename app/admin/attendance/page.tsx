@@ -725,7 +725,7 @@ export default function AttendanceManagement() {
                       {/* <option value="custom">Custom range</option> */}
                     </select>
                   </div>
-                  <div className="flex items-center gap-2 mt-2 md:mt-0">
+                  <div className="flex items-center gap-2 mt-2 md:fmt-0">
                     <button
                       className={`px-3 py-1 rounded text-sm font-medium transition-all ${
                         isFetching
@@ -901,17 +901,28 @@ export default function AttendanceManagement() {
                                     : undefined
                                 ).days
                               }
-                              startDateIso={
-                                computeRange(
-                                  studentRange,
-                                  studentRange === "custom"
-                                    ? {
-                                        start: studentCustomStart,
-                                        end: studentCustomEnd,
-                                      }
-                                    : undefined
-                                ).start
-                              }
+                                startDateIso={
+                                  computeRange(
+                                    studentRange,
+                                    studentRange === "custom"
+                                      ? {
+                                          start: studentCustomStart,
+                                          end: studentCustomEnd,
+                                        }
+                                      : undefined
+                                  ).start
+                                }
+                              maxDateIso={toLocalDate(new Date())}
+                                  onNavigate={(startIso, endIso) => {
+                                    setStudentCustomStart(startIso);
+                                    setStudentCustomEnd(endIso);
+                                    setStudentRange("custom");
+                                    setOpenStudentSummaryAfterLoad(false);
+                                    fetchStudentAttendance("custom", {
+                                      start: startIso,
+                                      end: endIso,
+                                    });
+                                  }}
                             />
                           </div>
                         );
@@ -1134,7 +1145,18 @@ export default function AttendanceManagement() {
                                   : undefined
                               ).start
                             }
+                            maxDateIso={toLocalDate(new Date())}
                             showTimestamps={true}
+                            onNavigate={(startIso, endIso) => {
+                              setTeacherCustomStart(startIso);
+                              setTeacherCustomEnd(endIso);
+                              setTeacherRange("custom");
+                              setOpenTeacherSummaryAfterLoad(false);
+                              fetchTeacherAttendance("custom", {
+                                start: startIso,
+                                end: endIso,
+                              });
+                            }}
                             onLeaveIconClick={(record, type, personName) => {
                               if (record.id) {
                                 openLeaveReason(
