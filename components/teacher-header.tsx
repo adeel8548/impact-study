@@ -48,10 +48,27 @@ export function TeacherHeader() {
     fetchPermissions();
   }, []);
 
-  const clearUser = () => localStorage.removeItem("currentUser");
+  const clearUser = () => {
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("accessToken");
+  };
 
-  const handleLogout = () => {
-    clearUser();
+  const logoutEverywhere = async (keepalive = false) => {
+    try {
+      await fetch("/api/auth/signout", {
+        method: "POST",
+        keepalive,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.error("Failed to sign out:", err);
+    } finally {
+      clearUser();
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutEverywhere();
     router.push("/");
   };
 
@@ -63,7 +80,10 @@ export function TeacherHeader() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const onBeforeUnload = () => clearUser();
+    const onBeforeUnload = () => {
+      // Use keepalive so cookies clear even when tab closes
+      logoutEverywhere(true);
+    };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, []);

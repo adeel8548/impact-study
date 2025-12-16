@@ -21,7 +21,7 @@ import {
   Grid,
   FileText,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
 const menuItems = [
   // { href: "/admin", label: "Dashboard", icon: Home },
@@ -45,10 +45,35 @@ export function AdminSidebar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogout = () => {
+  const clearUser = () => {
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("accessToken");
+  };
+
+  const logoutEverywhere = async (keepalive = false) => {
+    try {
+      await fetch("/api/auth/signout", {
+        method: "POST",
+        keepalive,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.error("Failed to sign out:", err);
+    } finally {
+      clearUser();
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutEverywhere();
     router.push("/");
   };
+
+  useEffect(() => {
+    const onBeforeUnload = () => logoutEverywhere(true);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
 
   return (
     <>

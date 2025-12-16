@@ -51,7 +51,7 @@ export default function LoginPage() {
 
       if (authError) {
         setError(authError.message);
-      } else if (data.user) {
+      } else if (data.user && data.session) {
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("role")
@@ -63,7 +63,7 @@ export default function LoginPage() {
 
           // Save user info + access token
           localStorage.setItem("currentUser", JSON.stringify(userWithRole));
-          localStorage.setItem("accessToken", data.session?.access_token || "");
+          localStorage.setItem("accessToken", data.session.access_token);
 
           // Redirect
           router.push(
