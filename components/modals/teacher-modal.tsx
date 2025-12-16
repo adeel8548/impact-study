@@ -320,7 +320,7 @@ export function TeacherModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1050px] h-[95vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[580px] h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Edit Teacher" : "Add New Teacher"}
@@ -575,7 +575,7 @@ export function TeacherModal({
 
           <div className="space-y-2">
             <Label>Assign Subjects</Label>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {assignRows.map((row, idx) => {
                 const subjects = subjectsCache[row.class_id] || [];
                 const subjectsLoading = row.class_id && !subjectsCache[row.class_id];
@@ -623,7 +623,7 @@ export function TeacherModal({
                             No subjects found for this class.
                           </p>
                         ) : (
-                          <div className="grid gap-2 sm:grid-cols-3">
+                          <div className="grid gap-2 sm:grid-cols-2">
                             {subjects.map((subject) => (
                               <label
                                 key={subject.id}
