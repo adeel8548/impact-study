@@ -270,52 +270,133 @@ export default function TeacherAttendance() {
     }
   };
 
-  // Display a compact summary of any loaded history range
+  // Display a student (rows) × date (columns) grid for loaded range
   const HistorySummary = () => {
     if (!historyRecords || historyRecords.length === 0) return null;
 
-    // Group by date
-    const byDate: Record<string, any[]> = {};
-    historyRecords.forEach((r) => {
-      byDate[r.date] = byDate[r.date] || [];
-      byDate[r.date].push(r);
+    // Unique dates in the range
+    const uniqueDates = Array.from(
+      new Set(historyRecords.map((r: any) => r.date)),
+    ).sort();
+
+    // Build map: studentId -> { name, dateStatus: Record<date, 'P'|'A'|'L'|'-'> }
+    const perStudent: Record<
+      string,
+      { name: string; dateStatus: Record<string, 'P' | 'A' | 'L' | '-'> }
+    > = {};
+
+    // Initialize from current class students so all students appear even if no records
+    students.forEach((s) => {
+      perStudent[s.id] = {
+        name: s.name,
+        dateStatus: {},
+      };
     });
 
-    const rows = Object.keys(byDate)
-      .sort((a, b) => (a < b ? -1 : 1))
-      .map((date) => {
-        const recs = byDate[date];
-        const present = recs.filter((x: any) => x.status === "present").length;
-        const absent = recs.filter((x: any) => x.status === "absent").length;
-        const notMarked = recs.filter(
-          (x: any) => !x.status || x.status === "notmarked",
-        ).length;
-        const total = recs.length;
+    // Fill from history records
+    historyRecords.forEach((r: any) => {
+      const sid = r.student_id;
+      if (!perStudent[sid]) {
+        perStudent[sid] = { name: r.student_name || `Student ${sid}` , dateStatus: {} };
+      }
+      const status =
+        r.status === 'present' ? 'P' : r.status === 'absent' ? 'A' : r.status === 'leave' ? 'L' : '-';
+      perStudent[sid].dateStatus[r.date] = status;
+    });
 
-        return (
-          <div
-            key={date}
-            className="flex justify-between items-center py-2 px-3 border-b border-border hover:bg-secondary/30 rounded"
-          >
-            <div className="text-sm font-medium">{date}</div>
-            <div className="flex gap-3 text-sm">
-              <span className="text-green-600 font-semibold">P: {present}</span>
-              <span className="text-red-600 font-semibold">A: {absent}</span>
-              <span className="text-gray-500 font-semibold">
-                N: {notMarked}
-              </span>
-              <span className="text-muted-foreground">({total})</span>
-            </div>
-          </div>
-        );
-      });
+    // Aggregate totals for the range
+    const totals = historyRecords.reduce(
+      (acc, r: any) => {
+        if (r.status === 'present') acc.present += 1;
+        else if (r.status === 'absent') acc.absent += 1;
+        else if (r.status === 'leave') acc.leaves += 1;
+        return acc;
+      },
+      { present: 0, absent: 0, leaves: 0 },
+    );
+
+    const studentEntries = Object.entries(perStudent).sort((a, b) =>
+      a[1].name.localeCompare(b[1].name),
+    );
 
     return (
-      <Card className="p-4 mb-4">
-        <h4 className="font-semibold mb-3 text-base">
-          History Summary ({historyRecords.length} records)
-        </h4>
-        <div className="max-h-96 overflow-y-auto">{rows}</div>
+      <Card className="p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold text-base">
+            Attendance ({studentEntries.length} students × {uniqueDates.length} days)
+          </h4>
+          <div className="hidden md:flex items-center gap-2 text-xs">
+            <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 font-semibold">P</span>
+            <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-semibold">A</span>
+            <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold">L</span>
+            <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold">-</span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="bg-secondary border-b border-border">
+                <th className="sticky left-0 z-10 bg-secondary text-left p-3 font-semibold">Student</th>
+                {uniqueDates.map((d) => {
+                  const day = d.split('-')[2];
+                  return (
+                    <th key={d} className="text-center p-2 font-semibold text-foreground" title={d}>
+                      {day}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {studentEntries.map(([sid, info]) => (
+                <tr key={sid} className="border-b border-border hover:bg-secondary/40">
+                  <td className="sticky left-0 bg-background p-3 font-medium text-foreground whitespace-nowrap">
+                    {info.name}
+                  </td>
+                  {uniqueDates.map((d) => {
+                    const status = info.dateStatus[d] || '-';
+                    const cls =
+                      status === 'P'
+                        ? 'bg-green-100 text-green-700'
+                        : status === 'A'
+                        ? 'bg-red-100 text-red-700'
+                        : status === 'L'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-100 text-gray-700';
+                    return (
+                      <td key={d} className="p-1 text-center">
+                        <span className={`inline-flex items-center justify-center w-8 h-7 rounded font-semibold ${cls}`}>
+                          {status}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Range Totals */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+          <div className="text-center p-2 bg-gray-50 rounded">
+            <p className="text-xs text-muted-foreground">Total Days</p>
+            <p className="text-lg font-bold text-gray-700">{uniqueDates.length}</p>
+          </div>
+          <div className="text-center p-2 bg-green-50 rounded">
+            <p className="text-xs text-muted-foreground">Total Present</p>
+            <p className="text-lg font-bold text-green-600">{totals.present}</p>
+          </div>
+          <div className="text-center p-2 bg-red-50 rounded">
+            <p className="text-xs text-muted-foreground">Total Absent</p>
+            <p className="text-lg font-bold text-red-600">{totals.absent}</p>
+          </div>
+          <div className="text-center p-2 bg-blue-50 rounded">
+            <p className="text-xs text-muted-foreground">Total Leaves</p>
+            <p className="text-lg font-bold text-blue-600">{totals.leaves}</p>
+          </div>
+        </div>
       </Card>
     );
   };
@@ -482,6 +563,17 @@ export default function TeacherAttendance() {
                   ) : (
                     "Load"
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setHistoryRecords([]);
+                    toast.success("Filter cleared");
+                  }}
+                  disabled={isFetching || historyRecords.length === 0}
+                  className="min-w-fit"
+                >
+                  Clear
                 </Button>
               </div>
             </div>
