@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { StudentResultsClient } from "@/components/student-results-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function StudentResultsPage() {
   const supabase = await createClient();
 

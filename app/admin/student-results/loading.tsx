@@ -12,10 +12,10 @@ export default function Loading() {
           <div className="flex justify-between items-start mb-8">
             <div>
               <h1 className="text-4xl font-bold text-foreground mb-2">
-                Student Management
+                Student Results
               </h1>
               <p className="text-muted-foreground">
-                Loading students...
+                Loading results...
               </p>
             </div>
           </div>
@@ -24,7 +24,7 @@ export default function Loading() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center space-y-4">
                 <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-                <p className="text-muted-foreground">Loading student data...</p>
+                <p className="text-muted-foreground">Loading data...</p>
               </div>
             </div>
           </Card>

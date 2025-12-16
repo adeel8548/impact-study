@@ -150,14 +150,6 @@ export default function SubjectsPage() {
     setSubjectName("");
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar />
@@ -169,35 +161,46 @@ export default function SubjectsPage() {
             <p className="text-muted-foreground">Manage subjects for classes</p>
           </div>
 
-          {/* Class Selection */}
-          <Card className="p-4">
-            <Label className="text-sm">Select Class</Label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full md:w-64 px-3 py-2 border border-border rounded bg-background text-foreground mt-2"
-            >
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Card>
+          {loading ? (
+            <Card className="p-8">
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-4">
+                  <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+                  <p className="text-muted-foreground">Loading subjects...</p>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {/* Class Selection */}
+              <Card className="p-4">
+                <Label className="text-sm">Select Class</Label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full md:w-64 px-3 py-2 border border-border rounded bg-background text-foreground mt-2"
+                >
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </Card>
 
-          {/* Add/Edit Form */}
-          <Card className="p-4 space-y-3">
-            <h3 className="font-semibold">
-              {editingId ? "Edit Subject" : "Add New Subject"}
-            </h3>
-            <div>
-              <Label>Subject Name</Label>
-              <Input
-                value={subjectName}
-                onChange={(e) => setSubjectName(e.target.value)}
-                placeholder="Example: Math, English"
-              />
-            </div>
+              {/* Add/Edit Form */}
+              <Card className="p-4 space-y-3">
+                <h3 className="font-semibold">
+                  {editingId ? "Edit Subject" : "Add New Subject"}
+                </h3>
+                <div>
+                  <Label>Subject Name</Label>
+                  <Input
+                    value={subjectName}
+                    onChange={(e) => setSubjectName(e.target.value)}
+                    placeholder="Example: Math, English"
+                  />
+                </div>
             <div className="flex gap-2 justify-end">
               {editingId && (
                 <Button variant="outline" onClick={handleCancel}>
@@ -254,6 +257,8 @@ export default function SubjectsPage() {
               </div>
             )}
           </Card>
+            </>
+          )}
         </div>
       </div>
     </div>

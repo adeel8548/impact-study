@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { QuizResultsClient } from "@/components/quiz-results-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function QuizResultsPage() {
   const supabase = await createClient();
 

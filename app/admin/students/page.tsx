@@ -5,6 +5,10 @@ import { StudentsClientComponent } from "@/components/students-client";
 import { StudentsCountCard } from "@/components/students-count-card";
 import { getFeeSummary } from "@/lib/actions/fees";
 
+// Force dynamic rendering for real-time data
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function StudentManagement() {
   const supabase = await createClient();
 

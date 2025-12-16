@@ -276,14 +276,6 @@ export default function QuizMarksPage() {
   // Render
   // ============================================
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   const selectedStudentName = students.find(
     (s) => s.id === selectedStudent,
   )?.name;
@@ -307,8 +299,19 @@ export default function QuizMarksPage() {
             </div>
           </div>
 
-          {/* Tabs for different sections */}
-          <Tabs defaultValue="entry" className="space-y-4">
+          {loading ? (
+            <Card className="p-8">
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-4">
+                  <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+                  <p className="text-muted-foreground">Loading quiz data...</p>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {/* Tabs for different sections */}
+              <Tabs defaultValue="entry" className="space-y-4">
             <TabsList>
               <TabsTrigger value="entry">Entry</TabsTrigger>
               <TabsTrigger value="results">
@@ -534,6 +537,8 @@ export default function QuizMarksPage() {
               )}
             </TabsContent>
           </Tabs>
+            </>
+          )}
         </div>
       </div>
     </div>

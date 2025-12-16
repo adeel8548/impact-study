@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AdminDashboardClient } from "@/components/admin-dashboard-client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AdminDashboard() {
   const supabase = await createClient();
 

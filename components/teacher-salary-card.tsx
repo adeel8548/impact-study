@@ -165,7 +165,7 @@ export function TeacherSalaryCard({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-0.5 md:gap-2">
         <div className="flex-1">
           <SalaryStatusButton
             teacherId={teacher.id}
