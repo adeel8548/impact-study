@@ -2,9 +2,10 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Cron Job: Auto mark teacher out time at 7 PM PKT
+ * Combined Cron Job: Auto mark teacher out time + auto-absent at 7 PM PKT
  * Runs daily at 7 PM Pakistan time (UTC+5)
- * Finds all teachers marked present today without out_time and sets it to 7 PM
+ * 1. Finds all teachers marked present today without out_time and sets it to 7 PM
+ * 2. Finds all teachers with NO attendance record for today and marks them ABSENT
  *
  * Schedule (Vercel, UTC): "0 14 * * *" → 19:00 PKT
  */
@@ -95,10 +96,101 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Auto Teacher Out] Successfully updated ${records.length} records`);
 
+    // ========================================
+    // PART 2: Auto-mark absent for teachers with NO attendance record
+    // ========================================
+    console.log("[Auto Teacher Out] Starting auto-absent check...");
+
+    // Get all active teachers
+    const { data: teachers, error: teachersError } = await adminClient
+      .from("teachers")
+      .select("id, name")
+      .eq("is_active", true);
+
+    if (teachersError) {
+      console.error("[Auto Teacher Out] Error fetching teachers:", teachersError);
+      throw teachersError;
+    }
+
+    if (!teachers || teachers.length === 0) {
+      console.log("[Auto Teacher Out] No active teachers found");
+      return NextResponse.json({
+        success: true,
+        message: `Auto-marked out time for ${records.length} teachers, no teachers to mark absent`,
+        outTimeUpdated: records.length,
+        absenceMarked: 0,
+        date: today,
+        outTime: outTime,
+      });
+    }
+
+    // Get all teachers who already have attendance marked for today
+    const { data: existingAttendance, error: fetchError } = await adminClient
+      .from("teacher_attendance")
+      .select("teacher_id")
+      .eq("date", today);
+
+    if (fetchError) {
+      console.error("[Auto Teacher Out] Error fetching existing attendance:", fetchError);
+      throw fetchError;
+    }
+
+    const markedTeacherIds = new Set(
+      (existingAttendance || []).map((a) => a.teacher_id)
+    );
+
+    // Find teachers with no attendance marked for today
+    const teachersWithoutAttendance = teachers.filter(
+      (t) => !markedTeacherIds.has(t.id)
+    );
+
+    if (teachersWithoutAttendance.length === 0) {
+      console.log("[Auto Teacher Out] All teachers have attendance marked");
+      return NextResponse.json({
+        success: true,
+        message: `Auto-marked out time for ${records.length} teachers, all others have attendance`,
+        outTimeUpdated: records.length,
+        absenceMarked: 0,
+        date: today,
+        outTime: outTime,
+      });
+    }
+
+    console.log(
+      `[Auto Teacher Out] Found ${teachersWithoutAttendance.length} teachers without any attendance marked`
+    );
+
+    // Mark these teachers as absent
+    const absenceRecords = teachersWithoutAttendance.map((teacher) => ({
+      teacher_id: teacher.id,
+      date: today,
+      status: "absent",
+      in_time: null,
+      out_time: null,
+      approval_status: "auto_marked", // Track that this was auto-marked
+    }));
+
+    const { data: insertedRecords, error: insertError } = await adminClient
+      .from("teacher_attendance")
+      .insert(absenceRecords)
+      .select();
+
+    if (insertError) {
+      console.error("[Auto Teacher Out] Insert error:", insertError);
+      throw insertError;
+    }
+
+    const absenceCount = insertedRecords?.length || 0;
+    console.log(
+      `[Auto Teacher Out] Successfully marked ${absenceCount} teachers as absent`
+    );
+
     return NextResponse.json({
       success: true,
-      message: `Auto-marked out time for ${records.length} teachers`,
-      updated: records.length,
+      message: `Auto-marked out time for ${records.length} teachers and ${absenceCount} as absent`,
+      outTimeUpdated: records.length,
+      absenceMarked: absenceCount,
+      absentTeachers: teachersWithoutAttendance.map((t) => ({ id: t.id, name: t.name })),
       date: today,
       outTime: outTime,
     });
@@ -108,7 +200,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to auto-mark out time",
+        error: error instanceof Error ? error.message : "Failed to process auto-attendance",
       },
       { status: 500 }
     );
