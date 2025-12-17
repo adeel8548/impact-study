@@ -125,14 +125,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all teachers who already have attendance marked for today
-    const { data: existingAttendance, error: fetchError } = await adminClient
+    const { data: existingAttendance, error: attendanceError } = await adminClient
       .from("teacher_attendance")
       .select("teacher_id")
       .eq("date", today);
 
-    if (fetchError) {
-      console.error("[Auto Teacher Out] Error fetching existing attendance:", fetchError);
-      throw fetchError;
+    if (attendanceError) {
+      console.error("[Auto Teacher Out] Error fetching existing attendance:", attendanceError);
+      throw attendanceError;
     }
 
     const markedTeacherIds = new Set(
