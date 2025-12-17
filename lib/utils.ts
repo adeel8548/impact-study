@@ -177,3 +177,25 @@ export function shouldMarkAsLate(
 ): boolean {
   return isAttendanceLate(createdAt, expectedTime, date);
 }
+
+/**
+ * Format time from HH:mm format to 12-hour format (e.g., "09:30" → "09:30 AM")
+ */
+export function formatTo12Hour(timeStr: string | null | undefined): string {
+  if (!timeStr) return "N/A";
+
+  try {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+
+    if (isNaN(hours) || isNaN(minutes)) {
+      return timeStr;
+    }
+
+    const hour = hours % 12 || 12; // Convert 0 to 12
+    const ampm = hours >= 12 ? "PM" : "AM";
+
+    return `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+}

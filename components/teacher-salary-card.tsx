@@ -12,7 +12,7 @@ import {
   Calendar,
   DollarSign,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatTo12Hour } from "@/lib/utils";
 import { SalaryStatusButton } from "@/components/salary-status-button";
 
 interface TeacherSalaryCardProps {
@@ -90,7 +90,7 @@ export function TeacherSalaryCard({
           )}
           {teacher.expected_time ? (
             <p className="text-xs text-muted-foreground mt-1">
-              Expected Time: {teacher.expected_time}
+              Arrival Time: {formatTo12Hour(teacher.expected_time)}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground mt-1">Expected Time: N/A</p>

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Calendar, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { LateReasonModal } from "@/components/modals/late-reason-modal";
-import { isAttendanceLate } from "@/lib/utils";
+import { isAttendanceLate, formatTo12Hour } from "@/lib/utils";
 import { updateLateReason } from "@/lib/actions/attendance";
 
 interface AdminAttendanceMarkingModalProps {
@@ -230,7 +230,7 @@ export function AdminAttendanceMarkingModal({
                       {teacherExpectedTime ? (
                         <>
                           <p className="text-sm font-medium text-foreground mb-2">
-                            Expected Time: <strong>{teacherExpectedTime}</strong>
+                            Expected Time: <strong>{formatTo12Hour(teacherExpectedTime)}</strong>
                           </p>
                           <p className="text-sm text-muted-foreground mb-3">
                             Current Time: <strong>{new Date().toLocaleTimeString()}</strong>

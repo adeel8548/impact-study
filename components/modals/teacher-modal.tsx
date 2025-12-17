@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { createTeacher, updateTeacher } from "@/lib/actions/teacher";
+import { formatTo12Hour } from "@/lib/utils";
 
 type SchoolClass = { id: string; name: string };
 type SubjectOption = { id: string; name: string; class_id: string };
@@ -491,6 +492,11 @@ export function TeacherModal({
               disabled={loading}
               title="Set the time when teacher is expected to arrive (e.g., 08:30). Attendance marked after 15 minutes will be marked as late."
             />
+            {formData.expected_time && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                📍 {formatTo12Hour(formData.expected_time)}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               Time when teacher is expected. Attendance after 15 min will be marked as late.
             </p>
