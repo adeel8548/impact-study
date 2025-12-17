@@ -36,6 +36,7 @@ interface FormState {
   password: string;
   salary: string;
   joining_date: string;
+  expected_time: string;
   incharge_class_ids: string[];
   assign_subjects: AssignedSubject[];
 }
@@ -100,6 +101,7 @@ export function TeacherModal({
           ? String(initialSalary)
           : "",
     joining_date: (teacher as any)?.joining_date || "",
+    expected_time: (teacher as any)?.expected_time || "",
     incharge_class_ids: Array.isArray((teacher as any)?.incharge_class_ids)
       ? (teacher as any).incharge_class_ids
       : [],
@@ -153,6 +155,7 @@ export function TeacherModal({
       password: "",
       salary: salaryValue,
       joining_date: (teacher as any)?.joining_date || "",
+      expected_time: (teacher as any)?.expected_time || "",
       incharge_class_ids: Array.isArray((teacher as any)?.incharge_class_ids)
         ? (teacher as any).incharge_class_ids
         : [],
@@ -275,6 +278,7 @@ export function TeacherModal({
           incharge_class_ids: formData.incharge_class_ids,
           assign_subjects: payloadAssignments,
           joining_date: formData.joining_date,
+          expected_time: formData.expected_time || null,
         });
 
         if (updateError) {
@@ -293,6 +297,7 @@ export function TeacherModal({
           class_ids: [],
           salary: salaryValue,
           joining_date: formData.joining_date,
+          expected_time: formData.expected_time || null,
           incharge_class_ids: formData.incharge_class_ids || null,
           assign_subjects: payloadAssignments,
         });
@@ -468,6 +473,27 @@ export function TeacherModal({
               }
               disabled={loading}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="expected_time">Expected Arrival Time</Label>
+            <Input
+              id="expected_time"
+              type="time"
+              placeholder="08:30"
+              value={formData.expected_time}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  expected_time: e.target.value,
+                }))
+              }
+              disabled={loading}
+              title="Set the time when teacher is expected to arrive (e.g., 08:30). Attendance marked after 15 minutes will be marked as late."
+            />
+            <p className="text-xs text-muted-foreground">
+              Time when teacher is expected. Attendance after 15 min will be marked as late.
+            </p>
           </div>
 
           <div className="space-y-2">

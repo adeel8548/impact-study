@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { LeaveReasonModal } from "./modals/leave-reason-modal";
+import { isAttendanceLate } from "@/lib/utils";
 
 interface AttendanceRecord {
   id?: string;
   student_id?: string;
   teacher_id?: string;
   date: string;
-  status: "present" | "absent" | "leave";
+  status: "present" | "absent" | "leave" | "late";
   remarks?: string; // Leave reason
   // optional timestamps from server (e.g. when record was created/updated)
   created_at?: string;
@@ -20,6 +21,8 @@ interface AttendanceRecord {
   rejected_by?: string; // Admin who rejected
   rejected_at?: string; // When rejection happened
   approval_status?: "approved" | "rejected"; // approval state
+  is_late?: boolean; // Whether attendance was marked as late
+  late_reason?: string; // Reason for late attendance
 }
 
 interface AttendanceGridProps {
@@ -27,7 +30,7 @@ interface AttendanceGridProps {
   title: string;
   onStatusChange: (
     date: string,
-    status: "present" | "absent" | "leave",
+    status: "present" | "absent" | "leave" | "late",
   ) => void;
   daysToShow?: number;
   // If provided, the grid will start from this ISO date (YYYY-MM-DD)
@@ -54,6 +57,14 @@ interface AttendanceGridProps {
     type: "student" | "teacher",
     personName: string,
   ) => void;
+  // Expected time for teacher attendance (HH:mm format)
+  expectedTime?: string;
+  // Callback when late status is detected (to open late reason modal)
+  onLateDetected?: (
+    date: string,
+    recordId: string,
+    personName: string,
+  ) => void;
 }
 
 interface HolidayDate {
@@ -76,6 +87,8 @@ export function AttendanceGrid({
   personName = "Person",
   canEditReasons = true,
   onLeaveIconClick,
+  expectedTime,
+  onLateDetected,
 }: AttendanceGridProps) {
   const [startDate, setStartDate] = useState(() => {
     if (startDateIso) {
@@ -317,10 +330,14 @@ export function AttendanceGrid({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-col md:flex-row gap-2 md:gap-6 mb-2 md:mb-6 text-sm">
+      <div className="flex flex-col md:flex-row gap-2 md:gap-6 mb-2 md:mb-6 text-sm flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-green-500 rounded"></div>
           <span>Present</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-orange-500 rounded"></div>
+          <span>Late (&gt; 15 min)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-500 rounded"></div>
@@ -381,44 +398,65 @@ export function AttendanceGrid({
                   <div className="w-full flex flex-col gap-1">
                     <Button
                       variant={
-                        status === "present"
+                        status === "late"
                           ? "default"
-                          : status === "absent"
-                            ? "destructive"
-                            : status === "leave"
-                              ? "secondary"
-                              : "outline"
+                          : status === "present"
+                            ? "default"
+                            : status === "absent"
+                              ? "destructive"
+                              : status === "leave"
+                                ? "secondary"
+                                : "outline"
                       }
                       size="sm"
                       onClick={() => {
-                        let newStatus: "present" | "absent" | "leave";
-                        if (status === "present") {
-                          newStatus = "absent";
-                        } else if (status === "absent") {
-                          newStatus = "leave";
+                        let newStatus: "present" | "absent" | "leave" | "late";
+                        
+                        // If no current status (first click), auto-detect based on time
+                        if (!status) {
+                          // For teachers with expected time, check if late
+                          if (type === "teacher" && expectedTime) {
+                            const isLate = isAttendanceLate(new Date(), expectedTime, dateStr);
+                            newStatus = isLate ? "late" : "present";
+                          } else {
+                            newStatus = "present";
+                          }
                         } else {
-                          newStatus = "present";
+                          // Subsequent clicks cycle through statuses
+                          if (status === "present") {
+                            newStatus = "absent";
+                          } else if (status === "absent") {
+                            newStatus = "leave";
+                          } else if (status === "leave") {
+                            newStatus = "late";
+                          } else {
+                            newStatus = "present";
+                          }
                         }
                         onStatusChange(dateStr, newStatus);
                       }}
                       disabled={!isAdmin && isPast && !isCurrent}
                       className={`w-full h-10 text-xs ${
-                        status === "present"
-                          ? "bg-green-500 hover:bg-green-600"
-                          : status === "absent"
-                            ? "bg-red-500 hover:bg-red-600"
-                            : status === "leave"
-                              ? "bg-blue-500 hover:bg-blue-600 text-white"
-                              : ""
+                        status === "late"
+                          ? "bg-orange-500 hover:bg-orange-600 text-white"
+                          : status === "present"
+                            ? "bg-green-500 hover:bg-green-600"
+                            : status === "absent"
+                              ? "bg-red-500 hover:bg-red-600"
+                              : status === "leave"
+                                ? "bg-blue-500 hover:bg-blue-600 text-white"
+                                : ""
                       }`}
                     >
-                      {status === "present"
-                        ? "✓ Present"
-                        : status === "absent"
-                          ? "✗ Absent"
-                          : status === "leave"
-                            ? "🏥 Leave"
-                            : "—"}
+                      {status === "late"
+                        ? "⏱ Late"
+                        : status === "present"
+                          ? "✓ Present"
+                          : status === "absent"
+                            ? "✗ Absent"
+                            : status === "leave"
+                              ? "🏥 Leave"
+                              : "—"}
                     </Button>
                     {/* Leave reason icon or approval status - show when leave is marked */}
                     {status === "leave" && record && (
@@ -473,6 +511,26 @@ export function AttendanceGrid({
                           </Button>
                         )}
                       </>
+                    )}
+                    {/* Late reason icon - show when late is marked */}
+                    {status === "late" && record && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (onLateDetected && record.id) {
+                            onLateDetected(dateStr, record.id, personName);
+                          }
+                        }}
+                        className="w-full h-6 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950 p-0"
+                        title={
+                          record.late_reason
+                            ? "View/Edit late reason"
+                            : "Add late reason"
+                        }
+                      >
+                        <Info className="w-4 h-4" />
+                      </Button>
                     )}
                   </div>
                 )}

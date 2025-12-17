@@ -59,9 +59,10 @@ export function AttendanceSummaryModal({
         if (r.status === "present") acc.present += 1;
         else if (r.status === "absent") acc.absent += 1;
         else if (r.status === "leave") acc.leaves += 1;
+        else if (r.status === "late") acc.late += 1;
         return acc;
       },
-      { present: 0, absent: 0, leaves: 0 },
+      { present: 0, absent: 0, leaves: 0, late: 0 },
     );
 
     return { uniqueDates: dates, perPerson: per, totals: agg };

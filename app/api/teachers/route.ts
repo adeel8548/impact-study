@@ -12,7 +12,7 @@ export async function GET() {
       adminClient
         .from("profiles")
         .select(
-          "id, name, email, phone, class_ids, incharge_class_id, incharge_class_ids, joining_date, created_at",
+          "id, name, email, phone, class_ids, incharge_class_id, incharge_class_ids, joining_date, expected_time, created_at",
         )
         .eq("role", "teacher")
         .order("created_at", { ascending: false, nullsLast: true }),

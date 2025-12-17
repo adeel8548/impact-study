@@ -203,3 +203,35 @@ export async function updateAttendanceRemarks(
   revalidatePath("/teacher/my-attendance");
   return { error: null };
 }
+
+/**
+ * Update late reason for teacher attendance
+ */
+export async function updateLateReason(
+  recordId: string,
+  lateReason: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  const { error } = await supabase
+    .from("teacher_attendance")
+    .update({ late_reason: lateReason })
+    .eq("id", recordId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/teacher");
+  revalidatePath("/admin/attendance");
+  revalidatePath("/teacher/my-attendance");
+  return { error: null };
+}
+

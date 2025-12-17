@@ -32,6 +32,7 @@ export async function createTeacher(teacherData: {
   incharge_class_ids?: string[] | null;
   assign_subjects?: Array<{ class_id: string; subject_id: string }>;
   joining_date?: string;
+  expected_time?: string | null;
 }) {
   const adminClient = await createAdminClient();
   const supabase = await createClient();
@@ -67,6 +68,7 @@ export async function createTeacher(teacherData: {
       class_ids: teacherData.class_ids || [],
       incharge_class_ids: teacherData.incharge_class_ids || null,
       joining_date: teacherData.joining_date || null,
+      expected_time: teacherData.expected_time || null,
     })
     .select()
     .single();
@@ -125,6 +127,7 @@ export async function updateTeacher(
     incharge_class_ids?: string[] | null;
     assign_subjects?: Array<{ class_id: string; subject_id: string }>;
     joining_date?: string;
+    expected_time?: string | null;
   }>,
 ) {
   const supabase = await createClient();
@@ -136,6 +139,7 @@ export async function updateTeacher(
   if (updates.email !== undefined) updatePayload.email = updates.email;
   if (updates.phone !== undefined) updatePayload.phone = updates.phone;
   if (updates.joining_date !== undefined) updatePayload.joining_date = updates.joining_date || null;
+  if (updates.expected_time !== undefined) updatePayload.expected_time = updates.expected_time || null;
 
   const { data, error } = await adminClient
     .from("profiles")

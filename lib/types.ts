@@ -36,6 +36,7 @@ export interface Teacher {
   phone?: string;
   classIds: string[]; // Classes assigned to this teacher
   schoolId: string;
+  expected_time?: string; // Expected arrival time (HH:mm format)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,7 +59,7 @@ export interface StudentAttendance {
   studentId: string;
   classId: string;
   date: Date;
-  status: "present" | "absent" | "leave";
+  status: "present" | "absent" | "leave" | "late";
   remarks?: string;
   schoolId: string;
   createdAt: Date;
@@ -69,8 +70,11 @@ export interface TeacherAttendance {
   id: string;
   teacherId: string;
   date: Date;
-  status: "present" | "absent" | "leave";
+  status: "present" | "absent" | "leave" | "late";
   remarks?: string;
+  expected_time?: string; // Expected time when teacher should arrive (HH:mm)
+  is_late?: boolean; // Whether attendance was marked late (> 15 min after expected_time)
+  late_reason?: string; // Reason for late attendance
   schoolId: string;
   createdAt: Date;
   updatedAt: Date;

@@ -6,6 +6,7 @@ import { AdminSidebar } from "@/components/admin-sidebar";
 import { AttendanceGrid } from "@/components/attendance-grid";
 import { AdminAttendanceMarkingModal } from "@/components/modals/admin-attendance-marking-modal";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
+import { LateReasonModal } from "@/components/modals/late-reason-modal";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -57,6 +58,7 @@ export default function AttendanceManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const [activeTab, setActiveTab] = useState("students");
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   // Classes and Students state
   const [classes, setClasses] = useState<Class[]>([]);
@@ -86,6 +88,16 @@ export default function AttendanceManagement() {
   const [approvedRejectReason, setApprovedRejectReason] = useState<{
     recordId: string;
     status: "approved" | "rejected";
+  } | null>(null);
+
+  // Late reason modal state
+  const [lateModalOpen, setLateModalOpen] = useState(false);
+  const [lateModalData, setLateModalData] = useState<{
+    recordId: string;
+    type: "student" | "teacher";
+    name: string;
+    date: string;
+    currentReason?: string;
   } | null>(null);
 
   // Marking modal state
@@ -219,6 +231,7 @@ export default function AttendanceManagement() {
     if (!user || user.role !== "admin") {
       return;
     }
+    setCurrentUser(user);
     setIsLoading(false);
     loadInitialData();
   }, []);
@@ -308,6 +321,22 @@ export default function AttendanceManagement() {
       approvalStatus: (record as any).approval_status,
     });
     setLeaveModalOpen(true);
+  };
+
+  const openLateReason = (
+    record: AttendanceRecord | null | undefined,
+    type: "student" | "teacher",
+    name: string
+  ) => {
+    if (!record || !record.id) return;
+    setLateModalData({
+      recordId: record.id,
+      type,
+      name,
+      date: record.date,
+      currentReason: (record as any).late_reason || "",
+    });
+    setLateModalOpen(true);
   };
 
   const updateLocalRemarks = (
@@ -484,7 +513,7 @@ export default function AttendanceManagement() {
   const handleStudentAttendanceChange = async (
     studentId: string,
     date: string,
-    status: "present" | "absent" | "leave" | null
+    status: "present" | "absent" | "leave" | "late" | null
   ) => {
     try {
       if (!status) {
@@ -527,7 +556,7 @@ export default function AttendanceManagement() {
           class_id: selectedClass,
           date,
           status,
-          school_id: user.school_id,
+          school_id: currentUser?.school_id,
         };
         response = await fetch("/api/attendance", {
           method: "POST",
@@ -562,6 +591,16 @@ export default function AttendanceManagement() {
             )
           : returned;
         openLeaveReason(savedRecord, "student", studentName);
+      } else if (status === "late") {
+        const studentName =
+          students.find((s) => s.id === studentId)?.name || "Student";
+        const savedRecord = Array.isArray(returned)
+          ? returned.find(
+              (a: AttendanceRecord) =>
+                a.student_id === studentId && a.date === date
+            )
+          : returned;
+        openLateReason(savedRecord, "student", studentName);
       }
     } catch (error) {
       console.error("Error updating attendance:", error);
@@ -572,7 +611,7 @@ export default function AttendanceManagement() {
   const handleTeacherAttendanceChange = async (
     teacherId: string,
     date: string,
-    status: "present" | "absent" | "leave" | null
+    status: "present" | "absent" | "leave" | "late" | null
   ) => {
     try {
       if (!status) {
@@ -591,7 +630,7 @@ export default function AttendanceManagement() {
         teacher_id: teacherId,
         date,
         status,
-        school_id: user.school_id,
+        school_id: currentUser?.school_id,
       };
       const response = await fetch("/api/teacher-attendance", {
         method: "POST",
@@ -624,6 +663,16 @@ export default function AttendanceManagement() {
             )
           : returned;
         openLeaveReason(savedRecord, "teacher", teacherName);
+      } else if (status === "late") {
+        const teacherName =
+          teachers.find((t) => t.id === teacherId)?.name || "Teacher";
+        const savedRecord = Array.isArray(returned)
+          ? returned.find(
+              (a: AttendanceRecord) =>
+                a.teacher_id === teacherId && a.date === date
+            )
+          : returned;
+        openLateReason(savedRecord, "teacher", teacherName);
       }
     } catch (error) {
       console.error("Error updating attendance:", error);
@@ -644,7 +693,7 @@ export default function AttendanceManagement() {
 
   const handleMarked = (
     date: string,
-    status: "present" | "absent" | "leave"
+    status: "present" | "absent" | "leave" | "late"
   ) => {
     // Refresh attendance after marking
     if (markingType === "teacher") {
@@ -1124,6 +1173,20 @@ export default function AttendanceManagement() {
                             isAdmin={true}
                             type="teacher"
                             personName={teacher.name}
+                            expectedTime={teacher.expected_time}
+                            onLateDetected={(date, recordId, name) => {
+                              const record = teacherRecords.find((r) => r.id === recordId);
+                              if (record) {
+                                setLateModalData({
+                                  recordId: record.id || "",
+                                  type: "teacher",
+                                  name: name,
+                                  date: date,
+                                  currentReason: record.late_reason || "",
+                                });
+                                setLateModalOpen(true);
+                              }
+                            }}
                             daysToShow={
                               computeRange(
                                 teacherRange,
@@ -1245,6 +1308,59 @@ export default function AttendanceManagement() {
                 // Refresh teacher attendance to show updated status
                 if (leaveModalData.type === "teacher") {
                   fetchTeacherAttendance(teacherRange);
+                }
+              }}
+            />
+          )}
+          {lateModalData && (
+            <LateReasonModal
+              open={lateModalOpen}
+              onOpenChange={setLateModalOpen}
+              teacherName={lateModalData.name}
+              attendanceDate={lateModalData.date}
+              isAdmin={true}
+              currentReason={lateModalData.currentReason}
+              onConfirm={async (reason) => {
+                try {
+                  // Update the late_reason in the database
+                  const table =
+                    lateModalData.type === "student"
+                      ? "student_attendance"
+                      : "teacher_attendance";
+
+                  const response = await fetch("/api/late-reason", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      recordId: lateModalData.recordId,
+                      table,
+                      reason,
+                    }),
+                  });
+
+                  if (!response.ok) throw new Error("Failed to save late reason");
+
+                  // Update local state
+                  if (lateModalData.type === "student") {
+                    setStudentAttendance((prev) =>
+                      (prev || []).map((r) =>
+                        r.id === lateModalData.recordId
+                          ? { ...r, late_reason: reason }
+                          : r
+                      )
+                    );
+                  } else {
+                    setTeacherAttendance((prev) =>
+                      (prev || []).map((r) =>
+                        r.id === lateModalData.recordId
+                          ? { ...r, late_reason: reason }
+                          : r
+                      )
+                    );
+                  }
+                } catch (error) {
+                  console.error("Error saving late reason:", error);
+                  throw error;
                 }
               }}
             />

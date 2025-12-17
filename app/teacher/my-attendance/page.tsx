@@ -5,19 +5,22 @@ import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
 import { TeacherOwnAttendanceViewModal } from "@/components/modals/teacher-own-attendance-view-modal";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
+import { LateReasonModal } from "@/components/modals/late-reason-modal";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
+import { isAttendanceLate } from "@/lib/utils";
 
 interface AttendanceRecord {
   id: string;
   teacher_id: string;
   date: string;
-  status: "present" | "absent" | "leave";
+  status: "present" | "absent" | "leave" | "late";
   school_id?: string;
   created_at?: string;
   updated_at?: string;
   out_time?: string;
   remarks?: string;
+  late_reason?: string;
 }
 
 export default function TeacherMyAttendancePage() {
@@ -32,6 +35,9 @@ export default function TeacherMyAttendancePage() {
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [selectedLeaveRecord, setSelectedLeaveRecord] =
     useState<AttendanceRecord | null>(null);
+  const [lateModalOpen, setLateModalOpen] = useState(false);
+  const [pendingLateAttendanceId, setPendingLateAttendanceId] = useState<string | null>(null);
+  const [teacherExpectedTime, setTeacherExpectedTime] = useState<string | null>(null);
 
   // OUT button state: disabled until midnight after marking out
   const [outDisabled, setOutDisabled] = useState(false);
@@ -111,7 +117,7 @@ export default function TeacherMyAttendancePage() {
   };
 
   // Explicit setter for today's status (present, absent, or leave)
-  const handleSetStatus = async (status: "present" | "absent" | "leave") => {
+  const handleSetStatus = async (status: "present" | "absent" | "leave" | "late") => {
     if (!teacher) return;
 
     const today = new Date();
@@ -119,13 +125,22 @@ export default function TeacherMyAttendancePage() {
       today.getDate(),
     ).padStart(2, "0")}`;
 
+    // Auto-detect late if marking as present
+    let finalStatus = status;
+    if (status === "present" && teacherExpectedTime) {
+      const isLate = isAttendanceLate(new Date(), teacherExpectedTime, date);
+      if (isLate) {
+        finalStatus = "late";
+      }
+    }
+
     try {
       setIsFetching(true);
       const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
       const payload = {
         teacher_id: teacher.id,
         date,
-        status,
+        status: finalStatus,
         school_id: user.school_id,
       } as any;
 
@@ -155,13 +170,66 @@ export default function TeacherMyAttendancePage() {
         return [...filtered, updated];
       });
 
-      toast.success("Attendance updated");
+      // If marked as late, show late reason modal
+      if (finalStatus === "late" && updated && updated.id) {
+        setPendingLateAttendanceId(updated.id);
+        setLateModalOpen(true);
+      } else {
+        toast.success("Attendance updated");
+      }
     } catch (err) {
       console.error("Error setting status:", err);
       toast.error("Failed to set status");
     } finally {
       setIsFetching(false);
     }
+  };
+
+  // Handle grid box click with status cycling
+  const handleGridBoxClick = async (day: number, record: AttendanceRecord | undefined) => {
+    if (!teacher || isFetching) return;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
+      today.getDate(),
+    ).padStart(2, "0")}`;
+
+    // Only allow marking today
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    if (dateStr !== todayStr) {
+      toast.error("You can only mark attendance for today");
+      return;
+    }
+
+    const isSunday = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay() === 0;
+    if (isSunday) {
+      return;
+    }
+
+    // Status cycle: no status → (auto-detect) → absent → leave → late → present
+    let nextStatus: "present" | "absent" | "leave" | "late";
+    
+    if (!record || !record.status) {
+      // Auto-detect on first click
+      if (teacherExpectedTime) {
+        const isLate = isAttendanceLate(new Date(), teacherExpectedTime, dateStr);
+        nextStatus = isLate ? "late" : "present";
+      } else {
+        nextStatus = "present";
+      }
+    } else if (record.status === "present") {
+      nextStatus = "absent";
+    } else if (record.status === "absent") {
+      nextStatus = "leave";
+    } else if (record.status === "leave") {
+      nextStatus = "late";
+    } else if (record.status === "late") {
+      nextStatus = "present";
+    } else {
+      nextStatus = "present";
+    }
+
+    await handleSetStatus(nextStatus);
   };
 
   // compute ms until next local midnight and schedule enabling the OUT button
@@ -324,6 +392,20 @@ export default function TeacherMyAttendancePage() {
     setTeacher({ id: user.id, name: user.name || "Teacher" });
     setIsLoading(false);
     fetchAttendance(user.id, new Date());
+    
+    // Fetch teacher's expected time
+    const fetchExpectedTime = async () => {
+      try {
+        const res = await fetch(`/api/teachers/${user.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setTeacherExpectedTime(data.expected_time || null);
+        }
+      } catch (error) {
+        console.error("Error fetching expected time:", error);
+      }
+    };
+    fetchExpectedTime();
   }, []);
 
   const fetchAttendance = async (teacherId: string, date: Date) => {
@@ -469,9 +551,11 @@ export default function TeacherMyAttendancePage() {
   // Calculate stats
   let presentCount = 0;
   let absentCount = 0;
+  let lateCount = 0;
   attendance.forEach((record) => {
     if (record.status === "present") presentCount++;
     if (record.status === "absent") absentCount++;
+    if (record.status === "late") lateCount++;
   });
 
   const getAttendanceRecord = (day: number) => {
@@ -500,6 +584,7 @@ export default function TeacherMyAttendancePage() {
     if (record.status === "present") return "bg-green-500 text-white";
     if (record.status === "absent") return "bg-red-500 text-white";
     if (record.status === "leave") return "bg-gray-400 text-white";
+    if (record.status === "late") return "bg-orange-500 text-white";
     return "bg-gray-200 text-gray-700";
   };
 
@@ -509,6 +594,7 @@ export default function TeacherMyAttendancePage() {
     if (!record) return "—";
     if (record.status === "present") return "✓";
     if (record.status === "absent") return "✗";
+    if (record.status === "late") return "⏰";
     return "—";
   };
 
@@ -552,7 +638,7 @@ export default function TeacherMyAttendancePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="p-6 border-l-4 border-l-green-500">
             <p className="text-muted-foreground text-sm font-medium mb-1">
               Present (This Month)
@@ -565,6 +651,13 @@ export default function TeacherMyAttendancePage() {
               Absent (This Month)
             </p>
             <p className="text-3xl font-bold text-foreground">{absentCount}</p>
+          </Card>
+
+          <Card className="p-6 border-l-4 border-l-orange-500">
+            <p className="text-muted-foreground text-sm font-medium mb-1">
+              Late (This Month)
+            </p>
+            <p className="text-3xl font-bold text-foreground">{lateCount}</p>
           </Card>
 
           <Card className="p-6 border-l-4 border-l-blue-500">
@@ -610,40 +703,11 @@ export default function TeacherMyAttendancePage() {
             </button> */}
           </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleSetStatus("present")}
-              disabled={!teacher || isFetching}
-              className="px-4 py-2 rounded bg-green-500 text-white font-semibold hover:bg-green-600 disabled:opacity-50"
-            >
-              ✓ Present
-            </button>
-            <button
-              onClick={() => handleSetStatus("absent")}
-              disabled={!teacher || isFetching}
-              className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-600 disabled:opacity-50"
-            >
-              ✗ Absent
-            </button>
-            <button
-              onClick={async () => {
-                await handleSetStatus("leave");
-                // open leave modal for today's record if created
-                const today = new Date();
-                const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-                const rec = attendance.find(
-                  (a) => a.date === dateStr && a.status === "leave",
-                );
-                if (rec) {
-                  setSelectedLeaveRecord(rec);
-                  setLeaveModalOpen(true);
-                }
-              }}
-              disabled={!teacher || isFetching}
-              className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600 disabled:opacity-50"
-            >
-              🏥 Leave
-            </button>
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Click on today's date in the calendar below</strong> to mark attendance. Each click cycles through:
+              <br />✓ Present → ✗ Absent → 🏥 Leave → ⏰ Late → ✓ Present
+            </p>
           </div>
         </Card>
 
@@ -690,6 +754,10 @@ export default function TeacherMyAttendancePage() {
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-blue-500"></div>
               <span className="text-xs text-foreground">Leave</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-orange-500"></div>
+              <span className="text-xs text-foreground">Late</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-gray-300"></div>
@@ -743,19 +811,26 @@ export default function TeacherMyAttendancePage() {
                               ? "bg-red-500 text-white"
                               : record.status === "leave"
                                 ? "bg-blue-500 text-white"
-                                : "bg-gray-200 text-gray-700"
+                                : record.status === "late"
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-gray-200 text-gray-700"
                       } ${
                         sunday || !today_
                           ? "opacity-50 cursor-not-allowed"
                           : "cursor-pointer hover:shadow-md"
                       }`}
+                      onClick={() => !sunday && today_ && handleGridBoxClick(day, record)}
                     >
                       <div
-                        className="text-center w-full"
-                        onClick={() => {
+                        className="text-center w-full pointer-events-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (record?.status === "leave" && !sunday && today_) {
                             setSelectedLeaveRecord(record);
                             setLeaveModalOpen(true);
+                          } else if (record?.status === "late" && !sunday && today_) {
+                            setPendingLateAttendanceId(record.id || null);
+                            setLateModalOpen(true);
                           }
                         }}
                       >
@@ -769,7 +844,9 @@ export default function TeacherMyAttendancePage() {
                                 ? "✗"
                                 : record?.status === "leave"
                                   ? "🏥"
-                                  : "—"}
+                                  : record?.status === "late"
+                                    ? "⏰"
+                                    : "—"}
                         </div>
                         {/* Show approval status to teacher if set */}
                         {record && (record as any).approval_status && (
@@ -797,6 +874,23 @@ export default function TeacherMyAttendancePage() {
                           title={
                             (record as any).remarks ||
                             "View / edit leave reason"
+                          }
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
+                        >
+                          🛈
+                        </button>
+                      )}
+                      
+                      {record && record.status === "late" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingLateAttendanceId(record.id || null);
+                            setLateModalOpen(true);
+                          }}
+                          title={
+                            record.late_reason ||
+                            "View late reason"
                           }
                           className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
                         >
@@ -922,6 +1016,60 @@ export default function TeacherMyAttendancePage() {
             teacherName={teacher.name}
           />
         )}
+
+        {/* Late Reason Modal */}
+        {teacher && (() => {
+          const existingRecord = attendance.find(r => r.id === pendingLateAttendanceId);
+          const hasExistingReason = !!existingRecord?.late_reason;
+          
+          return (
+            <LateReasonModal
+              open={lateModalOpen}
+              onOpenChange={(open) => {
+                setLateModalOpen(open);
+                if (!open) {
+                  setPendingLateAttendanceId(null);
+                }
+              }}
+              teacherName={teacher.name}
+              attendanceDate={new Date().toLocaleDateString()}
+              isAdmin={false}
+              currentReason={existingRecord?.late_reason || ""}
+              readOnly={hasExistingReason}
+              onConfirm={async (reason) => {
+                if (!pendingLateAttendanceId) return;
+                
+                try {
+                  const response = await fetch("/api/late-reason", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      recordId: pendingLateAttendanceId,
+                      table: "teacher_attendance",
+                      reason,
+                    }),
+                  });
+
+                  if (!response.ok) throw new Error("Failed to save late reason");
+
+                  // Update local state
+                  setAttendance((prev) =>
+                    prev.map((r) =>
+                      r.id === pendingLateAttendanceId
+                        ? { ...r, late_reason: reason }
+                        : r
+                    )
+                  );
+
+                  toast.success("Late attendance recorded with reason");
+                } catch (error) {
+                  console.error("Error saving late reason:", error);
+                  throw error;
+                }
+              }}
+            />
+          );
+        })()}
       </div>
     </div>
   );

@@ -254,7 +254,7 @@ export default function TeacherAttendance() {
         `/api/attendance?classId=${selectedClass}&teacherId=${teacherId}`,
       );
       const data = await response.json();
-      const attendanceMap: Record<string, "present" | "absent" | "leave"> = {};
+      const attendanceMap: Record<string, "present" | "absent" | "leave" | "late"> = {};
       const leaveMap: Record<string, string> = {};
       const meta: Record<string, { id?: string; remarks?: string }> = {};
       if (data.attendance) {

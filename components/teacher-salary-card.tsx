@@ -24,6 +24,7 @@ interface TeacherSalaryCardProps {
     school_id?: string;
     class_ids?: string[] | null;
     joining_date?: string;
+    expected_time?: string;
     salary?: {
       amount: number;
       status: "paid" | "unpaid";
@@ -86,6 +87,13 @@ export function TeacherSalaryCard({
             </p>
           ) : (
             <p className="text-xs text-muted-foreground mt-1">Joined: N/A</p>
+          )}
+          {teacher.expected_time ? (
+            <p className="text-xs text-muted-foreground mt-1">
+              Expected Time: {teacher.expected_time}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">Expected Time: N/A</p>
           )}
         </div>
         <div

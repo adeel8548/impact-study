@@ -103,3 +103,77 @@ export function formatCurrency(amount: number): string {
     currency: "USD",
   }).format(amount);
 }
+
+/**
+ * Check if attendance is marked as late (> 15 minutes after expected time)
+ * @param createdAt - The timestamp when attendance was marked
+ * @param expectedTime - The expected time in HH:mm format
+ * @param date - The attendance date
+ * @returns true if attendance is late
+ */
+export function isAttendanceLate(
+  createdAt: Date | string,
+  expectedTime: string | null | undefined,
+  date: string | Date
+): boolean {
+  if (!expectedTime) return false;
+
+  const created = new Date(createdAt);
+  const attendanceDate = new Date(date);
+  
+  // Extract HH:mm from expected time
+  const [expectedHours, expectedMinutes] = expectedTime.split(":").map(Number);
+  
+  if (isNaN(expectedHours) || isNaN(expectedMinutes)) {
+    return false;
+  }
+
+  // Create expected datetime (same date as attendance, but with expected time)
+  const expectedDateTime = new Date(attendanceDate);
+  expectedDateTime.setHours(expectedHours, expectedMinutes, 0, 0);
+
+  // Add 15 minutes to expected time
+  const lateThresholdTime = new Date(expectedDateTime.getTime() + 15 * 60 * 1000);
+
+  // If created_at is after the late threshold, it's marked as late
+  return created > lateThresholdTime;
+}
+
+/**
+ * Get time difference between attendance marking and expected time
+ * @returns difference in minutes (negative if before expected, positive if after)
+ */
+export function getAttendanceTimeOffset(
+  createdAt: Date | string,
+  expectedTime: string | null | undefined,
+  date: string | Date
+): number {
+  if (!expectedTime) return 0;
+
+  const created = new Date(createdAt);
+  const attendanceDate = new Date(date);
+  
+  const [expectedHours, expectedMinutes] = expectedTime.split(":").map(Number);
+  
+  if (isNaN(expectedHours) || isNaN(expectedMinutes)) {
+    return 0;
+  }
+
+  const expectedDateTime = new Date(attendanceDate);
+  expectedDateTime.setHours(expectedHours, expectedMinutes, 0, 0);
+
+  const diffMs = created.getTime() - expectedDateTime.getTime();
+  return Math.floor(diffMs / (1000 * 60)); // Convert to minutes
+}
+
+/**
+ * Check if teacher attendance should be marked as late and return the is_late flag
+ * (Alias for isAttendanceLate for clarity in different contexts)
+ */
+export function shouldMarkAsLate(
+  createdAt: Date | string,
+  expectedTime: string | null | undefined,
+  date: string | Date
+): boolean {
+  return isAttendanceLate(createdAt, expectedTime, date);
+}
