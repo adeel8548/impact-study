@@ -16,7 +16,11 @@ export default async function TeacherDashboard() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/");
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="p-4 md:p-8" />
+      </div>
+    );
   }
 
   // Check user role

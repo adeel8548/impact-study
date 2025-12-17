@@ -11,7 +11,12 @@ export default async function TeacherQuizResultsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/");
+    return (
+      <div className="min-h-screen bg-background">
+        <TeacherHeader />
+        <div className="p-4 md:p-8" />
+      </div>
+    );
   }
 
   // Check if user is teacher

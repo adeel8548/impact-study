@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,6 @@ const toLocalDate = (d: Date) => {
 };
 
 export function AdminSchedulesContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
@@ -77,12 +76,11 @@ export function AdminSchedulesContent() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "admin") {
-      router.push("/");
       return;
     }
     loadClasses();
     loadTeachers();
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     const t = searchParams?.get("tab");

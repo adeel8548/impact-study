@@ -77,16 +77,7 @@ export function TeacherHeader() {
       ? JSON.parse(localStorage.getItem("currentUser") || "{}")
       : {};
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const onBeforeUnload = () => {
-      // Use keepalive so cookies clear even when tab closes
-      logoutEverywhere(true);
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, []);
+  // Avoid auto-signout on reload/close; rely on explicit logout action
 
   const displayName = useMemo(() => {
     const metaName = (user as any)?.user_metadata?.name;

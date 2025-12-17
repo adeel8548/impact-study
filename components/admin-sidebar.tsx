@@ -69,11 +69,8 @@ export function AdminSidebar() {
     router.push("/");
   };
 
-  useEffect(() => {
-    const onBeforeUnload = () => logoutEverywhere(true);
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, []);
+  // Do not auto-signout on reload/close to avoid unintended logout
+  // Users can use the explicit Logout button.
 
   return (
     <>

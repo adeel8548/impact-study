@@ -32,6 +32,7 @@ interface Student {
   id: string;
   name: string;
   roll_number: string;
+  class_id: string;
 }
 
 interface StudentFeesClientProps {
@@ -57,6 +58,8 @@ export function StudentFeesClient({ students }: StudentFeesClientProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [summaryModalOpen, setSummaryModalOpen] = useState(false);
+  const [selectedStudentClassName, setSelectedStudentClassName] =
+    useState<string>("");
 
   const currentMonth = getCurrentMonth();
   const currentYear = getCurrentYear();
@@ -67,6 +70,32 @@ export function StudentFeesClient({ students }: StudentFeesClientProps) {
       fetchStudentFees();
     }
   }, [selectedStudent]);
+
+  useEffect(() => {
+    // Fetch and set class name for the selected student
+    const loadClassName = async () => {
+      try {
+        const student = students.find((s) => s.id === selectedStudent);
+        if (!student?.class_id) {
+          setSelectedStudentClassName("");
+          return;
+        }
+
+        const response = await fetch(`/api/classes?ids=${student.class_id}`);
+        if (!response.ok) throw new Error("Failed to fetch class name");
+        const data = await response.json();
+        const cls = data?.classes?.[0];
+        setSelectedStudentClassName(cls?.name || "");
+      } catch (err) {
+        console.error("Error fetching class name:", err);
+        setSelectedStudentClassName("");
+      }
+    };
+
+    if (selectedStudent) {
+      loadClassName();
+    }
+  }, [selectedStudent, students]);
 
   const fetchStudentFees = async () => {
     if (!selectedStudent) return;
@@ -330,6 +359,7 @@ export function StudentFeesClient({ students }: StudentFeesClientProps) {
             onOpenChange={setPaymentModalOpen}
             studentId={selectedStudent}
             studentName={selectedStudentData?.name}
+            studentClassName={selectedStudentClassName}
             onPaymentSuccess={handlePaymentSuccess}
           />
 

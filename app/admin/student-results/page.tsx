@@ -14,7 +14,12 @@ export default async function StudentResultsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/");
+    return (
+      <div className="min-h-screen bg-background">
+        <AdminSidebar />
+        <div className="md:pl-64 p-8" />
+      </div>
+    );
   }
 
   // Check if user is admin

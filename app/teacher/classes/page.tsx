@@ -22,6 +22,11 @@ interface Student {
   phone?: string;
   class_id?: string;
 }
+interface CurrentUser {
+  id: string;
+  role: string;
+  name?: string;
+}
 
 export default function TeacherClasses() {
   const router = useRouter();
@@ -31,15 +36,22 @@ export default function TeacherClasses() {
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!user || user.role !== "teacher") {
-      router.push("/");
-    } else {
-      loadTeacherData(user.id);
+    try {
+      const raw = localStorage.getItem("currentUser");
+      if (raw) {
+        const parsed = JSON.parse(raw) as CurrentUser;
+        setCurrentUser(parsed);
+        if (parsed.id && parsed.role === "teacher") {
+          loadTeacherData(parsed.id);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to parse currentUser from localStorage", err);
     }
-  }, [router]);
+  }, []);
 
   const loadTeacherData = async (userId: string) => {
     try {

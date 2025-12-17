@@ -179,6 +179,7 @@ export function TeacherSalaryCard({
             teacherId={teacher.id}
             buttonClassName="w-full"
             schoolId={teacher.school_id}
+            teacherName={teacher.name}
             onPaid={() => {
               setStatus("paid");
               onStatusChange?.({ status: "paid", amount: salaryAmount });

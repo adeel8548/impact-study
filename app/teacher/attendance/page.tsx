@@ -12,6 +12,12 @@ import { Calendar, Clock, Save, Loader2, Info } from "lucide-react";
 import { markStudentAttendance } from "@/lib/actions/attendance";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 
+interface CurrentUser {
+  id: string;
+  role: string;
+  name?: string;
+}
+
 export default function TeacherAttendance() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -38,6 +44,7 @@ export default function TeacherAttendance() {
   const [teacherName, setTeacherName] = useState<string>("");
   const classesFetchedRef = useRef(false);
   const attendanceFetchKeyRef = useRef<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   // Leave reason modal state
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
@@ -113,18 +120,25 @@ export default function TeacherAttendance() {
   };
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!user || user.role !== "teacher") {
-      router.push("/");
-    } else {
-      setTeacherId(user.id);
-      setTeacherName(user.name || "Teacher");
-      if (!classesFetchedRef.current) {
-        classesFetchedRef.current = true;
-        loadTeacherClasses(user.id);
+    try {
+      const raw = localStorage.getItem("currentUser");
+      if (raw) {
+        const user = JSON.parse(raw) as CurrentUser;
+        setCurrentUser(user);
+        if (user.id && user.role === "teacher") {
+          setTeacherId(user.id);
+          setTeacherName(user.name || "Teacher");
+          if (!classesFetchedRef.current) {
+            classesFetchedRef.current = true;
+            loadTeacherClasses(user.id);
+          }
+        }
       }
+    } catch (err) {
+      console.error("Failed to parse currentUser from localStorage", err);
+      setLoading(false);
     }
-  }, [router]);
+  }, []);
 
   const loadTeacherClasses = async (userId: string) => {
     try {

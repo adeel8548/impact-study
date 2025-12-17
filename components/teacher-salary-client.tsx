@@ -229,6 +229,7 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
                   <SalaryStatusButton
                     teacherId={selectedTeacher!}
                     schoolId={selectedTeacherData?.school_id as any}
+                    teacherName={selectedTeacherData?.name}
                     onPaid={handlePaymentSuccess}
                   />
                 ) : (
@@ -252,6 +253,7 @@ export function TeacherSalaryClient({ teachers }: TeacherSalaryClientProps) {
               <SalaryStatusButton
                 teacherId={selectedTeacher}
                 schoolId={selectedTeacherData?.school_id as any}
+                teacherName={selectedTeacherData?.name}
                 onPaid={handlePaymentSuccess}
               />
             )}

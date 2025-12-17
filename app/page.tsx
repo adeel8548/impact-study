@@ -64,6 +64,8 @@ export default function LoginPage() {
           // Save user info + access token
           localStorage.setItem("currentUser", JSON.stringify(userWithRole));
           localStorage.setItem("accessToken", data.session.access_token);
+          // Record when the token/session was issued for custom expiry window
+          localStorage.setItem("accessTokenIssuedAt", String(Date.now()));
 
           // Redirect
           router.push(

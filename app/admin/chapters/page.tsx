@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,6 @@ type SeriesExam = {
 type SubjectOption = { id: string; name: string };
 
 export default function ChaptersPage() {
-  const router = useRouter();
   const [chapters, setChapters] = useState<ExamChapter[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [subjects, setSubjects] = useState<SubjectOption[]>([]);
@@ -47,15 +45,12 @@ export default function ChaptersPage() {
   const [maxMarks, setMaxMarks] = useState<string>("100");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Check authentication
+  // Simple admin role check via localStorage
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!user || user.role !== "admin") {
-      router.push("/");
-      return;
-    }
+    if (!user || user.role !== "admin") return;
     loadClasses();
-  }, [router]);
+  }, []);
 
   const loadClasses = async () => {
     try {

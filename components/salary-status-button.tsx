@@ -37,6 +37,7 @@ interface SalaryStatusButtonProps {
   onPaid?: () => void;
   buttonClassName?: string;
   schoolId?: string;
+  teacherName?: string;
 }
 
 export function SalaryStatusButton({
@@ -44,6 +45,7 @@ export function SalaryStatusButton({
   onPaid,
   buttonClassName,
   schoolId,
+  teacherName,
 }: SalaryStatusButtonProps) {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [salaries, setSalaries] = useState<SalaryRow[]>([]);
@@ -190,7 +192,14 @@ export function SalaryStatusButton({
               Pay Pending Salary
             </DialogTitle>
             <DialogDescription>
-              Select the pending month to mark as paid. Date will be saved as today.
+              {teacherName && (
+                <span className="block font-medium border-2 p-2 rounded-md">
+                  TeacherName: <span className="font-bold text-black">{teacherName}</span>
+                </span>
+              )}
+              <span className="block text-muted-foreground">
+                Select the pending month to mark as paid. Date will be saved as today.
+              </span>
             </DialogDescription>
           </DialogHeader>
 

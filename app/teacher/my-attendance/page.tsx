@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
 import { TeacherOwnAttendanceViewModal } from "@/components/modals/teacher-own-attendance-view-modal";
@@ -22,7 +21,6 @@ interface AttendanceRecord {
 }
 
 export default function TeacherMyAttendancePage() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -316,18 +314,17 @@ export default function TeacherMyAttendancePage() {
     }
   };
 
-  // Auth check and load teacher
+  // Auth check and load teacher (using localStorage only)
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "teacher") {
-      router.push("/");
       return;
     }
 
     setTeacher({ id: user.id, name: user.name || "Teacher" });
     setIsLoading(false);
     fetchAttendance(user.id, new Date());
-  }, [router]);
+  }, []);
 
   const fetchAttendance = async (teacherId: string, date: Date) => {
     try {

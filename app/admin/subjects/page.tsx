@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ type Subject = {
 type ClassOption = { id: string; name: string };
 
 export default function SubjectsPage() {
-  const router = useRouter();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -29,15 +27,12 @@ export default function SubjectsPage() {
   const [subjectName, setSubjectName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Check authentication
+  // Simple role check using localStorage (no AuthGuard)
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!user || user.role !== "admin") {
-      router.push("/");
-      return;
-    }
+    if (!user || user.role !== "admin") return;
     loadClasses();
-  }, [router]);
+  }, []);
 
   // Load classes
   const loadClasses = async () => {

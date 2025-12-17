@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Loader2, Plus, Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { ExamCard } from "@/components/exam-card";
 import { QuizCard } from "@/components/quiz-card";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
@@ -30,7 +31,6 @@ const toLocalDate = (d: Date) => {
 };
 
 export default function TeacherSchedulesPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -45,6 +45,9 @@ export default function TeacherSchedulesPage() {
   const [revisions, setRevisions] = useState<RevisionSchedule[]>([]);
   const [exams, setExams] = useState<SeriesExam[]>([]);
   const [quizzes, setQuizzes] = useState<DailyQuiz[]>([]);
+  const [deleteQuizModalOpen, setDeleteQuizModalOpen] = useState(false);
+  const [quizToDeleteId, setQuizToDeleteId] = useState<string | null>(null);
+  const [deletingQuiz, setDeletingQuiz] = useState(false);
 
   // Form state
   // Quizzes editable by teacher
@@ -59,14 +62,13 @@ export default function TeacherSchedulesPage() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "teacher") {
-      router.push("/");
       return;
     }
     setTeacherId(user.id);
     setTeacherName(user.name || "Teacher");
     loadClasses(user.id);
     loadAssignments(user.id);
-  }, [router]);
+  }, []);
 
   // Sync tab with query param ?tab=revisions|exams|quizzes
   useEffect(() => {
@@ -141,6 +143,19 @@ export default function TeacherSchedulesPage() {
       loadQuizzes();
       const subjectsForClass = assignments.filter(
         (a) => a.class_id === selectedClass,
+          <DeleteConfirmationModal
+            open={deleteQuizModalOpen}
+            onOpenChange={(open) => {
+              setDeleteQuizModalOpen(open);
+              if (!open) setQuizToDeleteId(null);
+            }}
+            title="Delete Quiz"
+            description="Are you sure you want to delete this quiz? This action cannot be undone."
+            onConfirm={async () => {
+              if (quizToDeleteId) await deleteQuiz(quizToDeleteId);
+            }}
+            isLoading={deletingQuiz}
+          />
       );
       if (subjectsForClass.length > 0) {
         setQuizSubject(
@@ -239,16 +254,21 @@ export default function TeacherSchedulesPage() {
   };
 
   const deleteQuiz = async (id: string) => {
+    setDeletingQuiz(true);
     try {
       const res = await fetch(`/api/daily-quizzes?id=${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Delete failed");
       toast.success("Quiz deleted");
+      setDeleteQuizModalOpen(false);
+      setQuizToDeleteId(null);
       loadQuizzes();
     } catch (e) {
       console.error(e);
       toast.error("Failed to delete quiz");
+    } finally {
+      setDeletingQuiz(false);
     }
   };
 
@@ -477,7 +497,10 @@ export default function TeacherSchedulesPage() {
                           quiz.duration_minutes?.toString() || "",
                         );
                       }}
-                      onDelete={(id) => deleteQuiz(id)}
+                      onDelete={(id) => {
+                        setQuizToDeleteId(id);
+                        setDeleteQuizModalOpen(true);
+                      }}
                     />
                   ))}
                 </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,7 +89,6 @@ const emptySummary = (): SalarySummary => ({
 });
 
 export default function TeacherManagement() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -123,13 +121,12 @@ export default function TeacherManagement() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "admin") {
-      router.push("/");
-    } else {
-      loadTeachers();
-      loadClasses();
-      loadSalaryData();
+      return;
     }
-  }, [router]);
+    loadTeachers();
+    loadClasses();
+    loadSalaryData();
+  }, []);
 
   const loadClasses = async () => {
     try {

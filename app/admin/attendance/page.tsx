@@ -46,6 +46,12 @@ interface AttendanceRecord {
   approved_at?: string;
 }
 
+interface CurrentUser {
+  id: string;
+  role: string;
+  school_id?: string;
+}
+
 export default function AttendanceManagement() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -207,16 +213,15 @@ export default function AttendanceManagement() {
     return { start: startStr, end: endStr, days, label };
   };
 
-  // Auth check and initial load
+  // Simple localStorage-based check; no AuthGuard
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "admin") {
-      router.push("/");
-    } else {
-      setIsLoading(false);
-      loadInitialData();
+      return;
     }
-  }, [router]);
+    setIsLoading(false);
+    loadInitialData();
+  }, []);
 
   // Load classes
   useEffect(() => {
@@ -497,8 +502,6 @@ export default function AttendanceManagement() {
         return;
       }
 
-      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-
       // Check if we already have a record for this student & date
       const existing = (studentAttendance || []).find(
         (a) => a.student_id === studentId && a.date === date
@@ -582,8 +585,6 @@ export default function AttendanceManagement() {
         );
         return;
       }
-
-      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
       // POST upsert is supported server-side; send single object
       const payload = {

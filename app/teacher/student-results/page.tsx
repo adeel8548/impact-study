@@ -20,7 +20,12 @@ export default async function TeacherStudentResultsPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/");
+    return (
+      <div className="min-h-screen bg-background">
+        <TeacherHeader />
+        <div className="p-4 md:p-8" />
+      </div>
+    );
   }
 
   const { data: profile } = await supabase

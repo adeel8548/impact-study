@@ -30,6 +30,7 @@ interface FeePaymentModalProps {
   onOpenChange: (open: boolean) => void;
   studentId: string;
   studentName?: string;
+  studentClassName?: string;
   onPaymentSuccess?: () => void;
 }
 
@@ -47,6 +48,7 @@ export function FeePaymentModal({
   onOpenChange,
   studentId,
   studentName = "Student",
+  studentClassName,
   onPaymentSuccess,
 }: FeePaymentModalProps) {
   const [selectedMonth, setSelectedMonth] = useState<number>(getCurrentMonth());
@@ -177,7 +179,10 @@ export function FeePaymentModal({
         <DialogHeader>
           <DialogTitle>Fee Payment - {studentName}</DialogTitle>
           <DialogDescription>
-            Select a month to view and manage fee payment
+            {studentClassName ? (
+              <span className="block">Class: {studentClassName}</span>
+            ) : null}
+            <span>Select a month to view and manage fee payment</span>
           </DialogDescription>
         </DialogHeader>
 

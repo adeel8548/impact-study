@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,15 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Plus, Trash2, Edit2, Search, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import type { QuizResult } from "@/lib/types";
-import { Sidebar } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin-sidebar";
+import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 
 type Student = { id: string; name: string; classId?: string };
 type Teacher = { id: string; name: string };
 
 export default function QuizMarksPage() {
-  const router = useRouter();
-
   // ============================================
   // State Management
   // ============================================
@@ -44,20 +41,16 @@ export default function QuizMarksPage() {
   // Results data
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteResultId, setDeleteResultId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // ============================================
   // Initialization and Authentication
   // ============================================
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!user) {
-      router.push("/");
-      return;
-    }
-
-    // Only admin and teacher can access this page
-    if (!["admin", "teacher"].includes(user.role)) {
-      router.push("/");
+    if (!user || !["admin", "teacher"].includes(user.role)) {
       return;
     }
 
@@ -65,7 +58,7 @@ export default function QuizMarksPage() {
     loadStudents(user.role, user.id);
     loadTeachers();
     loadQuizResults();
-  }, [router]);
+  }, []);
 
   // ============================================
   // Data Loading Functions
@@ -185,24 +178,31 @@ export default function QuizMarksPage() {
     }
   };
 
-  const handleDeleteResult = async (resultId: string) => {
-    if (!confirm("Are you sure you want to delete this quiz result?")) return;
+  const handleDeleteResult = (resultId: string) => {
+    setDeleteResultId(resultId);
+    setDeleteModalOpen(true);
+  };
 
+  const handleConfirmDeleteResult = async () => {
+    if (!deleteResultId) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/quiz-results?id=${resultId}`, {
+      const res = await fetch(`/api/quiz-results?id=${deleteResultId}`, {
         method: "DELETE",
       });
-
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
-
       toast.success("Quiz result deleted successfully");
+      setDeleteModalOpen(false);
+      setDeleteResultId(null);
       loadQuizResults();
     } catch (error) {
       console.error("Error deleting quiz result:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to delete quiz result",
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -440,9 +440,7 @@ export default function QuizMarksPage() {
                                   <Button
                                     variant="destructive"
                                     size="sm"
-                                    onClick={() =>
-                                      handleDeleteResult(result.id)
-                                    }
+                                    onClick={() => handleDeleteResult(result.id)}
                                     className="gap-1"
                                   >
                                     <Trash2 className="w-3 h-3" />
@@ -541,6 +539,19 @@ export default function QuizMarksPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={(open) => {
+          setDeleteModalOpen(open);
+          if (!open) setDeleteResultId(null);
+        }}
+        title="Delete Quiz Result"
+        description="Are you sure you want to delete this quiz result? This action cannot be undone."
+        onConfirm={handleConfirmDeleteResult}
+        isLoading={deleting}
+      />
     </div>
   );
 }

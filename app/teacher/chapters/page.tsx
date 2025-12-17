@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -24,7 +23,6 @@ type SeriesExam = {
 };
 
 export default function TeacherChaptersPage() {
-  const router = useRouter();
   const [chapters, setChapters] = useState<ExamChapter[]>([]);
   const [exams, setExams] = useState<SeriesExam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,16 +30,15 @@ export default function TeacherChaptersPage() {
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
 
-  // Check authentication and load data
+  // Simple localStorage check for teacher role
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "teacher") {
-      router.push("/");
       return;
     }
     setTeacherId(user.id);
     loadClasses(user.id);
-  }, [router]);
+  }, []);
 
   const loadClasses = async (userId: string) => {
     try {

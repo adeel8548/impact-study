@@ -41,15 +41,8 @@ export async function updateSession(request: NextRequest) {
     supabaseResponse.headers.set("x-supabase-user", "present");
   }
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
+  // Do not globally redirect unauthenticated requests here.
+  // Let individual routes/pages handle access control (SSR or client guards).
 
   return supabaseResponse;
 }

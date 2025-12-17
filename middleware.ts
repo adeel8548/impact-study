@@ -7,6 +7,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Only refresh Supabase session; do not force redirect here.
+  // Page-level guards (SSR or client) will handle access control.
   return await updateSession(request);
 }
 

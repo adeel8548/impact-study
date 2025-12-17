@@ -10,6 +10,12 @@ import { createClient } from "@/lib/supabase/client"; // supabase client
 import { sortByNewest } from "@/lib/utils";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 
+interface CurrentUser {
+  id: string;
+  role: string;
+  school_id?: string;
+}
+
 export default function ClassManagement() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -21,16 +27,24 @@ export default function ClassManagement() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!user || user.role !== "admin") {
-      router.push("/");
-    } else {
+    try {
+      const raw = localStorage.getItem("currentUser");
+      if (raw) {
+        const parsed = JSON.parse(raw) as CurrentUser;
+        setCurrentUser(parsed);
+        if (parsed.role === "admin") {
+          setIsLoading(false);
+          fetchClasses();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to parse currentUser from localStorage", err);
       setIsLoading(false);
-      fetchClasses();
     }
-  }, [router]);
+  }, []);
 
   // Fetch classes from Supabase
   const fetchClasses = async () => {

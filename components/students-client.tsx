@@ -109,6 +109,12 @@ export function StudentsClientComponent({
   const [selectedStudentForAttendance, setSelectedStudentForAttendance] =
     useState<Student | null>(null);
 
+  // Keep local students in sync when server data (initialStudents) changes
+  // This ensures router.refresh() and server revalidate update the table
+  useEffect(() => {
+    setStudents(initialStudents);
+  }, [initialStudents]);
+
   const filteredStudents = students?.filter((student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -367,6 +373,8 @@ export function StudentsClientComponent({
                           <FeeStatusButton
                             feeId={student.currentFee.id}
                             studentId={student.id}
+                            studentName={student.name}
+                            studentClassName={studentClass?.name}
                             initialStatus={student.currentFee.status}
                             initialPaidDate={student.currentFee.paid_date}
                             onStatusChange={() => {

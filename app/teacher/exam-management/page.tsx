@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,6 @@ type Assignment = {
  * - Responsive design with Tailwind CSS
  */
 export default function ExamManagementPage() {
-  const router = useRouter();
 
   // ============================================
   // State Management
@@ -87,14 +85,13 @@ export default function ExamManagementPage() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "teacher") {
-      router.push("/");
       return;
     }
     setTeacherId(user.id);
     setTeacherName(user.name || "Teacher");
     loadClasses(user.id);
     loadAssignments(user.id);
-  }, [router]);
+  }, []);
 
   // ============================================
   // Data Loading Functions

@@ -17,7 +17,12 @@ export default async function StudentManagement() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/");
+    return (
+      <div className="min-h-screen bg-background">
+        <AdminSidebar />
+        <div className="md:pl-64 p-8" />
+      </div>
+    );
   }
 
   const { data: profile } = await supabase
