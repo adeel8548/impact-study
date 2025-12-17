@@ -13,16 +13,13 @@ export async function GET(
       .from("profiles")
       .select("id, name, email, phone, expected_time, joining_date, class_ids, incharge_class_id, incharge_class_ids")
       .eq("id", id)
-      .eq("role", "teacher")
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
     if (!data) {
-      return NextResponse.json(
-        { error: "Teacher not found", success: false },
-        { status: 404 }
-      );
+      // Gracefully return a success=false payload so the UI can continue without hard failing
+      return NextResponse.json({ success: false, error: "Teacher not found" });
     }
 
     return NextResponse.json(data);

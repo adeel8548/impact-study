@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 
-type StatusLetter = "P" | "A" | "L" | "-";
+type StatusLetter = "P" | "A" | "L" | "T" | "-";
 
 export interface AttendanceSummaryModalProps {
   open: boolean;
@@ -21,7 +21,7 @@ export interface AttendanceSummaryModalProps {
     student_id?: string;
     teacher_id?: string;
     date: string;
-    status?: "present" | "absent" | "leave";
+    status?: "present" | "absent" | "leave" | "late";
   }>;
   people: Array<{ id: string; name: string; roll_number?: string; email?: string }>;
   label?: string; // optional range label
@@ -50,7 +50,15 @@ export function AttendanceSummaryModal({
       const id = (type === "student" ? r.student_id : r.teacher_id) as string;
       if (!id) return;
       if (!per[id]) per[id] = { name: id, dateStatus: {} };
-      const letter: StatusLetter = r.status === "present" ? "P" : r.status === "absent" ? "A" : r.status === "leave" ? "L" : "-";
+      const letter: StatusLetter = r.status === "present"
+        ? "P"
+        : r.status === "absent"
+        ? "A"
+        : r.status === "leave"
+        ? "L"
+        : r.status === "late"
+        ? "T"
+        : "-";
       per[id].dateStatus[r.date] = letter;
     });
 
@@ -91,8 +99,9 @@ export function AttendanceSummaryModal({
               </div>
               <div className="hidden md:flex items-center gap-2 text-xs">
                 <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 font-semibold">P</span>
-                <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-semibold">A</span>
+                <span className="px-2 py-0.5 rounded bg-red-100 text-red-900 font-semibold">A</span>
                 <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold">L</span>
+                <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-700 font-semibold">T</span>
                 <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold">-</span>
               </div>
             </div>
@@ -110,6 +119,7 @@ export function AttendanceSummaryModal({
                     <th className="text-center p-2 font-semibold">P</th>
                     <th className="text-center p-2 font-semibold">A</th>
                     <th className="text-center p-2 font-semibold">L</th>
+                    <th className="text-center p-2 font-semibold">T</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -120,9 +130,10 @@ export function AttendanceSummaryModal({
                         if (s === "P") acc.P += 1;
                         else if (s === "A") acc.A += 1;
                         else if (s === "L") acc.L += 1;
+                        else if (s === "T") acc.T += 1;
                         return acc;
                       },
-                      { P: 0, A: 0, L: 0 },
+                      { P: 0, A: 0, L: 0, T: 0 },
                     );
 
                     return (
@@ -134,9 +145,11 @@ export function AttendanceSummaryModal({
                             status === "P"
                               ? "bg-green-100 text-green-700"
                               : status === "A"
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-red-100 text-red-900"
                               : status === "L"
                               ? "bg-blue-100 text-blue-700"
+                              : status === "T"
+                              ? "bg-orange-100 text-orange-700"
                               : "bg-gray-100 text-gray-700";
                           return (
                             <td key={d} className="p-1 text-center">
@@ -147,8 +160,9 @@ export function AttendanceSummaryModal({
                           );
                         })}
                         <td className="text-center p-2 font-semibold text-green-600">{counts.P}</td>
-                        <td className="text-center p-2 font-semibold text-red-600">{counts.A}</td>
+                        <td className="text-center p-2 font-semibold text-red-900">{counts.A}</td>
                         <td className="text-center p-2 font-semibold text-blue-600">{counts.L}</td>
+                        <td className="text-center p-2 font-semibold text-orange-600">{counts.T}</td>
                       </tr>
                     );
                   })}
@@ -157,7 +171,7 @@ export function AttendanceSummaryModal({
             </div>
           </Card>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <div className="text-center p-2 bg-gray-50 rounded">
               <p className="text-xs text-muted-foreground">Total Days</p>
               <p className="text-lg font-bold text-gray-700">{uniqueDates.length}</p>
@@ -166,13 +180,17 @@ export function AttendanceSummaryModal({
               <p className="text-xs text-muted-foreground">Total Present</p>
               <p className="text-lg font-bold text-green-600">{totals.present}</p>
             </div>
-            <div className="text-center p-2 bg-red-50 rounded">
+            <div className="text-center p-2 bg-amber-100 rounded">
               <p className="text-xs text-muted-foreground">Total Absent</p>
-              <p className="text-lg font-bold text-red-600">{totals.absent}</p>
+              <p className="text-lg font-bold text-red-900">{totals.absent}</p>
             </div>
             <div className="text-center p-2 bg-blue-50 rounded">
               <p className="text-xs text-muted-foreground">Total Leaves</p>
               <p className="text-lg font-bold text-blue-600">{totals.leaves}</p>
+            </div>
+            <div className="text-center p-2 bg-orange-50 rounded">
+              <p className="text-xs text-muted-foreground">Total Late</p>
+              <p className="text-lg font-bold text-orange-600">{totals.late}</p>
             </div>
           </div>
         </div>
