@@ -22,6 +22,7 @@ interface LateReasonModalProps {
   isAdmin?: boolean;
   currentReason?: string;
   readOnly?: boolean;
+  forceClose?: boolean; // If true, prevent closing without proper reason (teacher side)
   onConfirm: (reason: string) => Promise<void>;
 }
 
@@ -33,10 +34,16 @@ export function LateReasonModal({
   isAdmin = false,
   currentReason = "",
   readOnly = false,
+  forceClose = false,
   onConfirm,
 }: LateReasonModalProps) {
   const [reason, setReason] = useState(currentReason);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Minimum characters required for teacher (not for admin)
+  const MIN_CHARS = forceClose ? 10 : 0;
+  const canClose = !forceClose || reason.length >= MIN_CHARS;
+  const canSubmit = reason.trim() && reason.length >= MIN_CHARS;
 
   // Update reason when currentReason changes or modal opens
   useEffect(() => {
@@ -46,8 +53,8 @@ export function LateReasonModal({
   }, [open, currentReason]);
 
   const handleSubmit = async () => {
-    if (!reason.trim()) {
-      toast.error("Please provide a reason for late attendance");
+    if (!canSubmit) {
+      toast.error(`Please provide at least ${MIN_CHARS} characters for the reason`);
       return;
     }
 
@@ -65,8 +72,17 @@ export function LateReasonModal({
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    // Prevent closing if forceClose is true and not enough characters
+    if (forceClose && newOpen === false && reason.length < MIN_CHARS) {
+      toast.error(`Please provide at least ${MIN_CHARS} characters for the reason before closing`);
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -105,9 +121,16 @@ export function LateReasonModal({
               className="min-h-[120px] resize-none"
               readOnly={readOnly}
             />
-            <p className="text-xs text-muted-foreground">
-              {reason.length > 0 && `${reason.length} characters`}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {reason.length > 0 && `${reason.length} characters`}
+              </p>
+              {forceClose && (
+                <p className={`text-xs font-semibold ${reason.length >= MIN_CHARS ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                  {reason.length < MIN_CHARS ? `Minimum ${MIN_CHARS} characters required` : "✓ Ready to submit"}
+                </p>
+              )}
+            </div>
           </div>
 
           {!readOnly && (
@@ -115,6 +138,7 @@ export function LateReasonModal({
               <p className="text-sm text-orange-800 dark:text-orange-200">
                 <strong>Note:</strong> Late attendance (marked after 15 minutes of expected
                 time) will be recorded as "Present - Late" with the reason you provide.
+                {forceClose && !isAdmin && <> You must provide at least {MIN_CHARS} characters before submitting.</>}
               </p>
             </div>
           )}
@@ -122,15 +146,17 @@ export function LateReasonModal({
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSaving}
+              onClick={() => handleOpenChange(false)}
+              disabled={isSaving || !canClose}
+              className={!canClose ? "opacity-50 cursor-not-allowed" : ""}
+              title={!canClose ? `Please add at least ${MIN_CHARS} characters to the reason` : ""}
             >
               {readOnly ? "Close" : "Cancel"}
             </Button>
             {!readOnly && (
               <Button
                 onClick={handleSubmit}
-                disabled={isSaving || !reason.trim()}
+                disabled={isSaving || !canSubmit}
                 className="bg-orange-600 hover:bg-orange-700 text-white"
               >
                 {isSaving ? (
