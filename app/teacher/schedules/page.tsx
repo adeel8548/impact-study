@@ -37,7 +37,6 @@ export default function TeacherSchedulesPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [teacherId, setTeacherId] = useState<string>("");
   const [teacherName, setTeacherName] = useState<string>("");
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<string>("revisions");
 
   const today = useMemo(() => toLocalDate(new Date()), []);
@@ -95,7 +94,6 @@ export default function TeacherSchedulesPage() {
       if (uniqueClassIds.length === 0) {
         setClasses([]);
         setSelectedClass("");
-        setLoading(false);
         return;
       }
 
@@ -114,8 +112,6 @@ export default function TeacherSchedulesPage() {
     } catch (error) {
       console.error("Error loading classes:", error);
       toast.error("Failed to load classes");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -271,14 +267,6 @@ export default function TeacherSchedulesPage() {
       setDeletingQuiz(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <Suspense

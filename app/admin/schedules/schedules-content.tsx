@@ -40,7 +40,6 @@ export function AdminSchedulesContent() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [tab, setTab] = useState<string>("revisions");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const today = useMemo(() => toLocalDate(new Date()), []);
@@ -108,8 +107,6 @@ export function AdminSchedulesContent() {
       if (cls.length > 0) setSelectedClass(cls[0].id);
     } catch (e) {
       toast.error("Failed to load classes");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -459,14 +456,6 @@ export function AdminSchedulesContent() {
       toast.error("Failed to delete");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
