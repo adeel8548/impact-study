@@ -23,7 +23,17 @@ export async function GET(request: NextRequest) {
     const quizDate = searchParams.get("quizDate");
     const filterTeacherOnly = searchParams.get("filterTeacherOnly") === "true";
 
+    console.log("Quiz Results GET called with params:", {
+      studentId,
+      teacherId,
+      classId,
+      quizId,
+      quizName,
+      quizDate,
+    });
+
     // Start with the base query including related data
+    // Note: class_id is optional - will be added after migration 018_fix_quiz_results_schema.sql is applied
     let query = supabase.from("quiz_results").select(
       `
         id,
@@ -72,7 +82,19 @@ export async function GET(request: NextRequest) {
       ascending: false,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error in quiz_results query:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Database query error: ${error.message}`,
+        },
+        { status: 500 },
+      );
+    }
+
+    console.log(`Quiz results query returned ${data?.length || 0} rows`);
+    console.log("Raw data from query:", JSON.stringify(data, null, 2));
 
     // If filterTeacherOnly is true, only return quizzes for subjects the teacher is assigned to
     // Note: This requires subject_id field in quiz_results or a proper relationship to daily_quizzes
@@ -100,6 +122,7 @@ export async function GET(request: NextRequest) {
                id,
     student_id,
     teacher_id,
+    quiz_id,
     quiz_name,
     obtained_marks,
     total_marks,
@@ -117,6 +140,7 @@ export async function GET(request: NextRequest) {
           console.warn("Fallback query error:", fbErr);
         } else {
           fallbackData = fb || [];
+          console.log(`Fallback query returned ${fallbackData.length} rows`);
         }
       } catch (e) {
         console.warn("Fallback query exception:", e);
@@ -126,15 +150,42 @@ export async function GET(request: NextRequest) {
     // Filter by classId on the server side if provided
     let results = data || [];
     if (classId && results.length > 0) {
-      results = results.filter(
-        (result: any) => result.student?.class_id === classId,
+      console.log(`Filtering ${results.length} results by classId=${classId}`);
+      const beforeFilter = results.length;
+      results = results.filter((result: any) => {
+        // Use student.class_id for filtering (class_id column will be available after migration)
+        const resultClassId = result.student?.class_id;
+        const matches = resultClassId === classId;
+        if (!matches) {
+          console.log(
+            `Result ${result.id} student=${result.student_id} class_id=${resultClassId} does not match filter classId=${classId}`,
+          );
+        }
+        return matches;
+      });
+      console.log(
+        `After classId filter: ${beforeFilter} → ${results.length} results`,
       );
+    } else if (classId && results.length === 0) {
+      console.warn(
+        `classId filter requested but no results to filter. classId=${classId}, quizId=${quizId}`,
+      );
+    }
+
+    // If no results after filtering but we have quizId, return all results for that quiz
+    // (classId filtering may have been too strict due to RLS or missing student data)
+    if (quizId && results.length === 0 && data && data.length > 0) {
+      console.log(
+        `No results after classId filter but ${data.length} exist for quizId=${quizId}. Returning all for quiz.`,
+      );
+      results = data;
     }
 
     return NextResponse.json({
       success: true,
-      data: results,
-      fallbackData,
+      data: results || [],
+      fallbackData: fallbackData || [],
+      message: results.length === 0 ? "No quiz results found" : `Found ${results.length} quiz results`,
     });
   } catch (error) {
     console.error("Error fetching quiz results:", error);
@@ -229,13 +280,20 @@ export async function POST(request: NextRequest) {
       };
       if (quizId) updatePayload.quiz_id = quizId;
 
+      console.log("Updating quiz result with payload:", updatePayload);
+
       const { data, error } = await supabase
         .from("quiz_results")
         .update(updatePayload)
         .eq("id", existingResult.id)
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating quiz result:", error);
+        throw error;
+      }
+
+      console.log("Quiz result updated successfully:", data?.[0]);
 
       return NextResponse.json({
         success: true,
@@ -256,12 +314,19 @@ export async function POST(request: NextRequest) {
       };
       if (quizId) insertPayload.quiz_id = quizId;
 
+      console.log("Saving quiz result with payload:", insertPayload);
+
       const { data, error } = await supabase
         .from("quiz_results")
         .insert(insertPayload)
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting quiz result:", error);
+        throw error;
+      }
+
+      console.log("Quiz result saved successfully:", data?.[0]);
 
       return NextResponse.json({
         success: true,

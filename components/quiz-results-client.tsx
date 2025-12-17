@@ -24,6 +24,7 @@ type Quiz = {
   topic: string;
   quiz_date: string;
   duration_minutes?: number;
+  total_marks?: number | null;
 };
 
 interface MarkInput {
@@ -50,6 +51,7 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
   const [selectedQuiz, setSelectedQuiz] = useState<string>("");
 
   const [marks, setMarks] = useState<MarkInput>({});
+  const [originalMarks, setOriginalMarks] = useState<MarkInput>({}); // Track loaded marks
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prefillLoaded, setPrefillLoaded] = useState(false);
@@ -60,7 +62,11 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
   // ============================================
   // Calculate totals
   // ============================================
-  const totalMaxMarks = selectedQuizDetails?.duration_minutes || 100;
+  // Prefer explicit total_marks; fall back to duration_minutes (older data) or 100
+  const totalMaxMarks =
+    selectedQuizDetails?.total_marks ??
+    selectedQuizDetails?.duration_minutes ??
+    100;
 
   const getStudentPercent = (studentId: string) => {
     const val = marks[studentId];
@@ -201,25 +207,25 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
       });
       setMarks(blanked);
 
-      // Fetch quiz results with classId and quizId filter
+      // Fetch quiz results with ONLY quizId filter (no classId)
       const params = new URLSearchParams();
-      params.append("classId", selectedClass);
       if (selectedQuiz) params.append("quizId", selectedQuiz);
       const res = await fetch(`/api/quiz-results?${params.toString()}`);
       const data = await res.json();
       const allResults = data.data || [];
 
-      // Server should return results scoped to the provided quizId and classId (student.class_id).
-      // Map returned results to marks for students in the selected class.
+      // Map returned results to marks for students
+      // Match student IDs from quiz results with students in the selected class
       if (Array.isArray(allResults) && allResults.length > 0) {
-        setMarks((prev) => {
-          const next = { ...prev };
-          allResults.forEach((result: QuizResult) => {
-            if (result.student_id)
-              next[result.student_id] = result.obtained_marks;
-          });
-          return next;
+        const loadedMarks: MarkInput = { ...marks };
+        allResults.forEach((result: QuizResult) => {
+          // Only add marks if the student exists in the current class
+          if (result.student_id && students.some(s => s.id === result.student_id)) {
+            loadedMarks[result.student_id] = result.obtained_marks;
+          }
         });
+        setMarks(loadedMarks);
+        setOriginalMarks(loadedMarks); // Store as original for comparison
       }
 
       setPrefillLoaded(true);
@@ -424,6 +430,7 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
                 <p className="font-semibold">Quiz Info:</p>
                 <p>Subject: {selectedQuizDetails.subject}</p>
                 <p>Duration: {selectedQuizDetails.duration_minutes} min</p>
+                <p>Total Marks: {totalMaxMarks}</p>
               </div>
             </div>
           )}
@@ -467,10 +474,10 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
                       <th className="px-4 py-3 text-left text-sm font-semibold min-w-[100px]">
                         Roll No.
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold min-w-[120px]">
+                      <th className="px-4 py-3 text-left text-sm font-semibold min-w-[140px]">
                         <div className="flex flex-col gap-1">
                           <span className="truncate">
-                            {selectedQuizDetails?.topic || "Quiz"}
+                            {selectedQuizDetails?.topic || "Quiz"} Marks
                           </span>
                           <div className="flex items-center gap-2 text-xs">
                             <span className="text-muted-foreground">
@@ -500,21 +507,28 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
                           {student.roll_number || "-"}
                         </td>
                         <td className="px-4 py-3">
-                          <Input
-                            type="number"
-                            placeholder="—"
-                            min="0"
-                            max={totalMaxMarks}
-                            value={
-                              marks[student.id] === "" ? "" : marks[student.id]
-                            }
-                            onChange={(e) =>
-                              handleMarkChange(student.id, e.target.value)
-                            }
-                            className="w-full h-9 text-sm"
-                          />
-                          <div className="text-[11px] text-muted-foreground mt-1">
-                            of {totalMaxMarks}
+                          <div className="space-y-2">
+                            <Input
+                              type="number"
+                              placeholder="—"
+                              min="0"
+                              max={totalMaxMarks}
+                              value={
+                                marks[student.id] === "" ? "" : marks[student.id]
+                              }
+                              onChange={(e) =>
+                                handleMarkChange(student.id, e.target.value)
+                              }
+                              className="w-full h-9 text-sm"
+                            />
+                            <div className="text-[11px] text-muted-foreground flex items-center justify-between px-1">
+                              <span>of {totalMaxMarks}</span>
+                              {originalMarks[student.id] !== undefined && originalMarks[student.id] !== "" && (
+                                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                  Saved: {originalMarks[student.id]}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold">

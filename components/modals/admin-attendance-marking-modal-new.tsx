@@ -115,15 +115,10 @@ export function AdminAttendanceMarkingModal({
   };
 
   const handleLeaveReasonSubmit = async (recordId: string, reason: string) => {
-    if (!selectedDate) {
-      toast.error("Please select a date");
-      return;
-    }
-
     try {
-      setIsSaving(true);
+      // Mark as leave first
       const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-
+      
       const payload: any = {
         date: selectedDate,
         status: "leave",
@@ -137,27 +132,14 @@ export function AdminAttendanceMarkingModal({
         payload.student_id = targetId;
       }
 
-      const response = await fetch(
-        type === "teacher" ? "/api/teacher-attendance" : "/api/attendance",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!response?.ok) throw new Error("Failed to mark attendance");
+      await submitMark("leave", reason);
 
       toast.success("Leave attendance recorded");
-      onMarked?.(selectedDate, "leave");
       setLeaveReasonModalOpen(false);
       setSelectedStatus(null);
-      onOpenChange(false);
     } catch (error) {
       console.error("Error saving leave reason:", error);
       toast.error("Failed to save leave reason");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -171,6 +153,7 @@ export function AdminAttendanceMarkingModal({
       setIsSaving(true);
       const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
+      // Mark as late with reason
       const payload: any = {
         date: selectedDate,
         status: "late",
@@ -197,6 +180,7 @@ export function AdminAttendanceMarkingModal({
       const markData = await markResponse.json();
       const attendanceId = markData.id || markData.attendance?.[0]?.id;
 
+      // Save the reason
       if (attendanceId) {
         await fetch("/api/late-reason", {
           method: "POST",

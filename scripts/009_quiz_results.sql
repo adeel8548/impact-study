@@ -25,9 +25,9 @@ ALTER TABLE quiz_results ENABLE ROW LEVEL SECURITY;
 CREATE POLICY admin_view_all_quiz_results ON quiz_results
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
     )
   );
 
@@ -36,9 +36,9 @@ CREATE POLICY teacher_view_own_quiz_results ON quiz_results
   FOR SELECT USING (
     teacher_id = auth.uid()
     OR EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
     )
   );
 
@@ -46,9 +46,9 @@ CREATE POLICY teacher_view_own_quiz_results ON quiz_results
 CREATE POLICY admin_insert_quiz_results ON quiz_results
   FOR INSERT WITH CHECK (
     EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
     )
   );
 
@@ -62,9 +62,9 @@ CREATE POLICY teacher_insert_quiz_results ON quiz_results
 CREATE POLICY admin_update_quiz_results ON quiz_results
   FOR UPDATE USING (
     EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
     )
   );
 
@@ -78,9 +78,9 @@ CREATE POLICY teacher_update_quiz_results ON quiz_results
 CREATE POLICY admin_delete_quiz_results ON quiz_results
   FOR DELETE USING (
     EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.role = 'admin'
     )
   );
 
