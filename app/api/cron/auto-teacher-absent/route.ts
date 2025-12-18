@@ -35,10 +35,11 @@ export async function GET(request: NextRequest) {
     
     console.log(`[Auto Teacher Absent] Running for date: ${today}`);
 
-    // Get all active teachers
+    // Get all active teachers from profiles table
     const { data: teachers, error: teachersError } = await adminClient
-      .from("teachers")
+      .from("profiles")
       .select("id, name")
+      .eq("role", "teacher")
       .eq("is_active", true);
 
     if (teachersError) {
