@@ -101,12 +101,11 @@ export async function GET(request: NextRequest) {
     // ========================================
     console.log("[Auto Teacher Out] Starting auto-absent check...");
 
-    // Get all active teachers from profiles table
+    // Get all teachers from profiles table (role = teacher)
     const { data: teachers, error: teachersError } = await adminClient
       .from("profiles")
       .select("id, name")
-      .eq("role", "teacher")
-      .eq("is_active", true);
+      .eq("role", "teacher");
 
     if (teachersError) {
       console.error("[Auto Teacher Out] Error fetching teachers:", teachersError);

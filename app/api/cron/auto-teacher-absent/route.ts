@@ -2,12 +2,12 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Cron Job: Auto mark teacher absent at 7 AM PKT
- * Runs daily at 7 AM Pakistan time (UTC+5)
+ * Cron Job: Auto mark teacher absent at 7 PM PKT
+ * Runs daily at 7 PM Pakistan time (UTC+5)
  * Finds all teachers with no attendance record for today and marks them absent
  * This ensures teachers who don't mark attendance are automatically marked absent
  *
- * Schedule (Vercel, UTC): "0 2 * * *" → 07:00 PKT
+ * Schedule (Vercel, UTC): "0 14 * * *" → 19:00 PKT (7:00 PM)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -35,12 +35,11 @@ export async function GET(request: NextRequest) {
     
     console.log(`[Auto Teacher Absent] Running for date: ${today}`);
 
-    // Get all active teachers from profiles table
+    // Get all teachers from profiles table (role = teacher)
     const { data: teachers, error: teachersError } = await adminClient
       .from("profiles")
       .select("id, name")
-      .eq("role", "teacher")
-      .eq("is_active", true);
+      .eq("role", "teacher");
 
     if (teachersError) {
       console.error("[Auto Teacher Absent] Error fetching teachers:", teachersError);
