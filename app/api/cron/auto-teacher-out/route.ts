@@ -56,13 +56,13 @@ export async function GET(request: NextRequest) {
     console.log(`[Auto Teacher Out] Setting out_time to: ${outTime}`);
 
     // Find all teacher attendance records for today that are:
-    // 1. Status = "present"
+    // 1. Status = "present" OR "late"
     // 2. out_time is null
     const { data: records, error: fetchError } = await adminClient
       .from("teacher_attendance")
       .select("id, teacher_id, date, status, out_time")
       .eq("date", today)
-      .eq("status", "present")
+      .in("status", ["present", "late"])
       .is("out_time", null);
 
     if (fetchError) {
