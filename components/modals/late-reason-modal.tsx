@@ -25,6 +25,7 @@ interface LateReasonModalProps {
   forceClose?: boolean; // If true, prevent closing without proper reason (teacher side)
   onConfirm: (reason: string) => Promise<void>;
   requireReason?: boolean;
+  minCharacters?: number; // Minimum characters required for late reason (default 10 when forceClose=true)
 }
 
 export function LateReasonModal({
@@ -38,17 +39,18 @@ export function LateReasonModal({
   forceClose = false,
   onConfirm,
   requireReason,
+  minCharacters = 10,
 }: LateReasonModalProps) {
-  const [reason, setReason] = useState(currentReason);
+  const [reason, setReason] = useState<string>(currentReason || "");
   const [isSaving, setIsSaving] = useState(false);
 
   // Minimum characters required for teacher (not for admin)
-  const MIN_CHARS = forceClose ? 10 : 0;
-  const canClose = !forceClose || reason.length >= MIN_CHARS;
+  const MIN_CHARS = forceClose ? minCharacters : 0;
+  const canClose = !forceClose || (reason?.length ?? 0) >= MIN_CHARS;
   const shouldRequireReason = requireReason ?? true;
   const canSubmit = shouldRequireReason
-    ? reason.trim().length >= MIN_CHARS
-    : reason.length >= MIN_CHARS;
+    ? (reason?.trim?.()?.length ?? 0) >= MIN_CHARS
+    : (reason?.length ?? 0) >= MIN_CHARS;
 
   // Update reason when currentReason changes or modal opens
   useEffect(() => {
@@ -79,7 +81,7 @@ export function LateReasonModal({
 
   const handleOpenChange = (newOpen: boolean) => {
     // Prevent closing if forceClose is true and not enough characters
-    if (forceClose && newOpen === false && reason.length < MIN_CHARS) {
+    if (forceClose && newOpen === false && (reason?.length ?? 0) < MIN_CHARS) {
       toast.error(`Please provide at least ${MIN_CHARS} characters for the reason before closing`);
       return;
     }

@@ -694,7 +694,9 @@ export default function AdminAttendancePage() {
                 a.teacher_id === teacherId && a.date === date
             )
           : returned;
-        openLateReason(savedRecord, "teacher", teacherName);
+        if (savedRecord) {
+          openLateReasonModal(date, savedRecord.id, teacherName, "teacher");
+        }
       }
     } catch (error) {
       console.error("Error updating attendance:", error);
@@ -725,6 +727,24 @@ export default function AdminAttendancePage() {
     }
   };
 
+  const openLateReasonModal = (
+    date: string,
+    recordId: string,
+    personName: string,
+    type: "student" | "teacher"
+  ) => {
+    const records = type === "student" ? studentAttendance : teacherAttendance;
+    const record = records.find((r) => r.id === recordId);
+    setLateModalData({
+      recordId,
+      type,
+      name: personName,
+      date,
+      currentReason: record?.late_reason,
+    });
+    setLateModalOpen(true);
+  };
+
   if (isLoading) return null;
 
   const selectedClassObj = classes.find((c) => c.id === selectedClass);
@@ -746,7 +766,7 @@ export default function AdminAttendancePage() {
 
           <Tabs
             value={activeTab}
-            onValueChange={setActiveTab}
+            onValueChange={(val) => setActiveTab(val as "students" | "teachers")}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2">
@@ -960,6 +980,9 @@ export default function AdminAttendancePage() {
                                   date,
                                   status
                                 )
+                              }
+                              onLateDetected={(date, recordId, personName) =>
+                                openLateReasonModal(date, recordId, personName, "student")
                               }
                               isAdmin={true}
                               expectedTime={studentExpectedTime}
@@ -1193,10 +1216,13 @@ export default function AdminAttendancePage() {
                                 status
                               )
                             }
+                            onLateDetected={(date, recordId, personName) =>
+                              openLateReasonModal(date, recordId, personName, "teacher")
+                            }
                             isAdmin={true}
                             type="teacher"
                             personName={teacher.name}
-                            expectedTime={teacher.expected_time}
+                            expectedTime={studentExpectedTime}
                             daysToShow={
                               computeRange(
                                 teacherRange,
@@ -1306,7 +1332,7 @@ export default function AdminAttendancePage() {
                               {teacherName}
                             </p>
                             <p className="text-xs text-muted-foreground">{record.date}</p>
-                            <p className="text-xs text-foreground max-w-[240px] truncate">
+                            <p className="text-xs text-foreground max-w-60 truncate">
                               {record.remarks || "No reason provided"}
                             </p>
                           </div>

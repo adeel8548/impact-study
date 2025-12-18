@@ -435,11 +435,14 @@ export default function TeacherAttendance() {
     );
   };
 
-  const handleAttendanceChange = (
+  const handleAttendanceChange = async (
     studentId: string,
     status: "present" | "absent" | "leave",
   ) => {
     let finalStatus = status;
+
+    // Check if attendance already exists for this student on selected date
+    const isExisting = !!attendanceRecords[studentId]?.id;
 
     // Auto-mark late if student is marked present after a 40-minute grace period
     if (status === "present") {
@@ -451,6 +454,7 @@ export default function TeacherAttendance() {
       }
     }
 
+    // Update local state immediately for UI feedback
     setAttendance((prev) => ({
       ...prev,
       [studentId]: finalStatus,
@@ -458,6 +462,42 @@ export default function TeacherAttendance() {
 
     if (status !== "leave") {
       setLeaveReasons((prev) => {
+        const { [studentId]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
+
+    // Save to database immediately
+    try {
+      const result = await markStudentAttendance(
+        studentId,
+        selectedClass,
+        selectedDate,
+        finalStatus,
+        undefined,
+      );
+
+      if (result.error) {
+        console.error("Error saving attendance:", result.error);
+        toast.error("Failed to save attendance");
+        // Revert local state on error
+        setAttendance((prev) => {
+          const { [studentId]: _removed, ...rest } = prev;
+          return rest;
+        });
+      } else {
+        // Show appropriate success message
+        if (isExisting) {
+          toast.success("Attendance updated successfully");
+        } else {
+          toast.success("Attendance marked successfully");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      toast.error("Failed to save attendance");
+      // Revert local state on error
+      setAttendance((prev) => {
         const { [studentId]: _removed, ...rest } = prev;
         return rest;
       });
@@ -477,13 +517,22 @@ export default function TeacherAttendance() {
 
     setSaving(true);
     try {
+      // Check current time to determine if students should be marked late
+      const now = new Date();
+      const shouldMarkLate = isAttendanceLate(now, schoolExpectedTime, selectedDate, 40);
+
       // Only process students that were explicitly marked
       const markedStudentIds = Object.keys(attendance);
 
       // Save each attendance record using server action
       for (const studentId of markedStudentIds) {
-        const status = attendance[studentId];
+        let status = attendance[studentId];
         const reason = leaveReasons[studentId] || undefined;
+
+        // If current time is >40 min late and student is marked present, change to late
+        if (status === "present" && shouldMarkLate) {
+          status = "late";
+        }
 
         const result = await markStudentAttendance(
           studentId,
@@ -509,9 +558,22 @@ export default function TeacherAttendance() {
             },
           }));
         }
+
+        // Update local state to reflect late status
+        if (status === "late" && attendance[studentId] === "present") {
+          setAttendance((prev) => ({
+            ...prev,
+            [studentId]: "late",
+          }));
+        }
       }
 
-      toast.success("Attendance saved successfully");
+      if (shouldMarkLate) {
+        toast.success("Attendance saved (students marked late due to >40 min delay)");
+      } else {
+        toast.success("Attendance saved successfully");
+      }
+      
       // Refresh state so colors/reasons reflect saved values
       await loadAttendance();
       await loadClassStudents();
@@ -689,12 +751,12 @@ export default function TeacherAttendance() {
                               handleAttendanceChange(student.id, "present")
                             }
                             className={`w-full px-3 py-2 rounded font-semibold text-sm transition-colors ${
-                              attendance[student.id] === "present"
+                              attendance[student.id] === "present" || attendance[student.id] === "late"
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-gray-200 hover:bg-gray-300 text-gray-700"
                             }`}
                           >
-                            ✓ Present
+                            {attendance[student.id] === "late" ? "⏰ Late" : "✓ Present"}
                           </button>
                         </td>
                         <td className="p-4 text-center">
@@ -777,23 +839,6 @@ export default function TeacherAttendance() {
               )}
             </Card>
           </>
-        )}
-
-        {/* Save Button */}
-        {selectedClass && students.length > 0 && (
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => loadAttendance()}>
-              Reset
-            </Button>
-            <Button
-              className="gap-2 bg-primary text-primary-foreground"
-              onClick={handleSaveAttendance}
-              disabled={saving}
-            >
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              Save Attendance
-            </Button>
-          </div>
         )}
 
         {/* Leave Reason Modal */}

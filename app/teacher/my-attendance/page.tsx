@@ -1288,8 +1288,9 @@ export default function TeacherMyAttendancePage() {
               isAdmin={false}
               currentReason={existingRecord?.late_reason || ""}
               readOnly={hasExistingReason}
-              requireReason={false}
-              forceClose={false}
+              requireReason={true}
+              forceClose={true}
+              minCharacters={15}
               onConfirm={async (reason) => {
                 if (!pendingLateAttendanceId) return;
 

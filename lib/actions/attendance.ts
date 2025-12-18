@@ -68,14 +68,19 @@ export async function markStudentAttendance(
       .eq("id", user.id)
       .single();
 
-    const { error } = await supabase.from("student_attendance").upsert({
-      student_id: studentId,
-      class_id: classId,
-      date,
-      status,
-      remarks: remarks || null,
-      school_id: profile?.school_id,
-    });
+    const { error } = await supabase.from("student_attendance").upsert(
+      {
+        student_id: studentId,
+        class_id: classId,
+        date,
+        status,
+        remarks: remarks || null,
+        school_id: profile?.school_id,
+      },
+      {
+        onConflict: "student_id,date",
+      }
+    );
 
     if (error) {
       return { error: error.message };
