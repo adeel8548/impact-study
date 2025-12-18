@@ -90,6 +90,9 @@ export default function TimetablePage() {
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteEntry, setDeleteEntry] = useState<TimetableEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
   
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
@@ -299,9 +302,8 @@ export default function TimetablePage() {
   }, [selectedClass]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this lecture?")) return;
-
     try {
+      setDeleting(true);
       const response = await fetch(`/api/timetable?id=${id}`, {
         method: "DELETE",
       });
@@ -319,10 +321,14 @@ export default function TimetablePage() {
       }
 
       toast.success("Lecture deleted successfully");
+      setDeleteOpen(false);
+      setDeleteEntry(null);
       fetchData();
     } catch (error: any) {
       console.error("Error deleting lecture:", error);
       toast.error(error.message || "Failed to delete lecture");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -496,7 +502,7 @@ export default function TimetablePage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => handleDelete(entry.id)}
+                                    onClick={() => { setDeleteEntry(entry); setDeleteOpen(true); }}
                                     className="h-6 px-2 text-red-600 hover:text-red-700"
                                   >
                                     <Trash2 className="w-3 h-3" />
@@ -642,6 +648,43 @@ export default function TimetablePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+          {/* Delete Confirmation Modal */}
+          <Dialog open={deleteOpen} onOpenChange={(open) => { setDeleteOpen(open); if (!open) setDeleteEntry(null); }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete Lecture</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <p>Are you sure you want to delete this lecture?</p>
+                {deleteEntry && (
+                  <div className="rounded-md border bg-secondary/50 p-3">
+                    <div><span className="font-semibold">Teacher:</span> {resolveTeacherName(deleteEntry)}</div>
+                    <div><span className="font-semibold">Class:</span> {resolveClassName(deleteEntry)}</div>
+                    <div><span className="font-semibold">Subject:</span> {resolveSubjectName(deleteEntry)}</div>
+                    <div><span className="font-semibold">Time:</span> {formatTo12Hour(deleteEntry.start_time)} - {formatTo12Hour(deleteEntry.end_time)}</div>
+                    {deleteEntry.room_number && (
+                      <div><span className="font-semibold">Room:</span> {deleteEntry.room_number}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                  Cancel
+                </Button>
+                <Button onClick={() => deleteEntry && handleDelete(deleteEntry.id)} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">
+                  {deleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
     </div>
   );
 }
