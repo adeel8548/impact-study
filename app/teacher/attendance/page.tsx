@@ -145,15 +145,18 @@ export default function TeacherAttendance() {
 
   const fetchSchoolSettings = async (user: CurrentUser) => {
     try {
-      const schoolId = (user as any).school_id;
-      if (!schoolId) return;
-
       const res = await fetch(`/api/school-settings`);
       if (res.ok) {
         const data = await res.json();
         if (data.settings?.school_start_time) {
           setSchoolExpectedTime(data.settings.school_start_time);
+          console.log("School start time loaded from database:", data.settings.school_start_time);
         }
+        else {
+          console.warn("School settings found but no school_start_time; using fallback 15:00");
+        }
+      } else {
+        console.warn("Failed to fetch school settings; using fallback 15:00");
       }
     } catch (err) {
       console.error("Failed to fetch school settings:", err);
@@ -445,12 +448,28 @@ export default function TeacherAttendance() {
     const isExisting = !!attendanceRecords[studentId]?.id;
 
     // Auto-mark late if student is marked present after a 40-minute grace period
+    // BUT only check for TODAY's date - don't mark past/future dates as late based on current time
     if (status === "present") {
-      const now = new Date();
-      const isLate = isAttendanceLate(now, schoolExpectedTime, selectedDate, 40);
-      if (isLate) {
-        finalStatus = "late";
-        toast.info("Student marked Late (>40 min after start)");
+      const today = toLocalDate(new Date());
+      const isToday = selectedDate === today;
+      
+      if (isToday) {
+        const now = new Date();
+        // Debug: print the values used for late calculation
+        try {
+          console.log("[Attendance] Late check", {
+            currentTime: now.toLocaleTimeString(),
+            schoolStartTime: schoolExpectedTime,
+            thresholdMinutes: 40,
+            selectedDate,
+          });
+        } catch {}
+        const isLate = isAttendanceLate(now, schoolExpectedTime, selectedDate, 40);
+        try { console.log("[Attendance] Is late?", isLate); } catch {}
+        if (isLate) {
+          finalStatus = "late";
+          toast.info("Student marked Late (>40 min after start)");
+        }
       }
     }
 
@@ -608,7 +627,7 @@ export default function TeacherAttendance() {
         </div>
 
         {/* Filters */}
-        <Card className="p-6 mb-6">
+        <Card className="p-6 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label className="text-sm font-medium text-foreground mb-2 block">
@@ -686,6 +705,12 @@ export default function TeacherAttendance() {
               </div>
             </div>
           </div>
+          {/* <div className="mt-4 text-sm text-muted-foreground flex items-center gap-2">
+            <span className="font-medium text-foreground">Academy Time :</span>
+            <span className="px-2 py-0.5 rounded border border-border bg-secondary/40 font-mono">
+              {()?.schoolExpectedTime || "--:--"}
+            </span>
+          </div> */}
         </Card>
 
         {/* Attendance Table + History Summary */}
