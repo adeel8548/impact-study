@@ -708,7 +708,7 @@ export default function TeacherAttendance() {
           {/* <div className="mt-4 text-sm text-muted-foreground flex items-center gap-2">
             <span className="font-medium text-foreground">Academy Time :</span>
             <span className="px-2 py-0.5 rounded border border-border bg-secondary/40 font-mono">
-              {()?.schoolExpectedTime || "--:--"}
+              {schoolExpectedTime || "--:--"}
             </span>
           </div> */}
         </Card>

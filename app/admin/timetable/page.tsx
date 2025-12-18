@@ -43,6 +43,7 @@ interface TimetableEntry {
   teacher_id: string;
   class_id: string;
   subject_id: string;
+  subjects?: string[];
   day_of_week: number;
   start_time: string;
   end_time: string;
@@ -97,7 +98,9 @@ export default function TimetablePage() {
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState<number>(1);
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("15:00");
   const [endTime, setEndTime] = useState("15:30");
   const [roomNumber, setRoomNumber] = useState("");
@@ -208,7 +211,9 @@ export default function TimetablePage() {
     setSelectedTeacher("");
     setSelectedClass("");
     setSelectedSubject("");
+    setSelectedSubjects([]);
     setSelectedDay(1);
+    setSelectedDays([]);
     setStartTime("15:00");
     setEndTime("15:30");
     setRoomNumber("");
@@ -220,7 +225,8 @@ export default function TimetablePage() {
     setEditingEntry(entry);
     setSelectedTeacher(entry.teacher_id);
     setSelectedClass(entry.class_id);
-    setSelectedSubject(entry.subject_id);
+    setSelectedSubject("");
+    setSelectedSubjects(entry.subjects && entry.subjects.length > 0 ? entry.subjects : (entry.subject_id ? [entry.subject_id] : []));
     setSelectedDay(entry.day_of_week);
     setStartTime(entry.start_time);
     setEndTime(entry.end_time);
@@ -230,9 +236,9 @@ export default function TimetablePage() {
   };
 
   const handleSave = async () => {
-    if (!selectedTeacher || !selectedClass || !selectedSubject) {
-      toast.error("Please select teacher, class, and subject");
-      setFormError("Please select teacher, class, and subject");
+    if (!selectedTeacher || !selectedClass) {
+      toast.error("Please select teacher and class");
+      setFormError("Please select teacher and class");
       return;
     }
 
@@ -245,43 +251,97 @@ export default function TimetablePage() {
     try {
       setSaving(true);
       setFormError(null);
-      const payload = {
-        id: editingEntry?.id,
-        teacher_id: selectedTeacher,
-        class_id: selectedClass,
-        subject_id: selectedSubject,
-        day_of_week: selectedDay,
-        start_time: startTime,
-        end_time: endTime,
-        room_number: roomNumber || null,
-      };
-
-      const response = await fetch("/api/timetable", {
-        method: editingEntry ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const txt = await response.text();
-        let serverMsg = "Failed to save lecture";
-        try {
-          const json = JSON.parse(txt || "{}");
-          serverMsg = json.error || json.message || serverMsg;
-        } catch {
-          serverMsg = txt || serverMsg;
+      if (editingEntry) {
+        // Update flow: allow multiple subjects on a single slot
+        const subjectsToUse = selectedSubjects.length > 0 ? selectedSubjects : (selectedSubject ? [selectedSubject] : []);
+        if (subjectsToUse.length === 0) {
+          toast.error("Please select at least one subject");
+          setFormError("Please select at least one subject");
+          setSaving(false);
+          return;
         }
-
-        // Friendly hint for overlaps if server provided a generic message
-        if (/overlap|conflict|already/i.test(serverMsg)) {
-          // keep as is
-        } else if (serverMsg === "Failed to save lecture") {
-          serverMsg = "Could not save lecture. Possible conflict with another lecture.";
+        const payload = {
+          id: editingEntry.id,
+          teacher_id: selectedTeacher,
+          class_id: selectedClass,
+          subjects: subjectsToUse,
+          day_of_week: selectedDay,
+          start_time: startTime,
+          end_time: endTime,
+          room_number: roomNumber || null,
+        };
+        const response = await fetch("/api/timetable", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const txt = await response.text();
+          let serverMsg = "Failed to save lecture";
+          try {
+            const json = JSON.parse(txt || "{}");
+            serverMsg = json.error || json.message || serverMsg;
+          } catch {
+            serverMsg = txt || serverMsg;
+          }
+          if (serverMsg === "Failed to save lecture") {
+            serverMsg = "Could not save lecture. Possible conflict with another lecture.";
+          }
+          throw new Error(serverMsg);
         }
-        throw new Error(serverMsg);
+        toast.success("Lecture updated successfully");
+      } else {
+        // Create flow: one slot per selected day, with multiple subjects in array
+        const subjectsToUse = selectedSubjects.length > 0 ? selectedSubjects : (selectedSubject ? [selectedSubject] : []);
+        const daysToUse = selectedDays.length > 0 ? selectedDays : (selectedDay ? [selectedDay] : []);
+        if (subjectsToUse.length === 0) {
+          toast.error("Please select at least one subject");
+          setFormError("Please select at least one subject");
+          setSaving(false);
+          return;
+        }
+        if (daysToUse.length === 0) {
+          toast.error("Please select at least one day");
+          setFormError("Please select at least one day");
+          setSaving(false);
+          return;
+        }
+        let created = 0;
+        let failed = 0;
+        for (const day of daysToUse) {
+          const payload = {
+            teacher_id: selectedTeacher,
+            class_id: selectedClass,
+            subjects: subjectsToUse,
+            day_of_week: day,
+            start_time: startTime,
+            end_time: endTime,
+            room_number: roomNumber || null,
+          };
+          const response = await fetch("/api/timetable", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) {
+            failed++;
+            const txt = await response.text();
+            let serverMsg = "Failed to save lecture";
+            try {
+              const json = JSON.parse(txt || "{}");
+              serverMsg = json.error || json.message || serverMsg;
+            } catch {
+              serverMsg = txt || serverMsg;
+            }
+            toast.error(serverMsg);
+          } else {
+            created++;
+          }
+        }
+        if (created > 0 && failed === 0) toast.success("Lectures added successfully");
+        else if (created > 0 && failed > 0) toast.success(`Added ${created} lecture(s), ${failed} failed`);
+        else toast.error("Failed to add lectures");
       }
-
-      toast.success(editingEntry ? "Lecture updated successfully" : "Lecture added successfully");
       setModalOpen(false);
       fetchData();
     } catch (error: any) {
@@ -480,7 +540,11 @@ export default function TimetablePage() {
                                   {resolveClassName(entry)}
                                 </div>
                                 <div className="text-blue-600 dark:text-blue-400">
-                                  {resolveSubjectName(entry)}
+                                  {entry.subjects && entry.subjects.length > 0
+                                    ? entry.subjects
+                                        .map((sid) => subjects.find((s) => s.id === sid)?.name || "Subject")
+                                        .join(", ")
+                                    : resolveSubjectName(entry)}
                                 </div>
                                 <div className="text-blue-500 dark:text-blue-500 mt-1">
                                   {formatTo12Hour(entry.start_time)} - {formatTo12Hour(entry.end_time)}
@@ -524,7 +588,7 @@ export default function TimetablePage() {
 
       {/* Add/Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {editingEntry ? "Edit Lecture" : "Add New Lecture"}
@@ -569,37 +633,107 @@ export default function TimetablePage() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Subject *</Label>
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getSubjectsForClass().map(subject => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {editingEntry ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Subjects (select one or more) *</Label>
+                  {!selectedClass ? (
+                    <div className="text-sm text-muted-foreground border rounded p-2 bg-secondary/30">
+                      Select a class first to view subjects.
+                    </div>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto border rounded p-2">
+                      {getSubjectsForClass().map(subject => {
+                        const checked = selectedSubjects.includes(subject.id);
+                        return (
+                          <label key={subject.id} className="flex items-center gap-2 py-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="accent-primary"
+                              checked={checked}
+                              onChange={(e) => {
+                                setSelectedSubject("");
+                                setSelectedSubjects(prev => e.target.checked ? [...prev, subject.id] : prev.filter(id => id !== subject.id));
+                              }}
+                            />
+                            <span>{subject.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Day *</Label>
+                  <Select value={selectedDay.toString()} onValueChange={(val) => setSelectedDay(parseInt(val))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DAYS.map((day) => (
+                        <SelectItem key={day.value} value={day.value.toString()}>
+                          {day.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Subjects (select one or more) *</Label>
+                  {!selectedClass ? (
+                    <div className="text-sm text-muted-foreground border rounded p-2 bg-secondary/30">
+                      Select a class first to view subjects.
+                    </div>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto border rounded p-2">
+                      {getSubjectsForClass().map(subject => {
+                        const checked = selectedSubjects.includes(subject.id);
+                        return (
+                          <label key={subject.id} className="flex items-center gap-2 py-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="accent-primary"
+                              checked={checked}
+                              onChange={(e) => {
+                                setSelectedSubject("");
+                                setSelectedSubjects(prev => e.target.checked ? [...prev, subject.id] : prev.filter(id => id !== subject.id));
+                              }}
+                            />
+                            <span>{subject.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Label>Day *</Label>
-              <Select value={selectedDay.toString()} onValueChange={(val) => setSelectedDay(parseInt(val))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DAYS.map((day) => (
-                    <SelectItem key={day.value} value={day.value.toString()}>
-                      {day.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <Label>Days (select one or more) *</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DAYS.map(day => {
+                      const checked = selectedDays.includes(day.value);
+                      return (
+                        <label key={day.value} className="flex items-center gap-2 py-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="accent-primary"
+                            checked={checked}
+                            onChange={(e) => {
+                              setSelectedDay(1);
+                              setSelectedDays(prev => e.target.checked ? [...prev, day.value] : prev.filter(v => v !== day.value));
+                            }}
+                          />
+                          <span>{day.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -660,7 +794,7 @@ export default function TimetablePage() {
                   <div className="rounded-md border bg-secondary/50 p-3">
                     <div><span className="font-semibold">Teacher:</span> {resolveTeacherName(deleteEntry)}</div>
                     <div><span className="font-semibold">Class:</span> {resolveClassName(deleteEntry)}</div>
-                    <div><span className="font-semibold">Subject:</span> {resolveSubjectName(deleteEntry)}</div>
+                    <div><span className="font-semibold">Subject:</span> {deleteEntry.subjects && deleteEntry.subjects.length > 0 ? deleteEntry.subjects.map((sid) => subjects.find((s) => s.id === sid)?.name || "Subject").join(", ") : resolveSubjectName(deleteEntry)}</div>
                     <div><span className="font-semibold">Time:</span> {formatTo12Hour(deleteEntry.start_time)} - {formatTo12Hour(deleteEntry.end_time)}</div>
                     {deleteEntry.room_number && (
                       <div><span className="font-semibold">Room:</span> {deleteEntry.room_number}</div>

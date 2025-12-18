@@ -87,7 +87,7 @@ export function AdminSidebar() {
       </button>
 
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 z-40 ${
+        className={`fixed left-0 top-0 h-full w-64 bg-sidebar overflow-y-auto border-r border-sidebar-border transition-transform duration-300 z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >

@@ -18,8 +18,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         teacher:profiles!teacher_timetable_teacher_id_fkey(name),
-        class:classes(name),
-        subject:subjects(name)
+        class:classes(name)
       `);
 
     if (teacherId) {
@@ -34,12 +33,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Format the data with names
+    // Pass through subjects array and basic names; subject names will be resolved client-side from the subjects list
     const formatted = data.map((entry: any) => ({
       ...entry,
       teacher_name: entry.teacher?.name,
       class_name: entry.class?.name,
-      subject_name: entry.subject?.name,
     }));
 
     return NextResponse.json({ timetable: formatted });
@@ -62,43 +60,67 @@ export async function POST(request: NextRequest) {
       teacher_id,
       class_id,
       subject_id,
+      subjects,
       day_of_week,
       start_time,
       end_time,
       room_number,
     } = body;
 
-    if (!teacher_id || !class_id || !subject_id || day_of_week === undefined || !start_time || !end_time) {
+    if (!teacher_id || !class_id || day_of_week === undefined || !start_time || !end_time) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
+    // Determine incoming subjects as an array (merge subject_id if provided)
+    const incomingSubjects: string[] = Array.isArray(subjects)
+      ? subjects.filter(Boolean)
+      : (subject_id ? [subject_id] : []);
 
-    // Check for time conflicts
-    const { data: conflicts, error: conflictError } = await supabase
-      .from("teacher_timetable")
-      .select("*, class:classes(name)")
-      .eq("teacher_id", teacher_id)
-      .eq("day_of_week", day_of_week)
-      .or(`and(start_time.lte.${start_time},end_time.gt.${start_time}),and(start_time.lt.${end_time},end_time.gte.${end_time}),and(start_time.gte.${start_time},end_time.lte.${end_time})`);
-
-    if (conflicts && conflicts.length > 0) {
-      const conflict = conflicts[0];
+    if (incomingSubjects.length === 0) {
       return NextResponse.json(
-        {
-          error: `This teacher already has a lecture at ${conflict.start_time} in ${conflict.class?.name || "another class"}`,
-        },
-        { status: 409 }
+        { error: "Please provide at least one subject (subjects[] or subject_id)" },
+        { status: 400 }
       );
     }
 
-    const { data: entry, error } = await supabase
+    // Check if a slot already exists for this teacher/class/day/time
+    const { data: existing } = await supabase
+      .from("teacher_timetable")
+      .select("id, subjects")
+      .eq("teacher_id", teacher_id)
+      .eq("class_id", class_id)
+      .eq("day_of_week", day_of_week)
+      .eq("start_time", start_time)
+      .eq("end_time", end_time)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      // Merge unique subjects and update
+      const current = Array.isArray(existing[0].subjects) ? existing[0].subjects : [];
+      const merged = Array.from(new Set([...current, ...incomingSubjects]));
+
+      const { data: updated, error: upErr } = await supabase
+        .from("teacher_timetable")
+        .update({ subjects: merged, room_number })
+        .eq("id", existing[0].id)
+        .select()
+        .single();
+
+      if (upErr) {
+        return NextResponse.json({ error: upErr.message }, { status: 500 });
+      }
+      return NextResponse.json({ entry: updated });
+    }
+
+    // Insert new slot with subjects array
+    const { data: entry, error: insErr } = await supabase
       .from("teacher_timetable")
       .insert({
         teacher_id,
         class_id,
-        subject_id,
+        subjects: incomingSubjects,
         day_of_week,
         start_time,
         end_time,
@@ -107,12 +129,8 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      // Check if it's a duplicate time slot error from the trigger
-      if (error.message.includes("already has a lecture")) {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insErr) {
+      return NextResponse.json({ error: insErr.message }, { status: 500 });
     }
 
     return NextResponse.json({ entry });
@@ -135,6 +153,7 @@ export async function PUT(request: NextRequest) {
       id,
       teacher_id,
       class_id,
+      subjects,
       subject_id,
       day_of_week,
       start_time,
@@ -142,38 +161,23 @@ export async function PUT(request: NextRequest) {
       room_number,
     } = body;
 
-    if (!id || !teacher_id || !class_id || !subject_id || day_of_week === undefined || !start_time || !end_time) {
+    if (!id || !teacher_id || !class_id || day_of_week === undefined || !start_time || !end_time) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
-
-    // Check for time conflicts (excluding current entry)
-    const { data: conflicts } = await supabase
-      .from("teacher_timetable")
-      .select("*, class:classes(name)")
-      .eq("teacher_id", teacher_id)
-      .eq("day_of_week", day_of_week)
-      .neq("id", id)
-      .or(`and(start_time.lte.${start_time},end_time.gt.${start_time}),and(start_time.lt.${end_time},end_time.gte.${end_time}),and(start_time.gte.${start_time},end_time.lte.${end_time})`);
-
-    if (conflicts && conflicts.length > 0) {
-      const conflict = conflicts[0];
-      return NextResponse.json(
-        {
-          error: `This teacher already has a lecture at ${conflict.start_time} in ${conflict.class?.name || "another class"}`,
-        },
-        { status: 409 }
-      );
-    }
+    // Coalesce subjects: prefer array, else wrap single subject_id if given
+    const updatedSubjects: string[] | null = Array.isArray(subjects)
+      ? subjects.filter(Boolean)
+      : (subject_id ? [subject_id] : null);
 
     const { data: entry, error } = await supabase
       .from("teacher_timetable")
       .update({
         teacher_id,
         class_id,
-        subject_id,
+        subjects: updatedSubjects ?? undefined,
         day_of_week,
         start_time,
         end_time,
@@ -185,9 +189,6 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      if (error.message.includes("already has a lecture")) {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
