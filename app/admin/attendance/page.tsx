@@ -8,6 +8,7 @@ import { AdminAttendanceMarkingModal } from "@/components/modals/admin-attendanc
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 import { LateReasonModal } from "@/components/modals/late-reason-modal";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -41,40 +42,38 @@ interface AttendanceRecord {
   student_id?: string;
   teacher_id?: string;
   date: string;
-  status: "present" | "absent" | "leave";
+  status: "present" | "absent" | "leave" | "late";
   remarks?: string;
+  created_at?: string;
+  updated_at?: string;
+  out_time?: string;
   approved_by?: string;
   approved_at?: string;
+  rejected_by?: string;
+  rejected_at?: string;
+  approval_status?: "approved" | "rejected";
+  is_late?: boolean;
+  late_reason?: string;
 }
 
-interface CurrentUser {
-  id: string;
-  role: string;
-  school_id?: string;
-}
+export default function AdminAttendancePage() {
 
-export default function AttendanceManagement() {
-  const router = useRouter();
+  const [markingTargetId, setMarkingTargetId] = useState("");
+  const [markingTargetName, setMarkingTargetName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isFetching, setIsFetching] = useState(false);
-  const [activeTab, setActiveTab] = useState("students");
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-
-  // Classes and Students state
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClass, setSelectedClass] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
-  const [studentAttendance, setStudentAttendance] = useState<
-    AttendanceRecord[]
-  >([]);
-  const [studentsPastLoaded, setStudentsPastLoaded] = useState(false);
-
-  // Teachers state
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [teacherAttendance, setTeacherAttendance] = useState<
-    AttendanceRecord[]
-  >([]);
+  const [selectedClass, setSelectedClass] = useState<string>("");
+  const [studentAttendance, setStudentAttendance] = useState<AttendanceRecord[]>([]);
+  const [teacherAttendance, setTeacherAttendance] = useState<AttendanceRecord[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
+  const [activeTab, setActiveTab] = useState<"students" | "teachers">("students");
+  const [studentsPastLoaded, setStudentsPastLoaded] = useState(false);
   const [teachersPastLoaded, setTeachersPastLoaded] = useState(false);
+  const [markingModalOpen, setMarkingModalOpen] = useState(false);
+  const [markingType, setMarkingType] = useState<"teacher" | "student">("student");
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaveModalData, setLeaveModalData] = useState<{
     recordId: string;
@@ -85,12 +84,6 @@ export default function AttendanceManagement() {
     approvedBy?: string;
     approvalStatus?: "approved" | "rejected";
   } | null>(null);
-  const [approvedRejectReason, setApprovedRejectReason] = useState<{
-    recordId: string;
-    status: "approved" | "rejected";
-  } | null>(null);
-
-  // Late reason modal state
   const [lateModalOpen, setLateModalOpen] = useState(false);
   const [lateModalData, setLateModalData] = useState<{
     recordId: string;
@@ -99,15 +92,11 @@ export default function AttendanceManagement() {
     date: string;
     currentReason?: string;
   } | null>(null);
-
-  // Marking modal state
-  const [markingModalOpen, setMarkingModalOpen] = useState(false);
-  const [markingType, setMarkingType] = useState<"teacher" | "student">(
-    "teacher"
-  );
-  const [markingTargetId, setMarkingTargetId] = useState("");
-  const [markingTargetName, setMarkingTargetName] = useState("");
-
+  const [approvedRejectReason, setApprovedRejectReason] = useState<{
+    recordId: string;
+    status: "approved" | "rejected";
+  } | null>(null);
+  const [studentExpectedTime, setStudentExpectedTime] = useState<string>("15:00");
   // Helper to produce local YYYY-MM-DD strings
   const toLocalDate = (d: Date) => {
     const y = d.getFullYear();
@@ -234,7 +223,22 @@ export default function AttendanceManagement() {
     setCurrentUser(user);
     setIsLoading(false);
     loadInitialData();
+    fetchSchoolSettings();
   }, []);
+
+  const fetchSchoolSettings = async () => {
+    try {
+      const res = await fetch(`/api/school-settings`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings?.school_start_time) {
+          setStudentExpectedTime(data.settings.school_start_time);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch school settings:", err);
+    }
+  };
 
   // Load classes
   useEffect(() => {
@@ -259,6 +263,10 @@ export default function AttendanceManagement() {
     useState(false);
   const [openTeacherSummaryAfterLoad, setOpenTeacherSummaryAfterLoad] =
     useState(false);
+
+  // State for upcoming teacher leaves card
+  const [isLoadingUpcomingLeaves, setIsLoadingUpcomingLeaves] = useState(false);
+  const [upcomingTeacherLeaves, setUpcomingTeacherLeaves] = useState<AttendanceRecord[]>([]);
 
   // Load students when class changes
   useEffect(() => {
@@ -321,22 +329,6 @@ export default function AttendanceManagement() {
       approvalStatus: (record as any).approval_status,
     });
     setLeaveModalOpen(true);
-  };
-
-  const openLateReason = (
-    record: AttendanceRecord | null | undefined,
-    type: "student" | "teacher",
-    name: string
-  ) => {
-    if (!record || !record.id) return;
-    setLateModalData({
-      recordId: record.id,
-      type,
-      name,
-      date: record.date,
-      currentReason: (record as any).late_reason || "",
-    });
-    setLateModalOpen(true);
   };
 
   const updateLocalRemarks = (
@@ -510,6 +502,45 @@ export default function AttendanceManagement() {
     }
   };
 
+  const fetchUpcomingTeacherLeaves = async () => {
+    try {
+      setIsLoadingUpcomingLeaves(true);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + 1);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 30);
+      const params = new URLSearchParams({
+        startDate: toLocalDate(startDate),
+        endDate: toLocalDate(endDate),
+      });
+
+      const response = await fetch(`/api/teacher-attendance?${params}`);
+      if (!response.ok) throw new Error("Failed to load upcoming leaves");
+      const result = await response.json();
+      const attendanceData = result.attendance || result;
+
+      const upcoming = (Array.isArray(attendanceData) ? attendanceData : [])
+        .filter((record) => record.status === "leave")
+        .map((record: any) => {
+          const d = new Date(record.date);
+          const localDate = toLocalDate(
+            new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+          );
+          return { ...record, date: localDate };
+        })
+        .sort((a: AttendanceRecord, b: AttendanceRecord) =>
+          a.date.localeCompare(b.date),
+        );
+
+      setUpcomingTeacherLeaves(upcoming);
+    } catch (error) {
+      console.error("Error fetching upcoming teacher leaves:", error);
+      toast.error("Failed to load upcoming leave requests");
+    } finally {
+      setIsLoadingUpcomingLeaves(false);
+    }
+  };
+
   const handleStudentAttendanceChange = async (
     studentId: string,
     date: string,
@@ -591,16 +622,6 @@ export default function AttendanceManagement() {
             )
           : returned;
         openLeaveReason(savedRecord, "student", studentName);
-      } else if (status === "late") {
-        const studentName =
-          students.find((s) => s.id === studentId)?.name || "Student";
-        const savedRecord = Array.isArray(returned)
-          ? returned.find(
-              (a: AttendanceRecord) =>
-                a.student_id === studentId && a.date === date
-            )
-          : returned;
-        openLateReason(savedRecord, "student", studentName);
       }
     } catch (error) {
       console.error("Error updating attendance:", error);
@@ -663,6 +684,7 @@ export default function AttendanceManagement() {
             )
           : returned;
         openLeaveReason(savedRecord, "teacher", teacherName);
+        fetchUpcomingTeacherLeaves();
       } else if (status === "late") {
         const teacherName =
           teachers.find((t) => t.id === teacherId)?.name || "Teacher";
@@ -940,6 +962,7 @@ export default function AttendanceManagement() {
                                 )
                               }
                               isAdmin={true}
+                              expectedTime={studentExpectedTime}
                               daysToShow={
                                 computeRange(
                                   studentRange,
@@ -1174,19 +1197,6 @@ export default function AttendanceManagement() {
                             type="teacher"
                             personName={teacher.name}
                             expectedTime={teacher.expected_time}
-                            onLateDetected={(date, recordId, name) => {
-                              const record = teacherRecords.find((r) => r.id === recordId);
-                              if (record) {
-                                setLateModalData({
-                                  recordId: record.id || "",
-                                  type: "teacher",
-                                  name: name,
-                                  date: date,
-                                  currentReason: record.late_reason || "",
-                                });
-                                setLateModalOpen(true);
-                              }
-                            }}
                             daysToShow={
                               computeRange(
                                 teacherRange,
@@ -1231,6 +1241,89 @@ export default function AttendanceManagement() {
                               }
                             }}
                           />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-4 space-y-3 border border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      Upcoming Teacher Leave Requests
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Future leaves submitted by teachers are listed here for admin review.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={fetchUpcomingTeacherLeaves}
+                    disabled={isLoadingUpcomingLeaves}
+                  >
+                    Refresh
+                  </Button>
+                </div>
+
+                {isLoadingUpcomingLeaves ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading leave requests...
+                  </div>
+                ) : upcomingTeacherLeaves.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No pending leave applications for upcoming dates.
+                  </p>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {upcomingTeacherLeaves.map((record) => {
+                      const recordTeacher =
+                        teachers.find((t) => t.id === record.teacher_id);
+                      const teacherName = recordTeacher?.name || "Teacher";
+                      const statusLabel = record.approval_status || "pending";
+                      const statusText =
+                        statusLabel === "approved"
+                          ? "Approved"
+                          : statusLabel === "rejected"
+                            ? "Rejected"
+                            : "Pending admin review";
+                      const statusClass =
+                        statusLabel === "approved"
+                          ? "text-green-600"
+                          : statusLabel === "rejected"
+                            ? "text-red-600"
+                            : "text-orange-600";
+                      return (
+                        <div
+                          key={record.id}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+                        >
+                          <div className="space-y-1 text-sm">
+                            <p className="font-semibold text-foreground">
+                              {teacherName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{record.date}</p>
+                            <p className="text-xs text-foreground max-w-[240px] truncate">
+                              {record.remarks || "No reason provided"}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`text-xs font-semibold ${statusClass}`}>
+                              {statusText}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                openLeaveReason(record, "teacher", teacherName)
+                              }
+                            >
+                              Review
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
@@ -1305,9 +1398,25 @@ export default function AttendanceManagement() {
               }}
               onApprovalStatusChanged={(recordId, status) => {
                 setApprovedRejectReason({ recordId, status });
-                // Refresh teacher attendance to show updated status
+                // Immediately update local state to reflect approval status
                 if (leaveModalData.type === "teacher") {
-                  fetchTeacherAttendance(teacherRange);
+                  setTeacherAttendance((prev) =>
+                    prev.map((record) =>
+                      record.id === recordId
+                        ? { ...record, approval_status: status }
+                        : record
+                    )
+                  );
+                  // Also refresh upcoming leaves card
+                  fetchUpcomingTeacherLeaves();
+                } else if (leaveModalData.type === "student") {
+                  setStudentAttendance((prev) =>
+                    prev.map((record) =>
+                      record.id === recordId
+                        ? { ...record, approval_status: status }
+                        : record
+                    )
+                  );
                 }
               }}
             />

@@ -105,16 +105,14 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
- * Check if attendance is marked as late (> 15 minutes after expected time)
- * @param createdAt - The timestamp when attendance was marked
- * @param expectedTime - The expected time in HH:mm format
- * @param date - The attendance date
- * @returns true if attendance is late
+ * Check if attendance is marked as late once the allowed grace period has passed.
+ * Default grace period is 15 minutes; override via thresholdMinutes when needed.
  */
 export function isAttendanceLate(
   createdAt: Date | string,
   expectedTime: string | null | undefined,
-  date: string | Date
+  date: string | Date,
+  thresholdMinutes: number = 15
 ): boolean {
   if (!expectedTime) return false;
 
@@ -132,8 +130,10 @@ export function isAttendanceLate(
   const expectedDateTime = new Date(attendanceDate);
   expectedDateTime.setHours(expectedHours, expectedMinutes, 0, 0);
 
-  // Add 15 minutes to expected time
-  const lateThresholdTime = new Date(expectedDateTime.getTime() + 15 * 60 * 1000);
+  // Add grace period to expected time
+  const lateThresholdTime = new Date(
+    expectedDateTime.getTime() + thresholdMinutes * 60 * 1000,
+  );
 
   // If created_at is after the late threshold, it's marked as late
   return created > lateThresholdTime;
@@ -173,9 +173,10 @@ export function getAttendanceTimeOffset(
 export function shouldMarkAsLate(
   createdAt: Date | string,
   expectedTime: string | null | undefined,
-  date: string | Date
+  date: string | Date,
+  thresholdMinutes: number = 15
 ): boolean {
-  return isAttendanceLate(createdAt, expectedTime, date);
+  return isAttendanceLate(createdAt, expectedTime, date, thresholdMinutes);
 }
 
 /**

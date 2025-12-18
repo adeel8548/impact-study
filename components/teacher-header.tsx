@@ -182,6 +182,19 @@ export function TeacherHeader() {
           My Attendance
         </Button>
 
+          {/* Timetable - always visible */}
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/teacher/timetable")}
+            className={`rounded-none border-b-2 ${
+              isActive("/teacher/timetable")
+                ? "text-primary font-semibold border-primary"
+                : "text-muted-foreground hover:text-foreground border-transparent"
+            }`}
+          >
+            Timetable
+          </Button>
+
         {/* Show Quizzes, Exams, Results only if teacher has assigned subjects */}
         {hasAssignedSubjects && (
           <>

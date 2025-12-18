@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Calendar, Clock, Save, Loader2, Info } from "lucide-react";
 import { markStudentAttendance } from "@/lib/actions/attendance";
+import { isAttendanceLate } from "@/lib/utils";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 
 interface CurrentUser {
@@ -34,7 +35,7 @@ export default function TeacherAttendance() {
   const [selectedDate, setSelectedDate] = useState(toLocalDate(new Date()));
   const [students, setStudents] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<
-    Record<string, "present" | "absent" | "leave">
+    Record<string, "present" | "absent" | "leave" | "late">
   >({});
   const [leaveReasons, setLeaveReasons] = useState<Record<string, string>>({});
   const [attendanceRecords, setAttendanceRecords] = useState<
@@ -42,6 +43,7 @@ export default function TeacherAttendance() {
   >({});
   const [teacherId, setTeacherId] = useState<string>("");
   const [teacherName, setTeacherName] = useState<string>("");
+    const [schoolExpectedTime, setSchoolExpectedTime] = useState<string>("15:00"); // Default school start time for students
   const classesFetchedRef = useRef(false);
   const attendanceFetchKeyRef = useRef<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -128,6 +130,7 @@ export default function TeacherAttendance() {
         if (user.id && user.role === "teacher") {
           setTeacherId(user.id);
           setTeacherName(user.name || "Teacher");
+          fetchSchoolSettings(user);
           if (!classesFetchedRef.current) {
             classesFetchedRef.current = true;
             loadTeacherClasses(user.id);
@@ -139,6 +142,23 @@ export default function TeacherAttendance() {
       setLoading(false);
     }
   }, []);
+
+  const fetchSchoolSettings = async (user: CurrentUser) => {
+    try {
+      const schoolId = (user as any).school_id;
+      if (!schoolId) return;
+
+      const res = await fetch(`/api/school-settings`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings?.school_start_time) {
+          setSchoolExpectedTime(data.settings.school_start_time);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch school settings:", err);
+    }
+  };
 
   const loadTeacherClasses = async (userId: string) => {
     try {
@@ -419,9 +439,21 @@ export default function TeacherAttendance() {
     studentId: string,
     status: "present" | "absent" | "leave",
   ) => {
+    let finalStatus = status;
+
+    // Auto-mark late if student is marked present after a 40-minute grace period
+    if (status === "present") {
+      const now = new Date();
+      const isLate = isAttendanceLate(now, schoolExpectedTime, selectedDate, 40);
+      if (isLate) {
+        finalStatus = "late";
+        toast.info("Student marked Late (>40 min after start)");
+      }
+    }
+
     setAttendance((prev) => ({
       ...prev,
-      [studentId]: status,
+      [studentId]: finalStatus,
     }));
 
     if (status !== "leave") {

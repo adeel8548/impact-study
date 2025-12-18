@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { LeaveReasonModal } from "./modals/leave-reason-modal";
 import { isAttendanceLate } from "@/lib/utils";
 
@@ -164,6 +164,8 @@ export function AttendanceGrid({
   const holidays: HolidayDate[] = [
     // Add holidays as needed (format: YYYY-MM-DD)
   ];
+
+  const isStudentGrid = type === "student";
 
   const isHoliday = (date: Date): boolean => {
     const dateStr = `${date.getFullYear()}-${String(
@@ -337,7 +339,7 @@ export function AttendanceGrid({
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-orange-500 rounded"></div>
-          <span>Late (&gt; 15 min)</span>
+          <span>Late (&gt; 40 min students / &gt; 15 min teachers)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-500 rounded"></div>
@@ -411,19 +413,42 @@ export function AttendanceGrid({
                       size="sm"
                       onClick={() => {
                         let newStatus: "present" | "absent" | "leave" | "late";
-                        
-                        // If no current status (first click), auto-detect based on time
-                        if (!status) {
-                          // For teachers with expected time, check if late
-                          if (type === "teacher" && expectedTime) {
-                            const isLate = isAttendanceLate(new Date(), expectedTime, dateStr);
-                            newStatus = isLate ? "late" : "present";
+
+                        if (isStudentGrid) {
+                          // Students: auto-detect late after 40 minutes on first mark
+                          if (!status) {
+                            const shouldAutoDetectLate = Boolean(expectedTime);
+                            if (shouldAutoDetectLate) {
+                              const isLate = isAttendanceLate(
+                                new Date(),
+                                expectedTime!,
+                                dateStr,
+                                40,
+                              );
+                              newStatus = isLate ? "late" : "present";
+                            } else {
+                              newStatus = "present";
+                            }
+                          } else if (status === "present") {
+                            newStatus = "absent";
+                          } else if (status === "absent") {
+                            newStatus = "leave";
+                          } else if (status === "leave") {
+                            newStatus = "late";
                           } else {
                             newStatus = "present";
                           }
                         } else {
-                          // Subsequent clicks cycle through statuses
-                          if (status === "present") {
+                          // Teachers/admin: keep late detection (15 min default)
+                          if (!status) {
+                            const shouldAutoDetectLate = expectedTime && type === "teacher";
+                            if (shouldAutoDetectLate) {
+                              const isLate = isAttendanceLate(new Date(), expectedTime!, dateStr);
+                              newStatus = isLate ? "late" : "present";
+                            } else {
+                              newStatus = "present";
+                            }
+                          } else if (status === "present") {
                             newStatus = "absent";
                           } else if (status === "absent") {
                             newStatus = "leave";
@@ -488,7 +513,7 @@ export function AttendanceGrid({
                               : "❌ Rejected"}
                           </button>
                         ) : (
-                          // Show info icon for pending leave
+                          // Show eye icon for pending leave
                           <Button
                             variant="ghost"
                             size="sm"
@@ -507,13 +532,13 @@ export function AttendanceGrid({
                                 : "Add leave reason"
                             }
                           >
-                            <Info className="w-4 h-4" />
+                            <Eye className="w-4 h-4" />
                           </Button>
                         )}
                       </>
                     )}
                     {/* Late reason icon - show when late is marked */}
-                    {status === "late" && record && (
+                    {!isStudentGrid && status === "late" && record && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -529,7 +554,7 @@ export function AttendanceGrid({
                             : "Add late reason"
                         }
                       >
-                        <Info className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                       </Button>
                     )}
                   </div>

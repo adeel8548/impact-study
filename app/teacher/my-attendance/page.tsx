@@ -3,11 +3,23 @@
 import { useEffect, useState, useRef } from "react";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { TeacherOwnAttendanceViewModal } from "@/components/modals/teacher-own-attendance-view-modal";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 import { LateReasonModal } from "@/components/modals/late-reason-modal";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Calendar, Eye } from "lucide-react";
 import { isAttendanceLate } from "@/lib/utils";
 
 interface AttendanceRecord {
@@ -22,6 +34,35 @@ interface AttendanceRecord {
   remarks?: string;
   late_reason?: string;
 }
+
+const toIsoDate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+
+const getTomorrowIsoDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return toIsoDate(tomorrow);
+};
+
+const getCurrentWeekStart = () => {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // If Sunday, go back 6 days, else go to Monday
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diff);
+  return toIsoDate(monday);
+};
+
+const getCurrentWeekEnd = () => {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = day === 0 ? 0 : 7 - day; // If Sunday, it's the end, else calculate to Sunday
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() + diff);
+  return toIsoDate(sunday);
+};
 
 export default function TeacherMyAttendancePage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +79,18 @@ export default function TeacherMyAttendancePage() {
   const [lateModalOpen, setLateModalOpen] = useState(false);
   const [pendingLateAttendanceId, setPendingLateAttendanceId] = useState<string | null>(null);
   const [teacherExpectedTime, setTeacherExpectedTime] = useState<string | null>(null);
+  const [todayLocked, setTodayLocked] = useState(false);
+  const [applyLeaveModalOpen, setApplyLeaveModalOpen] = useState(false);
+  const [applyLeaveDate, setApplyLeaveDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = toIsoDate(tomorrow);
+    const weekEnd = getCurrentWeekEnd();
+    // If tomorrow is beyond current week, default to week start, else use tomorrow
+    return tomorrowStr <= weekEnd ? tomorrowStr : getCurrentWeekStart();
+  });
+  const [applyLeaveReason, setApplyLeaveReason] = useState("");
+  const [isApplyingLeave, setIsApplyingLeave] = useState(false);
 
   // OUT button state: disabled until midnight after marking out
   const [outDisabled, setOutDisabled] = useState(false);
@@ -116,8 +169,11 @@ export default function TeacherMyAttendancePage() {
     };
   };
 
-  // Explicit setter for today's status (present, absent, or leave)
-  const handleSetStatus = async (status: "present" | "absent" | "leave" | "late") => {
+  // Explicit setter for today's status (present or late)
+  const handleSetStatus = async (
+    status: "present" | "late",
+    opts?: { skipAutoLate?: boolean },
+  ) => {
     if (!teacher) return;
 
     const today = new Date();
@@ -127,7 +183,11 @@ export default function TeacherMyAttendancePage() {
 
     // Auto-detect late if marking as present
     let finalStatus = status;
-    if (status === "present" && teacherExpectedTime) {
+    if (
+      status === "present" &&
+      teacherExpectedTime &&
+      !opts?.skipAutoLate
+    ) {
       const isLate = isAttendanceLate(new Date(), teacherExpectedTime, date);
       if (isLate) {
         finalStatus = "late";
@@ -169,6 +229,7 @@ export default function TeacherMyAttendancePage() {
         const filtered = (prev || []).filter((a) => a.date !== date);
         return [...filtered, updated];
       });
+      setTodayLocked(true);
 
       // If marked as late, show late reason modal
       if (finalStatus === "late" && updated && updated.id) {
@@ -206,30 +267,30 @@ export default function TeacherMyAttendancePage() {
       return;
     }
 
-    // Status cycle: no status → (auto-detect) → absent → leave → late → present
-    let nextStatus: "present" | "absent" | "leave" | "late";
-    
-    if (!record || !record.status) {
-      // Auto-detect on first click
-      if (teacherExpectedTime) {
-        const isLate = isAttendanceLate(new Date(), teacherExpectedTime, dateStr);
-        nextStatus = isLate ? "late" : "present";
-      } else {
-        nextStatus = "present";
-      }
-    } else if (record.status === "present") {
-      nextStatus = "absent";
-    } else if (record.status === "absent") {
-      nextStatus = "leave";
-    } else if (record.status === "leave") {
-      nextStatus = "late";
-    } else if (record.status === "late") {
-      nextStatus = "present";
-    } else {
-      nextStatus = "present";
+    if (todayLocked) {
+      toast.info("Today's attendance is locked after the initial mark.");
+      return;
     }
 
-    await handleSetStatus(nextStatus);
+    if (record?.status === "absent" || record?.status === "leave") {
+      toast.info("Contact admin to update absent or leave records");
+      return;
+    }
+
+    if (!record || !record.status) {
+      await handleSetStatus("present");
+      return;
+    }
+
+    if (record.status === "present") {
+      await handleSetStatus("late");
+      return;
+    }
+
+    if (record.status === "late") {
+      await handleSetStatus("present", { skipAutoLate: true });
+      return;
+    }
   };
 
   // compute ms until next local midnight and schedule enabling the OUT button
@@ -275,9 +336,11 @@ export default function TeacherMyAttendancePage() {
         } else {
           setOutDisabled(false);
         }
+        setTodayLocked(true);
       } else {
         setTodayAttendanceId(null);
         setOutDisabled(false);
+        setTodayLocked(false);
       }
     } catch (e) {
       // ignore
@@ -341,6 +404,97 @@ export default function TeacherMyAttendancePage() {
       toast.error("Failed to record OUT time");
     } finally {
       setIsFetching(false);
+    }
+  };
+
+  const handleApplyLeaveSubmit = async () => {
+    if (!teacher) return;
+    if (!applyLeaveDate) {
+      toast.error("Select a date for leave");
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(applyLeaveDate);
+    selected.setHours(0, 0, 0, 0);
+
+    if (selected <= today) {
+      toast.error("Please choose a future date");
+      return;
+    }
+
+    // Check if date is within current week
+    const weekStart = new Date(getCurrentWeekStart());
+    const weekEnd = new Date(getCurrentWeekEnd());
+    weekStart.setHours(0, 0, 0, 0);
+    weekEnd.setHours(23, 59, 59, 999);
+    
+    if (selected < weekStart || selected > weekEnd) {
+      toast.error("You can only apply for leave within the current week");
+      return;
+    }
+
+    if (!applyLeaveReason.trim()) {
+      toast.error("Please explain why you need the leave");
+      return;
+    }
+
+    const existing = attendance.find((a) => a.date === applyLeaveDate);
+    if (existing) {
+      toast.error("Attendance already exists for that date");
+      return;
+    }
+
+    try {
+      setIsApplyingLeave(true);
+      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+      const payload = {
+        teacher_id: teacher.id,
+        date: applyLeaveDate,
+        status: "leave",
+        remarks: applyLeaveReason.trim(),
+        school_id: user.school_id,
+      } as any;
+
+      const response = await fetch("/api/teacher-attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Failed to submit leave request");
+
+      const body = await response.json();
+      const returned = body.attendance || body;
+      const newRecord = Array.isArray(returned) ? returned[0] : returned;
+
+      if (newRecord) {
+        if (newRecord.date) {
+          try {
+            const normalizedDate = new Date(newRecord.date);
+            newRecord.date = toIsoDate(normalizedDate);
+          } catch (error) {
+            newRecord.date = applyLeaveDate;
+          }
+        } else {
+          newRecord.date = applyLeaveDate;
+        }
+
+        setAttendance((prev) => {
+          const filtered = (prev || []).filter((a) => a.date !== newRecord.date);
+          return [...filtered, newRecord];
+        });
+      }
+
+      toast.success("Leave request submitted");
+      setApplyLeaveModalOpen(false);
+      setApplyLeaveReason("");
+    } catch (error) {
+      console.error("Error applying leave:", error);
+      toast.error("Unable to submit leave request");
+    } finally {
+      setIsApplyingLeave(false);
     }
   };
 
@@ -408,6 +562,18 @@ export default function TeacherMyAttendancePage() {
     fetchExpectedTime();
   }, []);
 
+  useEffect(() => {
+    if (applyLeaveModalOpen) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = toIsoDate(tomorrow);
+      const weekEnd = getCurrentWeekEnd();
+      // If tomorrow is beyond current week, default to week start, else use tomorrow
+      setApplyLeaveDate(tomorrowStr <= weekEnd ? tomorrowStr : getCurrentWeekStart());
+      setApplyLeaveReason("");
+    }
+  }, [applyLeaveModalOpen]);
+
   const fetchAttendance = async (teacherId: string, date: Date) => {
     try {
       setIsFetching(true);
@@ -463,70 +629,6 @@ export default function TeacherMyAttendancePage() {
     }
   };
 
-  const handleAttendanceToggle = async (
-    date: string,
-    currentStatus: "present" | "absent" | null,
-  ) => {
-    if (!teacher) return;
-
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(
-      today.getMonth() + 1,
-    ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-
-    // Only allow marking attendance for today
-    if (date !== todayStr) {
-      toast.error("You can only mark attendance for today");
-      return;
-    }
-
-    try {
-      const newStatus = currentStatus === "present" ? "absent" : "present";
-
-      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-
-      const response = await fetch("/api/teacher-attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teacher_id: teacher.id,
-          date,
-          status: newStatus,
-          school_id: user.school_id,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to update attendance");
-
-      const body = await response.json();
-      const raw = body.attendance || body;
-      // Support both single object and array responses
-      const updatedRecord = Array.isArray(raw) ? raw[0] : raw;
-
-      // Normalize date on the returned record
-      if (updatedRecord && updatedRecord.date) {
-        try {
-          const d = new Date(updatedRecord.date);
-          updatedRecord.date = `${d.getFullYear()}-${String(
-            d.getMonth() + 1,
-          ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        } catch (e) {
-          // ignore
-        }
-      }
-
-      setAttendance((prev) => {
-        const filtered = (prev || []).filter((a) => a.date !== date);
-        return [...filtered, updatedRecord];
-      });
-      toast.success("Attendance updated");
-    } catch (error) {
-      console.error("Error updating attendance:", error);
-      toast.error("Failed to update attendance");
-    }
-  };
-
   if (isLoading) return null;
 
   const year = currentDate.getFullYear();
@@ -538,6 +640,9 @@ export default function TeacherMyAttendancePage() {
   const today = new Date();
   const isCurrentMonth =
     today.getFullYear() === year && today.getMonth() === month;
+
+  const minLeaveDate = getCurrentWeekStart();
+  const maxLeaveDate = getCurrentWeekEnd();
 
   // Create array of days to display
   const days: (number | null)[] = [];
@@ -634,6 +739,13 @@ export default function TeacherMyAttendancePage() {
               <Calendar className="w-4 h-4" />
               View Records
             </button>
+            <button
+              onClick={() => setApplyLeaveModalOpen(true)}
+              disabled={!teacher || isFetching}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span>Apply Leave</span>
+            </button>
           </div>
         </div>
 
@@ -705,8 +817,8 @@ export default function TeacherMyAttendancePage() {
 
           <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>Click on today's date in the calendar below</strong> to mark attendance. Each click cycles through:
-              <br />✓ Present → ✗ Absent → 🏥 Leave → ⏰ Late → ✓ Present
+              <strong>Click on today's date in the calendar below</strong> to mark your arrival. The system will auto-detect if you are late
+              (after your expected time) and swap the day to ⏰ Late, otherwise it stays ✓ Present. Absent/leave statuses are controlled by the admin and shown here for reference only.
             </p>
           </div>
         </Card>
@@ -798,6 +910,7 @@ export default function TeacherMyAttendancePage() {
                   const sunday = isSunday(day);
                   const today_ = isToday(day);
                   const past = isPastDay(day);
+                  const lockedToday = today_ && todayLocked;
 
                   return (
                     <div
@@ -815,11 +928,11 @@ export default function TeacherMyAttendancePage() {
                                   ? "bg-orange-500 text-white"
                                   : "bg-gray-200 text-gray-700"
                       } ${
-                        sunday || !today_
+                        sunday || !today_ || lockedToday
                           ? "opacity-50 cursor-not-allowed"
                           : "cursor-pointer hover:shadow-md"
                       }`}
-                      onClick={() => !sunday && today_ && handleGridBoxClick(day, record)}
+                      onClick={() => !sunday && today_ && !lockedToday && handleGridBoxClick(day, record)}
                     >
                       <div
                         className="text-center w-full pointer-events-none"
@@ -877,7 +990,7 @@ export default function TeacherMyAttendancePage() {
                           }
                           className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
                         >
-                          🛈
+                          <Eye className="w-3 h-3" />
                         </button>
                       )}
                       
@@ -894,7 +1007,7 @@ export default function TeacherMyAttendancePage() {
                           }
                           className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
                         >
-                          🛈
+                          <Eye className="w-3 h-3" />
                         </button>
                       )}
                     </div>
@@ -977,13 +1090,78 @@ export default function TeacherMyAttendancePage() {
           />
         )}
 
+        <Dialog
+          open={applyLeaveModalOpen}
+          onOpenChange={(open) => setApplyLeaveModalOpen(open)}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Apply for Leave</DialogTitle>
+              <DialogDescription>
+                Request leave for any day in the current week only. You can edit the reason until the admin approves or
+                rejects the request.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="leave-date">Leave Date (Current Week Only)</Label>
+                <Input
+                  id="leave-date"
+                  type="date"
+                  min={minLeaveDate}
+                  max={maxLeaveDate}
+                  value={applyLeaveDate}
+                  onChange={(e) => setApplyLeaveDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="leave-reason">Reason</Label>
+                <Textarea
+                  id="leave-reason"
+                  value={applyLeaveReason}
+                  onChange={(e) => setApplyLeaveReason(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Keep it clear and concise; you can revise the note until it is approved or rejected.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 flex-wrap justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setApplyLeaveModalOpen(false)}
+                disabled={isApplyingLeave}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleApplyLeaveSubmit}
+                disabled={isApplyingLeave || !applyLeaveReason.trim()}
+              >
+                {isApplyingLeave ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Leave"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Instructions */}
         <Card className="p-6 bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-500">
           <h3 className="font-semibold text-foreground mb-2">How to use</h3>
           <ul className="text-sm text-foreground space-y-1">
             <li>
-              ✓ <strong>Today's box only:</strong> Click to toggle between
-              Present and Absent (only for today)
+              ✓ <strong>Today's box only:</strong> Tap to mark Present; the view auto-detects Late arrivals and toggles between the two. Absent/leave records are read-only—you'll need admin support to change them.
             </li>
             <li>
               ✓ <strong>Past days:</strong> Display your recorded attendance
@@ -1019,9 +1197,11 @@ export default function TeacherMyAttendancePage() {
 
         {/* Late Reason Modal */}
         {teacher && (() => {
-          const existingRecord = attendance.find(r => r.id === pendingLateAttendanceId);
+          const existingRecord = attendance.find(
+            (r) => r.id === pendingLateAttendanceId,
+          );
           const hasExistingReason = !!existingRecord?.late_reason;
-          
+
           return (
             <LateReasonModal
               open={lateModalOpen}
@@ -1032,14 +1212,15 @@ export default function TeacherMyAttendancePage() {
                 }
               }}
               teacherName={teacher.name}
-              attendanceDate={new Date().toLocaleDateString()}
+              attendanceDate={existingRecord?.date || new Date().toLocaleDateString()}
               isAdmin={false}
               currentReason={existingRecord?.late_reason || ""}
               readOnly={hasExistingReason}
-              forceClose={!hasExistingReason}
+              requireReason={false}
+              forceClose={false}
               onConfirm={async (reason) => {
                 if (!pendingLateAttendanceId) return;
-                
+
                 try {
                   const response = await fetch("/api/late-reason", {
                     method: "POST",

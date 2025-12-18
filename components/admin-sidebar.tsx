@@ -20,6 +20,8 @@ import {
   Clipboard,
   Grid,
   FileText,
+  Settings,
+  Calendar,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
@@ -29,6 +31,7 @@ const menuItems = [
   { href: "/admin/teachers", label: "Teachers", icon: Briefcase },
   { href: "/admin/classes", label: "Classes", icon: Grid },
   { href: "/admin/attendance", label: "Attendance", icon: Clock },
+  { href: "/admin/timetable", label: "Timetable", icon: Calendar },
   { href: "/admin/subjects", label: "Subjects", icon: Book },
   { href: "/admin/chapters", label: "Chapters Schedule ", icon: Layers },
   // { href: "/admin/revisions", label: "Revisions", icon: FileText },
@@ -36,6 +39,7 @@ const menuItems = [
   // { href: "/admin/quizzes", label: "Quizzes", icon: BookOpen },
   { href: "/admin/student-results", label: "Student Results", icon: Notebook },
   { href: "/admin/quiz-results", label: "Quiz Results", icon: Notebook },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
   // { href: "/admin/fees", label: "Fees", icon: DollarSign },
   // { href: "/admin/salaries", label: "Salaries", icon: BarChart3 },
 ];

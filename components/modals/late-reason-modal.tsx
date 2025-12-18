@@ -24,6 +24,7 @@ interface LateReasonModalProps {
   readOnly?: boolean;
   forceClose?: boolean; // If true, prevent closing without proper reason (teacher side)
   onConfirm: (reason: string) => Promise<void>;
+  requireReason?: boolean;
 }
 
 export function LateReasonModal({
@@ -36,6 +37,7 @@ export function LateReasonModal({
   readOnly = false,
   forceClose = false,
   onConfirm,
+  requireReason,
 }: LateReasonModalProps) {
   const [reason, setReason] = useState(currentReason);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +45,10 @@ export function LateReasonModal({
   // Minimum characters required for teacher (not for admin)
   const MIN_CHARS = forceClose ? 10 : 0;
   const canClose = !forceClose || reason.length >= MIN_CHARS;
-  const canSubmit = reason.trim() && reason.length >= MIN_CHARS;
+  const shouldRequireReason = requireReason ?? true;
+  const canSubmit = shouldRequireReason
+    ? reason.trim().length >= MIN_CHARS
+    : reason.length >= MIN_CHARS;
 
   // Update reason when currentReason changes or modal opens
   useEffect(() => {
@@ -53,7 +58,7 @@ export function LateReasonModal({
   }, [open, currentReason]);
 
   const handleSubmit = async () => {
-    if (!canSubmit) {
+    if (!canSubmit && shouldRequireReason) {
       toast.error(`Please provide at least ${MIN_CHARS} characters for the reason`);
       return;
     }
@@ -137,7 +142,8 @@ export function LateReasonModal({
             <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
               <p className="text-sm text-orange-800 dark:text-orange-200">
                 <strong>Note:</strong> Late attendance (marked after 15 minutes of expected
-                time) will be recorded as "Present - Late" with the reason you provide.
+                time) will be recorded as "Present - Late"{shouldRequireReason ? " with the reason you provide." : "."}
+                {!shouldRequireReason && " You can close the dialog without entering a reason."}
                 {forceClose && !isAdmin && <> You must provide at least {MIN_CHARS} characters before submitting.</>}
               </p>
             </div>
