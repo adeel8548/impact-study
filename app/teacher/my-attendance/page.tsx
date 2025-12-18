@@ -79,6 +79,7 @@ export default function TeacherMyAttendancePage() {
   const [lateModalOpen, setLateModalOpen] = useState(false);
   const [pendingLateAttendanceId, setPendingLateAttendanceId] = useState<string | null>(null);
   const [teacherExpectedTime, setTeacherExpectedTime] = useState<string | null>(null);
+  const [schoolStartTime, setSchoolStartTime] = useState<string>("15:00");
   const [todayLocked, setTodayLocked] = useState(false);
   const [applyLeaveModalOpen, setApplyLeaveModalOpen] = useState(false);
   const [applyLeaveDate, setApplyLeaveDate] = useState(() => {
@@ -91,6 +92,7 @@ export default function TeacherMyAttendancePage() {
   });
   const [applyLeaveReason, setApplyLeaveReason] = useState("");
   const [isApplyingLeave, setIsApplyingLeave] = useState(false);
+  const [applyLeaveError, setApplyLeaveError] = useState<string | null>(null);
 
   // OUT button state: disabled until midnight after marking out
   const [outDisabled, setOutDisabled] = useState(false);
@@ -410,7 +412,9 @@ export default function TeacherMyAttendancePage() {
   const handleApplyLeaveSubmit = async () => {
     if (!teacher) return;
     if (!applyLeaveDate) {
-      toast.error("Select a date for leave");
+      const errMsg = "Select a date for leave";
+      toast.error(errMsg);
+      setApplyLeaveError(errMsg);
       return;
     }
 
@@ -419,8 +423,29 @@ export default function TeacherMyAttendancePage() {
     const selected = new Date(applyLeaveDate);
     selected.setHours(0, 0, 0, 0);
 
-    if (selected <= today) {
-      toast.error("Please choose a future date");
+    // For same-day leave: allow only if at least 1 hour before school start time
+    if (selected.getTime() === today.getTime()) {
+      const now = new Date();
+      const [startHour, startMin] = schoolStartTime.split(':').map(Number);
+      const schoolStart = new Date();
+      schoolStart.setHours(startHour, startMin, 0, 0);
+      
+      // One hour before school start
+      const oneHourBefore = new Date(schoolStart.getTime() - 60 * 60 * 1000);
+      
+      if (now >= oneHourBefore) {
+        const errMsg = "You can only apply for leave at least 1 hour before academy start time";
+        toast.error(errMsg);
+        setApplyLeaveError(errMsg);
+        return;
+      }
+    }
+
+    // For past dates, reject
+    if (selected < today) {
+      const errMsg = "Cannot apply for leave on past dates";
+      toast.error(errMsg);
+      setApplyLeaveError(errMsg);
       return;
     }
 
@@ -431,23 +456,30 @@ export default function TeacherMyAttendancePage() {
     weekEnd.setHours(23, 59, 59, 999);
     
     if (selected < weekStart || selected > weekEnd) {
-      toast.error("You can only apply for leave within the current week");
+      const errMsg = "You can only apply for leave within the current week";
+      toast.error(errMsg);
+      setApplyLeaveError(errMsg);
       return;
     }
 
     if (!applyLeaveReason.trim()) {
-      toast.error("Please explain why you need the leave");
+      const errMsg = "Please explain why you need the leave";
+      toast.error(errMsg);
+      setApplyLeaveError(errMsg);
       return;
     }
 
     const existing = attendance.find((a) => a.date === applyLeaveDate);
     if (existing) {
-      toast.error("Attendance already exists for that date");
+      const errMsg = "Attendance already exists for that date";
+      toast.error(errMsg);
+      setApplyLeaveError(errMsg);
       return;
     }
 
     try {
       setIsApplyingLeave(true);
+      setApplyLeaveError(null);
       const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
       const payload = {
         teacher_id: teacher.id,
@@ -490,6 +522,7 @@ export default function TeacherMyAttendancePage() {
       toast.success("Leave request submitted");
       setApplyLeaveModalOpen(false);
       setApplyLeaveReason("");
+      setApplyLeaveError(null);
     } catch (error) {
       console.error("Error applying leave:", error);
       toast.error("Unable to submit leave request");
@@ -560,19 +593,49 @@ export default function TeacherMyAttendancePage() {
       }
     };
     fetchExpectedTime();
+
+    // Fetch school settings for start time
+    const fetchSchoolSettings = async () => {
+      try {
+        const res = await fetch('/api/school-settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.school_start_time) {
+            setSchoolStartTime(data.school_start_time.slice(0, 5));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching school settings:", error);
+      }
+    };
+    fetchSchoolSettings();
   }, []);
 
   useEffect(() => {
     if (applyLeaveModalOpen) {
+      const now = new Date();
+      const [startHour, startMin] = schoolStartTime.split(':').map(Number);
+      const schoolStart = new Date();
+      schoolStart.setHours(startHour, startMin, 0, 0);
+      const oneHourBefore = new Date(schoolStart.getTime() - 60 * 60 * 1000);
+      
+      // If current time is before 1 hour before school start, allow today
+      const canApplyToday = now < oneHourBefore;
+      
+      const today = new Date();
+      const todayStr = toIsoDate(today);
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const tomorrowStr = toIsoDate(tomorrow);
       const weekEnd = getCurrentWeekEnd();
-      // If tomorrow is beyond current week, default to week start, else use tomorrow
-      setApplyLeaveDate(tomorrowStr <= weekEnd ? tomorrowStr : getCurrentWeekStart());
+      
+      // Default to today if allowed, otherwise tomorrow
+      const defaultDate = canApplyToday && todayStr <= weekEnd ? todayStr : tomorrowStr;
+      setApplyLeaveDate(defaultDate <= weekEnd ? defaultDate : getCurrentWeekStart());
       setApplyLeaveReason("");
+      setApplyLeaveError(null);
     }
-  }, [applyLeaveModalOpen]);
+  }, [applyLeaveModalOpen, schoolStartTime]);
 
   const fetchAttendance = async (teacherId: string, date: Date) => {
     try {
@@ -641,7 +704,7 @@ export default function TeacherMyAttendancePage() {
   const isCurrentMonth =
     today.getFullYear() === year && today.getMonth() === month;
 
-  const minLeaveDate = getCurrentWeekStart();
+  const minLeaveDate = toIsoDate(today);
   const maxLeaveDate = getCurrentWeekEnd();
 
   // Create array of days to display
@@ -1102,6 +1165,12 @@ export default function TeacherMyAttendancePage() {
                 rejects the request.
               </DialogDescription>
             </DialogHeader>
+
+            {applyLeaveError && (
+              <div className="rounded-md border border-red-300 bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200 p-3 text-sm">
+                {applyLeaveError}
+              </div>
+            )}
 
             <div className="space-y-4 mt-4">
               <div className="space-y-2">

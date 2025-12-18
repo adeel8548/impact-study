@@ -443,7 +443,7 @@ export default function TimetablePage() {
           {/* Timetable Grid */}
           <Card className="p-6 overflow-x-auto">
             <div className="min-w-[1200px]">
-              <table className="w-full border-collapse">
+              <table className="w-full border-collapse overflow-x-auto">
                 <thead>
                   <tr>
                     <th className="border border-border bg-secondary p-2 text-sm font-semibold">
