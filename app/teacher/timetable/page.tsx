@@ -9,12 +9,14 @@ import { Loader2, Calendar, Clock } from "lucide-react";
 interface TimetableEntry {
   id: string;
   teacher_id?: string;
+  teacher_name?: string;
   day_of_week: number;
   start_time: string;
   end_time: string;
   room_number?: string;
   class_name?: string;
   subject_name?: string;
+  subjects?: string[];
 }
 
 const DAYS = [
@@ -47,10 +49,24 @@ export default function TeacherTimetablePage() {
   const [loading, setLoading] = useState(true);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [teacherName, setTeacherName] = useState("");
+  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
+    // Load subjects and timetable
+    fetchSubjects();
     fetchTimetable();
   }, []);
+
+  const fetchSubjects = async () => {
+    try {
+      const res = await fetch(`/api/subjects`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setSubjects(data.subjects || []);
+    } catch (err) {
+      console.warn("Failed to load subjects for timetable", err);
+    }
+  };
 
   const fetchTimetable = async () => {
     try {
@@ -84,16 +100,24 @@ export default function TeacherTimetablePage() {
     }
   };
 
+  const resolveSubjectNames = (entry: TimetableEntry) => {
+    if (Array.isArray(entry.subjects) && entry.subjects.length > 0) {
+      return entry.subjects
+        .map((sid) => subjects.find((s) => s.id === sid)?.name || "Subject")
+        .join(", ");
+    }
+    return entry.subject_name || "Subject";
+  };
+
   const getTimetableGrid = () => {
-    const grid: { [key: string]: TimetableEntry | null } = {};
+    const grid: { [key: string]: TimetableEntry[] } = {};
 
     DAYS.forEach(({ value }) => {
-      TIME_SLOTS.forEach(time => {
+      TIME_SLOTS.forEach((time) => {
         const key = `${value}-${time}`;
-        const entry = timetable.find(
-          e => e.day_of_week === value && e.start_time === time
+        grid[key] = timetable.filter(
+          (e) => e.day_of_week === value && e.start_time === time
         );
-        grid[key] = entry || null;
       });
     });
 
@@ -162,20 +186,28 @@ export default function TeacherTimetablePage() {
                         </td>
                         {DAYS.map((day) => {
                           const key = `${day.value}-${time}`;
-                          const entry = timetableGrid[key];
+                          const entries = timetableGrid[key] || [];
 
                           return (
                             <td
                               key={day.value}
                               className="border border-border p-2 align-top min-h-[70px]"
                             >
-                              {entry && (
-                                <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-950 border-l-4 border-blue-500 rounded p-3 shadow-sm">
+                              {entries.map((entry) => (
+                                <div
+                                  key={entry.id}
+                                  className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-950 border-l-4 border-blue-500 rounded p-3 shadow-sm mb-2"
+                                >
                                   <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
                                     {entry.class_name}
                                   </div>
+                                  {entry.teacher_name && (
+                                    <div className="text-sm text-blue-800 dark:text-blue-200 mb-1">
+                                      👤 {entry.teacher_name}
+                                    </div>
+                                  )}
                                   <div className="text-sm text-blue-700 dark:text-blue-300 mb-1">
-                                    📚 {entry.subject_name}
+                                    📚 {resolveSubjectNames(entry)}
                                   </div>
                                   <div className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
@@ -187,7 +219,7 @@ export default function TeacherTimetablePage() {
                                     </div>
                                   )}
                                 </div>
-                              )}
+                              ))}
                             </td>
                           );
                         })}
