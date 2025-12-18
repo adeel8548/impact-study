@@ -84,10 +84,12 @@ export default function TimetablePage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [pageErrors, setPageErrors] = useState<string[]>([]);
   
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
@@ -116,19 +118,58 @@ export default function TimetablePage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [teachersRes, classesRes, subjectsRes, timetableRes] = await Promise.all([
-        fetch(`/api/teachers`),
-        fetch(`/api/classes`),
-        fetch(`/api/subjects`),
-        fetch(`/api/timetable`),
-      ]);
 
-      const [teachersData, classesData, subjectsData, timetableData] = await Promise.all([
-        teachersRes.json(),
-        classesRes.json(),
-        subjectsRes.json(),
-        timetableRes.json(),
-      ]);
+      const requests = [
+        { key: "teachers", promise: fetch(`/api/teachers`) },
+        { key: "classes", promise: fetch(`/api/classes`) },
+        { key: "subjects", promise: fetch(`/api/subjects`) },
+        { key: "timetable", promise: fetch(`/api/timetable`) },
+      ];
+
+      const settled = await Promise.allSettled(requests.map(r => r.promise));
+      const errs: string[] = [];
+
+      const getBody = async (res: Response) => {
+        try {
+          const txt = await res.text();
+          try {
+            return JSON.parse(txt);
+          } catch {
+            return { error: txt || "Unexpected error" };
+          }
+        } catch {
+          return { error: "Unexpected error" };
+        }
+      };
+
+      let teachersData: any = { teachers: [] };
+      let classesData: any = { classes: [] };
+      let subjectsData: any = { subjects: [] };
+      let timetableData: any = { timetable: [] };
+
+      for (let i = 0; i < settled.length; i++) {
+        const reqKey = requests[i].key;
+        const result = settled[i];
+        if (result.status === "fulfilled") {
+          const res = result.value as Response;
+          if (!res.ok) {
+            const body = await getBody(res);
+            const msg = body?.error || body?.message || `Failed to load ${reqKey}`;
+            toast.error(`${reqKey.toUpperCase()} error: ${msg}`);
+            errs.push(`${reqKey.toUpperCase()} error: ${msg}`);
+          } else {
+            const body = await getBody(res);
+            if (reqKey === "teachers") teachersData = body;
+            if (reqKey === "classes") classesData = body;
+            if (reqKey === "subjects") subjectsData = body;
+            if (reqKey === "timetable") timetableData = body;
+          }
+        } else {
+          const msg = `${reqKey.toUpperCase()} error: ${result.reason?.message || "Request failed"}`;
+          toast.error(msg);
+          errs.push(msg);
+        }
+      }
 
       setTeachers(teachersData.teachers || []);
       setClasses(classesData.classes || []);
@@ -139,9 +180,11 @@ export default function TimetablePage() {
         end_time: (t.end_time || "").slice(0, 5),
       }));
       setTimetable(normalized);
+      setPageErrors(errs);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load timetable data");
+      setPageErrors(["Failed to load timetable data"]);
     } finally {
       setLoading(false);
     }
@@ -166,6 +209,7 @@ export default function TimetablePage() {
     setStartTime("15:00");
     setEndTime("15:30");
     setRoomNumber("");
+    setFormError(null);
     setModalOpen(true);
   };
 
@@ -178,24 +222,26 @@ export default function TimetablePage() {
     setStartTime(entry.start_time);
     setEndTime(entry.end_time);
     setRoomNumber(entry.room_number || "");
+    setFormError(null);
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!selectedTeacher || !selectedClass || !selectedSubject) {
       toast.error("Please select teacher, class, and subject");
+      setFormError("Please select teacher, class, and subject");
       return;
     }
 
     if (startTime >= endTime) {
       toast.error("End time must be after start time");
+      setFormError("End time must be after start time");
       return;
     }
 
     try {
       setSaving(true);
-      const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-
+      setFormError(null);
       const payload = {
         id: editingEntry?.id,
         teacher_id: selectedTeacher,
@@ -214,8 +260,22 @@ export default function TimetablePage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to save lecture");
+        const txt = await response.text();
+        let serverMsg = "Failed to save lecture";
+        try {
+          const json = JSON.parse(txt || "{}");
+          serverMsg = json.error || json.message || serverMsg;
+        } catch {
+          serverMsg = txt || serverMsg;
+        }
+
+        // Friendly hint for overlaps if server provided a generic message
+        if (/overlap|conflict|already/i.test(serverMsg)) {
+          // keep as is
+        } else if (serverMsg === "Failed to save lecture") {
+          serverMsg = "Could not save lecture. Possible conflict with another lecture.";
+        }
+        throw new Error(serverMsg);
       }
 
       toast.success(editingEntry ? "Lecture updated successfully" : "Lecture added successfully");
@@ -224,6 +284,7 @@ export default function TimetablePage() {
     } catch (error: any) {
       console.error("Error saving lecture:", error);
       toast.error(error.message || "Failed to save lecture");
+      setFormError(error.message || "Failed to save lecture");
     } finally {
       setSaving(false);
     }
@@ -246,14 +307,22 @@ export default function TimetablePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete lecture");
+        const txt = await response.text();
+        let serverMsg = "Failed to delete lecture";
+        try {
+          const json = JSON.parse(txt || "{}");
+          serverMsg = json.error || json.message || serverMsg;
+        } catch {
+          serverMsg = txt || serverMsg;
+        }
+        throw new Error(serverMsg);
       }
 
       toast.success("Lecture deleted successfully");
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting lecture:", error);
-      toast.error("Failed to delete lecture");
+      toast.error(error.message || "Failed to delete lecture");
     }
   };
 
@@ -311,6 +380,17 @@ export default function TimetablePage() {
               Add Lecture
             </Button>
           </div>
+
+          {pageErrors.length > 0 && (
+            <div className="rounded-md border border-red-300 bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200 p-4">
+              <div className="font-semibold mb-2">There were some errors:</div>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                {pageErrors.map((e, idx) => (
+                  <li key={idx}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Filters */}
           <Card className="p-4">
@@ -446,6 +526,11 @@ export default function TimetablePage() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {formError && (
+              <div className="rounded-md border border-red-300 bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200 p-3 text-sm">
+                {formError}
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Teacher *</Label>
               <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
