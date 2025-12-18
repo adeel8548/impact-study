@@ -312,7 +312,7 @@ export function LeaveReasonModal({
           )}
 
           {/* Save button for non-admin canEdit users */}
-          {canEdit && !isAdmin && !isEditingReason && (
+          {canEdit && !isAdmin && !isEditingReason && !isReasonLocked && (
             <Button onClick={handleSave} disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isLoading ? "Saving..." : "Save Changes"}
