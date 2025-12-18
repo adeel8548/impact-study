@@ -22,6 +22,7 @@ import {
   FileText,
   Settings,
   Calendar,
+  Trophy,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
@@ -38,7 +39,7 @@ const menuItems = [
   { href: "/admin/series-exams", label: " Schedules", icon: Clipboard },
   // { href: "/admin/quizzes", label: "Quizzes", icon: BookOpen },
   { href: "/admin/student-results", label: "Student Results", icon: Notebook },
-  { href: "/admin/quiz-results", label: "Quiz Results", icon: Notebook },
+  { href: "/admin/quiz-results", label: "Quiz Results", icon: Trophy },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   // { href: "/admin/fees", label: "Fees", icon: DollarSign },
   // { href: "/admin/salaries", label: "Salaries", icon: BarChart3 },
