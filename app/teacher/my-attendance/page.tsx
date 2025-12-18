@@ -93,6 +93,7 @@ export default function TeacherMyAttendancePage() {
   const [applyLeaveReason, setApplyLeaveReason] = useState("");
   const [isApplyingLeave, setIsApplyingLeave] = useState(false);
   const [applyLeaveError, setApplyLeaveError] = useState<string | null>(null);
+  const [todayStr, setTodayStr] = useState(toIsoDate(new Date()));
 
   // OUT button state: disabled until midnight after marking out
   const [outDisabled, setOutDisabled] = useState(false);
@@ -324,10 +325,6 @@ export default function TeacherMyAttendancePage() {
   // Watch attendance changes to determine OUT button state for today
   useEffect(() => {
     try {
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(
-        today.getMonth() + 1,
-      ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
       const todayRecord = attendance.find((a) => a.date === todayStr);
       if (todayRecord) {
         // Store the UUID of today's attendance row for PUT update
@@ -347,7 +344,13 @@ export default function TeacherMyAttendancePage() {
     } catch (e) {
       // ignore
     }
-  }, [attendance, teacher]);
+  }, [attendance, teacher, todayStr]);
+
+  // Tick todayStr so lock state resets when the day changes (even if attendance state is unchanged)
+  useEffect(() => {
+    const id = setInterval(() => setTodayStr(toIsoDate(new Date())), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleMarkOut = async () => {
     if (!teacher) return;

@@ -372,7 +372,7 @@ export default function TimetablePage() {
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
-      <div className="flex-1 p-8 md:pl-72 ">
+      <div className="flex-1 p-8 md:pl-72 overflow-x-scroll ">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
