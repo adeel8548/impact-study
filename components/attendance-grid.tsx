@@ -339,7 +339,7 @@ export function AttendanceGrid({
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-orange-500 rounded"></div>
-          <span>Late (&gt; 40 min students / &gt; 15 min teachers)</span>
+          <span>Late (&gt; 40 min students / &gt; 20 min teachers)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-500 rounded"></div>
@@ -439,11 +439,11 @@ export function AttendanceGrid({
                             newStatus = "present";
                           }
                         } else {
-                          // Teachers/admin: keep late detection (15 min default)
+                          // Teachers/admin: auto-detect late after 20 minutes on first mark
                           if (!status) {
                             const shouldAutoDetectLate = expectedTime && type === "teacher";
                             if (shouldAutoDetectLate) {
-                              const isLate = isAttendanceLate(new Date(), expectedTime!, dateStr);
+                              const isLate = isAttendanceLate(new Date(), expectedTime!, dateStr, 20);
                               newStatus = isLate ? "late" : "present";
                             } else {
                               newStatus = "present";

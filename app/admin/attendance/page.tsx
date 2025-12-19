@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Calendar, History } from "lucide-react";
-import { sortByNewest } from "@/lib/utils";
+import { isAttendanceLate, sortByNewest } from "@/lib/utils";
 import { AttendanceRangeModal } from "@/components/modals/attendance-range-modal";
 import { AttendanceSummaryModal } from "@/components/modals/attendance-summary-modal";
 
@@ -35,6 +35,7 @@ interface Teacher {
   id: string;
   name: string;
   email?: string;
+  expected_time?: string;
 }
 
 interface AttendanceRecord {
@@ -646,11 +647,20 @@ export default function AdminAttendancePage() {
         return;
       }
 
+      const teacherExpectedTime = teachers.find((t) => t.id === teacherId)?.expected_time;
+      let finalStatus = status;
+      if (status === "present" && teacherExpectedTime) {
+        const late = isAttendanceLate(new Date(), teacherExpectedTime, date, 20);
+        if (late) {
+          finalStatus = "late";
+        }
+      }
+
       // POST upsert is supported server-side; send single object
       const payload = {
         teacher_id: teacherId,
         date,
-        status,
+        status: finalStatus,
         school_id: currentUser?.school_id,
       };
       const response = await fetch("/api/teacher-attendance", {
@@ -674,7 +684,7 @@ export default function AdminAttendancePage() {
 
       toast.success("Attendance updated");
 
-      if (status === "leave") {
+      if (finalStatus === "leave") {
         const teacherName =
           teachers.find((t) => t.id === teacherId)?.name || "Teacher";
         const savedRecord = Array.isArray(returned)
@@ -685,7 +695,7 @@ export default function AdminAttendancePage() {
           : returned;
         openLeaveReason(savedRecord, "teacher", teacherName);
         fetchUpcomingTeacherLeaves();
-      } else if (status === "late") {
+      } else if (finalStatus === "late") {
         const teacherName =
           teachers.find((t) => t.id === teacherId)?.name || "Teacher";
         const savedRecord = Array.isArray(returned)
@@ -1222,7 +1232,7 @@ export default function AdminAttendancePage() {
                             isAdmin={true}
                             type="teacher"
                             personName={teacher.name}
-                            expectedTime={studentExpectedTime}
+                            expectedTime={teacher.expected_time || studentExpectedTime}
                             daysToShow={
                               computeRange(
                                 teacherRange,
@@ -1397,6 +1407,11 @@ export default function AdminAttendancePage() {
             type={markingType}
             targetId={markingTargetId}
             targetName={markingTargetName}
+            expectedTime={
+              markingType === "teacher"
+                ? teachers.find((t) => t.id === markingTargetId)?.expected_time
+                : undefined
+            }
             onMarked={handleMarked}
           />
 

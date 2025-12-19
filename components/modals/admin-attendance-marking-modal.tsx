@@ -14,6 +14,7 @@ import { Loader2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { LateReasonModal } from "@/components/modals/late-reason-modal";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
+import { isAttendanceLate } from "@/lib/utils";
 
 interface AdminAttendanceMarkingModalProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface AdminAttendanceMarkingModalProps {
   type: "teacher" | "student";
   targetId: string;
   targetName: string;
+  expectedTime?: string;
   onMarked?: (date: string, status: "present" | "absent" | "leave" | "late") => void;
 }
 
@@ -30,6 +32,7 @@ export function AdminAttendanceMarkingModal({
   type,
   targetId,
   targetName,
+  expectedTime,
   onMarked,
 }: AdminAttendanceMarkingModalProps) {
   const [selectedDate, setSelectedDate] = useState(
@@ -42,6 +45,18 @@ export function AdminAttendanceMarkingModal({
 
   // Handle status selection
   const handleStatusSelect = async (status: "present" | "absent" | "leave" | "late") => {
+    if (
+      type === "teacher" &&
+      status === "present" &&
+      expectedTime &&
+      isAttendanceLate(new Date(), expectedTime, selectedDate, 20)
+    ) {
+      // Auto-redirect to late flow when teacher is beyond expected time + grace
+      setSelectedStatus("late");
+      setLateReasonModalOpen(true);
+      return;
+    }
+
     setSelectedStatus(status);
 
     // If Present or Absent, submit directly

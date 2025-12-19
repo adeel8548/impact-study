@@ -191,7 +191,8 @@ export default function TeacherMyAttendancePage() {
       teacherExpectedTime &&
       !opts?.skipAutoLate
     ) {
-      const isLate = isAttendanceLate(new Date(), teacherExpectedTime, date);
+      // Teacher self-mark: allow 20 minutes grace (was 15) to avoid false late for slight delays
+      const isLate = isAttendanceLate(new Date(), teacherExpectedTime, date, 20);
       if (isLate) {
         finalStatus = "late";
       }
@@ -387,6 +388,13 @@ export default function TeacherMyAttendancePage() {
   const handleMarkOut = async () => {
     if (!teacher) return;
     if (outDisabled) return;
+
+    // Ensure today's attendance exists
+    const todayRecord = attendance.find((a) => a.date === todayStr);
+    if (!todayRecord) {
+      toast.error("Mark your attendance before OUT.");
+      return;
+    }
 
     // Validate that we have today's attendance record UUID
     if (!todayAttendanceId) {

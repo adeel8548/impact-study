@@ -108,27 +108,51 @@ export function formatCurrency(amount: number): string {
  * Check if attendance is marked as late once the allowed grace period has passed.
  * Default grace period is 15 minutes; override via thresholdMinutes when needed.
  */
+const parseExpectedTime = (expectedTime: string | null | undefined): { hours: number; minutes: number } | null => {
+  if (!expectedTime) return null;
+
+  const trimmed = expectedTime.trim();
+
+  // Handle formats like "3:45 PM" or "03:45 pm"
+  const ampmMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+  if (ampmMatch) {
+    let hours = Number(ampmMatch[1]);
+    const minutes = Number(ampmMatch[2]);
+    const meridiem = ampmMatch[3].toLowerCase();
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    if (meridiem === "pm" && hours !== 12) hours += 12;
+    if (meridiem === "am" && hours === 12) hours = 0;
+    return { hours, minutes };
+  }
+
+  // Handle HH:mm (24h). If hour is in 1-7 range, assume PM for afternoon-evening schools.
+  const parts = trimmed.split(":");
+  if (parts.length >= 2) {
+    const hoursRaw = Number(parts[0]);
+    const minutes = Number(parts[1]);
+    if (Number.isNaN(hoursRaw) || Number.isNaN(minutes)) return null;
+    const hours = hoursRaw >= 1 && hoursRaw <= 7 ? hoursRaw + 12 : hoursRaw; // assume PM for 1-7
+    return { hours, minutes };
+  }
+
+  return null;
+};
+
 export function isAttendanceLate(
   createdAt: Date | string,
   expectedTime: string | null | undefined,
   date: string | Date,
   thresholdMinutes: number = 15
 ): boolean {
-  if (!expectedTime) return false;
+  const parsed = parseExpectedTime(expectedTime);
+  if (!parsed) return false;
 
   const created = new Date(createdAt);
   const attendanceDate = new Date(date);
-  
-  // Extract HH:mm from expected time
-  const [expectedHours, expectedMinutes] = expectedTime.split(":").map(Number);
-  
-  if (isNaN(expectedHours) || isNaN(expectedMinutes)) {
-    return false;
-  }
 
   // Create expected datetime (same date as attendance, but with expected time)
   const expectedDateTime = new Date(attendanceDate);
-  expectedDateTime.setHours(expectedHours, expectedMinutes, 0, 0);
+  expectedDateTime.setHours(parsed.hours, parsed.minutes, 0, 0);
 
   // Add grace period to expected time
   const lateThresholdTime = new Date(
@@ -148,19 +172,14 @@ export function getAttendanceTimeOffset(
   expectedTime: string | null | undefined,
   date: string | Date
 ): number {
-  if (!expectedTime) return 0;
+  const parsed = parseExpectedTime(expectedTime);
+  if (!parsed) return 0;
 
   const created = new Date(createdAt);
   const attendanceDate = new Date(date);
-  
-  const [expectedHours, expectedMinutes] = expectedTime.split(":").map(Number);
-  
-  if (isNaN(expectedHours) || isNaN(expectedMinutes)) {
-    return 0;
-  }
 
   const expectedDateTime = new Date(attendanceDate);
-  expectedDateTime.setHours(expectedHours, expectedMinutes, 0, 0);
+  expectedDateTime.setHours(parsed.hours, parsed.minutes, 0, 0);
 
   const diffMs = created.getTime() - expectedDateTime.getTime();
   return Math.floor(diffMs / (1000 * 60)); // Convert to minutes
