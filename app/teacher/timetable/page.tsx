@@ -18,7 +18,6 @@ interface TimetableEntry {
   id: string;
   teacher_id?: string;
   teacher_name?: string;
-  class_id?: string;
   day_of_week: number;
   start_time: string;
   end_time: string;

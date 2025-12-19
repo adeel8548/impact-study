@@ -111,6 +111,7 @@ export default function TimetablePage() {
   const [filterTime, setFilterTime] = useState<string>("all");
 
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkTeacherId, setBulkTeacherId] = useState("keep");
   const [bulkRoomNumber, setBulkRoomNumber] = useState("");
   const [bulkStartTime, setBulkStartTime] = useState("");
   const [bulkEndTime, setBulkEndTime] = useState("");
@@ -402,7 +403,14 @@ export default function TimetablePage() {
   };
 
   const handleBulkUpdate = async () => {
-    if (!bulkRoomNumber && !bulkStartTime && !bulkEndTime) {
+    const teacherChange = bulkTeacherId && bulkTeacherId !== "keep";
+
+    if (teacherChange && bulkTimeFilter === "all" && filterTime === "all") {
+      toast.error("Please select a time slot to change the teacher for this class.");
+      return;
+    }
+
+    if (!teacherChange && !bulkRoomNumber && !bulkStartTime && !bulkEndTime) {
       toast.error("Please enter at least one field to update");
       return;
     }
@@ -415,11 +423,12 @@ export default function TimetablePage() {
     try {
       setBulkUpdating(true);
 
-      // Find all entries matching the selected teacher and class
-      let entriesToUpdate = timetable.filter(
-        (entry) =>
-          entry.teacher_id === filterTeacher && entry.class_id === filterClass
-      );
+      // Find entries matching selected class (required) and optional teacher
+      let entriesToUpdate = timetable.filter((entry) => {
+        if (entry.class_id !== filterClass) return false;
+        if (filterTeacher !== "all" && entry.teacher_id !== filterTeacher) return false;
+        return true;
+      });
 
       // If time filter is selected, only update that specific time slot
       if (bulkTimeFilter !== "all") {
@@ -441,7 +450,7 @@ export default function TimetablePage() {
       for (const entry of entriesToUpdate) {
         const payload: any = {
           id: entry.id,
-          teacher_id: entry.teacher_id,
+          teacher_id: teacherChange ? bulkTeacherId : entry.teacher_id,
           class_id: entry.class_id,
           subjects: entry.subjects || (entry.subject_id ? [entry.subject_id] : []),
           day_of_week: entry.day_of_week,
@@ -622,20 +631,21 @@ export default function TimetablePage() {
                 </Select>
               </div>
             </div>
-            {filterTeacher !== "all" && filterClass !== "all" && (
+            {filterClass !== "all" && (
               <div className="mt-4 flex justify-end">
                 <Button 
                   onClick={() => {
+                    setBulkTeacherId(filterTeacher !== "all" ? filterTeacher : "keep");
                     setBulkRoomNumber("");
                     setBulkStartTime("");
                     setBulkEndTime("");
-                    setBulkTimeFilter("all");
+                    setBulkTimeFilter(filterTime !== "all" ? filterTime : "all");
                     setBulkEditOpen(true);
                   }}
                   variant="outline"
                 >
                   <Edit className="w-4 h-4 mr-2" />
-                  Edit Room/Time for All Lectures
+                  Bulk edit (teacher / room / time)
                 </Button>
               </div>
             )}
@@ -698,19 +708,21 @@ export default function TimetablePage() {
                                 <div className="flex gap-1 mt-2">
                                   <Button
                                     size="sm"
-                                    variant="ghost"
+                                    variant="default"
                                     onClick={() => openEditModal(entry)}
-                                    className="h-6 px-2"
+                                    // className="h-7 px-3 bg-blue-600 hover:bg-blue-700 text-white"
                                   >
-                                    <Edit className="w-3 h-3" />
+                                    <Edit className="w-3 h-3 mr-1" />
+                                    
                                   </Button>
                                   <Button
                                     size="sm"
-                                    variant="ghost"
+                                    variant="destructive"
                                     onClick={() => { setDeleteEntry(entry); setDeleteOpen(true); }}
-                                    className="h-6 px-2 text-red-600 hover:text-red-700"
+                                    // className="h-7 px-3"
                                   >
-                                    <Trash2 className="w-3 h-3" />
+                                    <Trash2 className="w-3 h-3 mr-1" />
+                                    {/* Delete */}
                                   </Button>
                                 </div>
                               </div>
@@ -961,26 +973,50 @@ export default function TimetablePage() {
             </DialogContent>
           </Dialog>
 
-          {/* Bulk Edit Room/Time Modal */}
+          {/* Bulk Edit Modal */}
           <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Edit Room/Time for All Lectures</DialogTitle>
+                <DialogTitle>Bulk update lectures</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Update room number and/or time for all lectures of{" "}
-                  <span className="font-semibold">
-                    {teachers.find(t => t.id === filterTeacher)?.name}
-                  </span>{" "}
-                  teaching{" "}
+                  Update teacher, room, and/or time for all lectures of class{" "}
                   <span className="font-semibold">
                     {classes.find(c => c.id === filterClass)?.name}
                   </span>
+                  {filterTeacher !== "all" && (
+                    <>
+                      {" "}currently taught by {" "}
+                      <span className="font-semibold">
+                        {teachers.find(t => t.id === filterTeacher)?.name}
+                      </span>
+                    </>
+                  )}
                   {bulkTimeFilter !== "all" 
                     ? ` at ${formatTo12Hour(bulkTimeFilter)}.`
                     : " for the entire week."}
                 </p>
+
+                <div className="space-y-2">
+                  <Label>Change Teacher (Optional)</Label>
+                  <Select value={bulkTeacherId} onValueChange={setBulkTeacherId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Keep existing teacher" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="keep">Keep existing teacher</SelectItem>
+                      {teachers.map((teacher) => (
+                        <SelectItem key={teacher.id} value={teacher.id}>
+                          {teacher.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a teacher to replace for all matching lectures; leave empty to keep current teachers.
+                  </p>
+                </div>
 
                 <div className="space-y-2">
                   <Label>Filter by Time Slot (Optional)</Label>
