@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import {
   BarChart3,
   Users,
@@ -10,6 +12,7 @@ import {
   Clock,
   DollarSign,
   Briefcase,
+  MessageSquare,
   LogOut,
   Menu,
   X,
@@ -24,7 +27,6 @@ import {
   Calendar,
   Trophy,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
 const menuItems = [
   // { href: "/admin", label: "Dashboard", icon: Home },
@@ -32,6 +34,7 @@ const menuItems = [
   { href: "/admin/teachers", label: "Teachers", icon: Briefcase },
   { href: "/admin/classes", label: "Classes", icon: Grid },
   { href: "/admin/attendance", label: "Attendance", icon: Clock },
+  { href: "/admin/chat", label: "Chat", icon: MessageSquare },
   { href: "/admin/timetable", label: "Timetable", icon: Calendar },
   { href: "/admin/subjects", label: "Subjects", icon: Book },
   { href: "/admin/chapters", label: "Chapters Schedule ", icon: Layers },
@@ -49,6 +52,9 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [conversationIds, setConversationIds] = useState<string[]>([]);
+  const supabase = useMemo(() => createClient(), []);
 
   const clearUser = () => {
     localStorage.removeItem("currentUser");
@@ -74,6 +80,58 @@ export function AdminSidebar() {
     router.push("/");
   };
 
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      const userId = data.user?.id;
+      if (!userId) return;
+
+      const { data: convs, error: convErr } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("admin_id", userId);
+      if (convErr) return;
+      const ids = (convs || []).map((c) => c.id);
+      setConversationIds(ids);
+
+      if (ids.length > 0) {
+        const { count } = await supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("is_read", false)
+          .neq("sender_id", userId)
+          .in("conversation_id", ids);
+        setUnreadCount(count || 0);
+      }
+
+      const channel = supabase
+        .channel(`admin-messages-${userId}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages" },
+          (payload) => {
+            const row: any = payload.new;
+            if (row.sender_id === userId) return;
+            if (ids.includes(row.conversation_id)) setUnreadCount((c) => c + 1);
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "messages" },
+          (payload) => {
+            const row: any = payload.new;
+            if (row.is_read && row.sender_id !== userId && ids.includes(row.conversation_id)) {
+              setUnreadCount((c) => Math.max(0, c - 1));
+            }
+          },
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    });
+  }, [supabase]);
+
   // Do not auto-signout on reload/close to avoid unintended logout
   // Users can use the explicit Logout button.
 
@@ -87,7 +145,7 @@ export function AdminSidebar() {
       </button>
 
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-sidebar overflow-y-auto border-r border-sidebar-border transition-transform duration-300 z-40 ${
+        className={`fixed left-0 top-0 h-full w-64 bg-sidebar  border-r border-sidebar-border transition-transform duration-300 z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -102,7 +160,7 @@ export function AdminSidebar() {
           </h1>
         </div>
 
-        <nav className="flex flex-col gap-1 p-4 flex-1">
+        <nav className="flex flex-col gap-1 p-4 flex-1 h-[500px] overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -119,7 +177,14 @@ export function AdminSidebar() {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium flex items-center gap-2">
+                  {item.label}
+                  {item.href === "/admin/chat" && unreadCount > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500 text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </span>
               </Link>
             );
           })}

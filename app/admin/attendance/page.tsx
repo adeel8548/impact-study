@@ -58,7 +58,6 @@ interface AttendanceRecord {
 }
 
 export default function AdminAttendancePage() {
-
   const [markingTargetId, setMarkingTargetId] = useState("");
   const [markingTargetName, setMarkingTargetName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -67,14 +66,22 @@ export default function AdminAttendancePage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
-  const [studentAttendance, setStudentAttendance] = useState<AttendanceRecord[]>([]);
-  const [teacherAttendance, setTeacherAttendance] = useState<AttendanceRecord[]>([]);
+  const [studentAttendance, setStudentAttendance] = useState<
+    AttendanceRecord[]
+  >([]);
+  const [teacherAttendance, setTeacherAttendance] = useState<
+    AttendanceRecord[]
+  >([]);
   const [isFetching, setIsFetching] = useState(false);
-  const [activeTab, setActiveTab] = useState<"students" | "teachers">("students");
+  const [activeTab, setActiveTab] = useState<"students" | "teachers">(
+    "students"
+  );
   const [studentsPastLoaded, setStudentsPastLoaded] = useState(false);
   const [teachersPastLoaded, setTeachersPastLoaded] = useState(false);
   const [markingModalOpen, setMarkingModalOpen] = useState(false);
-  const [markingType, setMarkingType] = useState<"teacher" | "student">("student");
+  const [markingType, setMarkingType] = useState<"teacher" | "student">(
+    "student"
+  );
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaveModalData, setLeaveModalData] = useState<{
     recordId: string;
@@ -97,7 +104,8 @@ export default function AdminAttendancePage() {
     recordId: string;
     status: "approved" | "rejected";
   } | null>(null);
-  const [studentExpectedTime, setStudentExpectedTime] = useState<string>("15:00");
+  const [studentExpectedTime, setStudentExpectedTime] =
+    useState<string>("15:00");
   // Helper to produce local YYYY-MM-DD strings
   const toLocalDate = (d: Date) => {
     const y = d.getFullYear();
@@ -267,7 +275,9 @@ export default function AdminAttendancePage() {
 
   // State for upcoming teacher leaves card
   const [isLoadingUpcomingLeaves, setIsLoadingUpcomingLeaves] = useState(false);
-  const [upcomingTeacherLeaves, setUpcomingTeacherLeaves] = useState<AttendanceRecord[]>([]);
+  const [upcomingTeacherLeaves, setUpcomingTeacherLeaves] = useState<
+    AttendanceRecord[]
+  >([]);
 
   // Load students when class changes
   useEffect(() => {
@@ -525,12 +535,12 @@ export default function AdminAttendancePage() {
         .map((record: any) => {
           const d = new Date(record.date);
           const localDate = toLocalDate(
-            new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+            new Date(d.getFullYear(), d.getMonth(), d.getDate())
           );
           return { ...record, date: localDate };
         })
         .sort((a: AttendanceRecord, b: AttendanceRecord) =>
-          a.date.localeCompare(b.date),
+          a.date.localeCompare(b.date)
         );
 
       setUpcomingTeacherLeaves(upcoming);
@@ -647,10 +657,17 @@ export default function AdminAttendancePage() {
         return;
       }
 
-      const teacherExpectedTime = teachers.find((t) => t.id === teacherId)?.expected_time;
+      const teacherExpectedTime = teachers.find(
+        (t) => t.id === teacherId
+      )?.expected_time;
       let finalStatus = status;
       if (status === "present" && teacherExpectedTime) {
-        const late = isAttendanceLate(new Date(), teacherExpectedTime, date, 20);
+        const late = isAttendanceLate(
+          new Date(),
+          teacherExpectedTime,
+          date,
+          20
+        );
         if (late) {
           finalStatus = "late";
         }
@@ -776,7 +793,9 @@ export default function AdminAttendancePage() {
 
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as "students" | "teachers")}
+            onValueChange={(val) =>
+              setActiveTab(val as "students" | "teachers")
+            }
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2">
@@ -992,7 +1011,12 @@ export default function AdminAttendancePage() {
                                 )
                               }
                               onLateDetected={(date, recordId, personName) =>
-                                openLateReasonModal(date, recordId, personName, "student")
+                                openLateReasonModal(
+                                  date,
+                                  recordId,
+                                  personName,
+                                  "student"
+                                )
                               }
                               isAdmin={true}
                               expectedTime={studentExpectedTime}
@@ -1007,28 +1031,28 @@ export default function AdminAttendancePage() {
                                     : undefined
                                 ).days
                               }
-                                startDateIso={
-                                  computeRange(
-                                    studentRange,
-                                    studentRange === "custom"
-                                      ? {
-                                          start: studentCustomStart,
-                                          end: studentCustomEnd,
-                                        }
-                                      : undefined
-                                  ).start
-                                }
+                              startDateIso={
+                                computeRange(
+                                  studentRange,
+                                  studentRange === "custom"
+                                    ? {
+                                        start: studentCustomStart,
+                                        end: studentCustomEnd,
+                                      }
+                                    : undefined
+                                ).start
+                              }
                               maxDateIso={toLocalDate(new Date())}
-                                  onNavigate={(startIso, endIso) => {
-                                    setStudentCustomStart(startIso);
-                                    setStudentCustomEnd(endIso);
-                                    setStudentRange("custom");
-                                    setOpenStudentSummaryAfterLoad(false);
-                                    fetchStudentAttendance("custom", {
-                                      start: startIso,
-                                      end: endIso,
-                                    });
-                                  }}
+                              onNavigate={(startIso, endIso) => {
+                                setStudentCustomStart(startIso);
+                                setStudentCustomEnd(endIso);
+                                setStudentRange("custom");
+                                setOpenStudentSummaryAfterLoad(false);
+                                fetchStudentAttendance("custom", {
+                                  start: startIso,
+                                  end: endIso,
+                                });
+                              }}
                             />
                           </div>
                         );
@@ -1081,65 +1105,69 @@ export default function AdminAttendancePage() {
                       );
                     })()}
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="px-2 py-1 flex items-center gap-2 border border-border rounded text-sm bg-background text-foreground"
-                        onClick={() => setTeacherRangeModalOpen(true)}
-                        title="Open custom range picker"
-                      >
-                        <Calendar className="w-4 h-4" />
-                      </button>
-                      <select
-                        value={teacherRange}
-                        onChange={(e) => setTeacherRange(e.target.value)}
-                        className="px-3 py-1 border border-border rounded text-sm bg-background text-foreground"
-                      >
-                        <option value="last7">Last 7 days</option>
-                        <option value="last15">Last 15 days</option>
-                        <option value="lastMonth">Last month (calendar)</option>
-                        <option value="currentMonth">Current month</option>
-                        <option value="last3Months">Last 3 months</option>
-                        <option value="last6Months">Last 6 months</option>
-                        <option value="lastYear">Last year</option>
-                        {/* <option value="custom">Custom range</option> */}
-                      </select>
-
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col md:flex-row items-center gap-2">
+                      <div className="flex gap-1">
                         <button
-                          className={`px-3 py-1 rounded text-sm font-medium transition-all ${
-                            isFetching
-                              ? "bg-secondary text-muted-foreground cursor-not-allowed"
-                              : "bg-primary text-primary-foreground hover:bg-primary/90"
-                          }`}
-                          onClick={() => {
-                            setOpenTeacherSummaryAfterLoad(true);
-                            fetchTeacherAttendance(
-                              teacherRange,
-                              teacherRange === "custom"
-                                ? {
-                                    start: teacherCustomStart,
-                                    end: teacherCustomEnd,
-                                  }
-                                : undefined
-                            );
-                          }}
-                          disabled={
-                            isFetching ||
-                            (teacherRange === "custom" &&
-                              (!teacherCustomStart || !teacherCustomEnd))
-                          }
+                          className="px-2 py-1 flex items-center gap-2 border border-border rounded text-sm bg-background text-foreground"
+                          onClick={() => setTeacherRangeModalOpen(true)}
+                          title="Open custom range picker"
                         >
-                          {isFetching ? (
-                            <span className="flex items-center gap-2">
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Loading...
-                            </span>
-                          ) : (
-                            "Load"
-                          )}
+                          <Calendar className="w-4 h-4" />
                         </button>
+                        <select
+                          value={teacherRange}
+                          onChange={(e) => setTeacherRange(e.target.value)}
+                          className="px-3 py-1 border border-border rounded text-sm bg-background text-foreground"
+                        >
+                          <option value="last7">Last 7 days</option>
+                          <option value="last15">Last 15 days</option>
+                          <option value="lastMonth">
+                            Last month (calendar)
+                          </option>
+                          <option value="currentMonth">Current month</option>
+                          <option value="last3Months">Last 3 months</option>
+                          <option value="last6Months">Last 6 months</option>
+                          <option value="lastYear">Last year</option>
+                          {/* <option value="custom">Custom range</option> */}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2 md:fmt-0">
+                        <div className="flex items-center gap-2">
+                          <button
+                            className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                              isFetching
+                                ? "bg-secondary text-muted-foreground cursor-not-allowed"
+                                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                            }`}
+                            onClick={() => {
+                              setOpenTeacherSummaryAfterLoad(true);
+                              fetchTeacherAttendance(
+                                teacherRange,
+                                teacherRange === "custom"
+                                  ? {
+                                      start: teacherCustomStart,
+                                      end: teacherCustomEnd,
+                                    }
+                                  : undefined
+                              );
+                            }}
+                            disabled={
+                              isFetching ||
+                              (teacherRange === "custom" &&
+                                (!teacherCustomStart || !teacherCustomEnd))
+                            }
+                          >
+                            {isFetching ? (
+                              <span className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Loading...
+                              </span>
+                            ) : (
+                              "Load"
+                            )}
+                          </button>
 
-                        {/* <div className="text-sm text-muted-foreground ml-2">
+                          {/* <div className="text-sm text-muted-foreground ml-2">
                           {(() =>
                             computeRange(
                               teacherRange,
@@ -1151,31 +1179,32 @@ export default function AdminAttendancePage() {
                                 : undefined
                             ).label)()}
                         </div> */}
-                      </div>
+                        </div>
 
-                      {teachersPastLoaded && (
-                        <button
-                          className="px-3 py-1 border border-border rounded text-sm"
-                          onClick={() => {
-                            setTeacherAttendance((prev) =>
-                              prev.filter(
-                                (a) => a.date === toLocalDate(new Date())
-                              )
-                            );
-                            setTeachersPastLoaded(false);
-                          }}
-                        >
-                          Clear
-                        </button>
-                      )}
-                      {teacherAttendance.length > 0 && (
-                        <button
-                          className="px-3 py-1 border border-border rounded text-sm"
-                          onClick={() => setTeacherSummaryOpen(true)}
-                        >
-                         <History className="w-4 h-4 mr-1 inline-block" />
-                        </button>
-                      )}
+                        {teachersPastLoaded && (
+                          <button
+                            className="px-3 py-1 border border-border rounded text-sm"
+                            onClick={() => {
+                              setTeacherAttendance((prev) =>
+                                prev.filter(
+                                  (a) => a.date === toLocalDate(new Date())
+                                )
+                              );
+                              setTeachersPastLoaded(false);
+                            }}
+                          >
+                            Clear
+                          </button>
+                        )}
+                        {teacherAttendance.length > 0 && (
+                          <button
+                            className="px-3 py-1 border border-border rounded text-sm"
+                            onClick={() => setTeacherSummaryOpen(true)}
+                          >
+                            <History className="w-4 h-4 mr-1 inline-block" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1227,12 +1256,19 @@ export default function AdminAttendancePage() {
                               )
                             }
                             onLateDetected={(date, recordId, personName) =>
-                              openLateReasonModal(date, recordId, personName, "teacher")
+                              openLateReasonModal(
+                                date,
+                                recordId,
+                                personName,
+                                "teacher"
+                              )
                             }
                             isAdmin={true}
                             type="teacher"
                             personName={teacher.name}
-                            expectedTime={teacher.expected_time || studentExpectedTime}
+                            expectedTime={
+                              teacher.expected_time || studentExpectedTime
+                            }
                             daysToShow={
                               computeRange(
                                 teacherRange,
@@ -1291,7 +1327,8 @@ export default function AdminAttendancePage() {
                       Upcoming Teacher Leave Requests
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Future leaves submitted by teachers are listed here for admin review.
+                      Future leaves submitted by teachers are listed here for
+                      admin review.
                     </p>
                   </div>
                   <Button
@@ -1316,22 +1353,23 @@ export default function AdminAttendancePage() {
                 ) : (
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {upcomingTeacherLeaves.map((record) => {
-                      const recordTeacher =
-                        teachers.find((t) => t.id === record.teacher_id);
+                      const recordTeacher = teachers.find(
+                        (t) => t.id === record.teacher_id
+                      );
                       const teacherName = recordTeacher?.name || "Teacher";
                       const statusLabel = record.approval_status || "pending";
                       const statusText =
                         statusLabel === "approved"
                           ? "Approved"
                           : statusLabel === "rejected"
-                            ? "Rejected"
-                            : "Pending admin review";
+                          ? "Rejected"
+                          : "Pending admin review";
                       const statusClass =
                         statusLabel === "approved"
                           ? "text-green-600"
                           : statusLabel === "rejected"
-                            ? "text-red-600"
-                            : "text-orange-600";
+                          ? "text-red-600"
+                          : "text-orange-600";
                       return (
                         <div
                           key={record.id}
@@ -1341,13 +1379,17 @@ export default function AdminAttendancePage() {
                             <p className="font-semibold text-foreground">
                               {teacherName}
                             </p>
-                            <p className="text-xs text-muted-foreground">{record.date}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {record.date}
+                            </p>
                             <p className="text-xs text-foreground max-w-60 truncate">
                               {record.remarks || "No reason provided"}
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <span className={`text-xs font-semibold ${statusClass}`}>
+                            <span
+                              className={`text-xs font-semibold ${statusClass}`}
+                            >
                               {statusText}
                             </span>
                             <Button
@@ -1488,7 +1530,8 @@ export default function AdminAttendancePage() {
                     }),
                   });
 
-                  if (!response.ok) throw new Error("Failed to save late reason");
+                  if (!response.ok)
+                    throw new Error("Failed to save late reason");
 
                   // Update local state
                   if (lateModalData.type === "student") {

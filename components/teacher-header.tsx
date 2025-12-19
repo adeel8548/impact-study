@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Bell } from "lucide-react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
 import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export function TeacherHeader() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export function TeacherHeader() {
   const [hasInchargeClasses, setHasInchargeClasses] = useState(false);
   const [hasAssignedSubjects, setHasAssignedSubjects] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const fetchPermissions = async () => {
@@ -47,6 +50,56 @@ export function TeacherHeader() {
 
     fetchPermissions();
   }, []);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      const userId = data.user?.id;
+      if (!userId) return;
+
+      const { data: convs } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("teacher_id", userId);
+      const ids = (convs || []).map((c) => c.id);
+
+      if (ids.length > 0) {
+        const { count } = await supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("is_read", false)
+          .neq("sender_id", userId)
+          .in("conversation_id", ids);
+        setUnreadCount(count || 0);
+      }
+
+      const channel = supabase
+        .channel(`teacher-messages-${userId}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages" },
+          (payload) => {
+            const row: any = payload.new;
+            if (row.sender_id === userId) return;
+            if (ids.includes(row.conversation_id)) setUnreadCount((c) => c + 1);
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "messages" },
+          (payload) => {
+            const row: any = payload.new;
+            if (row.is_read && row.sender_id !== userId && ids.includes(row.conversation_id)) {
+              setUnreadCount((c) => Math.max(0, c - 1));
+            }
+          },
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    });
+  }, [supabase]);
 
   const clearUser = () => {
     localStorage.removeItem("currentUser");
@@ -114,8 +167,19 @@ export function TeacherHeader() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/teacher/chat")}
+            title="Messages"
+            className="relative"
+          >
             <Bell className="w-5 h-5 text-muted-foreground" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </Button>
           <Button
             onClick={handleLogout}
@@ -180,6 +244,18 @@ export function TeacherHeader() {
           }`}
         >
           My Attendance
+        </Button>
+
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/teacher/chat")}
+          className={`rounded-none border-b-2 ${
+            isActive("/teacher/chat")
+              ? "text-primary font-semibold border-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent"
+          }`}
+        >
+          Chat
         </Button>
 
           {/* Timetable - always visible */}
