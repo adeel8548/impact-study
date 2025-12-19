@@ -95,9 +95,9 @@ export default function TeacherMyAttendancePage() {
   const [applyLeaveError, setApplyLeaveError] = useState<string | null>(null);
   const [todayStr, setTodayStr] = useState(toIsoDate(new Date()));
 
-  // OUT button state: disabled until midnight after marking out
+  // OUT button state: disabled until 4 PM after marking out
   const [outDisabled, setOutDisabled] = useState(false);
-  const midnightTimerRef = useRef<any>(null);
+  const fourPMTimerRef = useRef<any>(null);
   // Store today's attendance row UUID so we can update it when marking OUT
   const [todayAttendanceId, setTodayAttendanceId] = useState<string | null>(
     null,
@@ -296,28 +296,43 @@ export default function TeacherMyAttendancePage() {
     }
   };
 
-  // compute ms until next local midnight and schedule enabling the OUT button
-  const scheduleEnableAtMidnight = () => {
+  // compute ms until next 4 PM and schedule enabling the OUT button
+  const scheduleEnableAt4PM = () => {
     try {
-      if (midnightTimerRef.current) {
-        clearTimeout(midnightTimerRef.current);
+      if (fourPMTimerRef.current) {
+        clearTimeout(fourPMTimerRef.current);
       }
     } catch (e) {}
 
     const now = new Date();
-    const nextMidnight = new Date(
+    const today4PM = new Date(
       now.getFullYear(),
       now.getMonth(),
-      now.getDate() + 1,
-      0,
+      now.getDate(),
+      16, // 4 PM
       0,
       0,
       0,
     );
-    const ms = nextMidnight.getTime() - now.getTime();
-    midnightTimerRef.current = setTimeout(() => {
+    
+    // If current time is past 4 PM today, schedule for 4 PM tomorrow
+    let next4PM = today4PM;
+    if (now >= today4PM) {
+      next4PM = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        16,
+        0,
+        0,
+        0,
+      );
+    }
+    
+    const ms = next4PM.getTime() - now.getTime();
+    fourPMTimerRef.current = setTimeout(() => {
       setOutDisabled(false);
-      midnightTimerRef.current = null;
+      fourPMTimerRef.current = null;
       if (teacher) fetchAttendance(teacher.id, new Date());
     }, ms + 50);
   };
@@ -326,19 +341,36 @@ export default function TeacherMyAttendancePage() {
   useEffect(() => {
     try {
       const todayRecord = attendance.find((a) => a.date === todayStr);
+      const now = new Date();
+      const currentHour = now.getHours();
+      
       if (todayRecord) {
         // Store the UUID of today's attendance row for PUT update
         setTodayAttendanceId((todayRecord as any).id || null);
         if ((todayRecord as any).out_time) {
+          // If already marked out, disable and schedule for next 4 PM
           setOutDisabled(true);
-          scheduleEnableAtMidnight();
+          scheduleEnableAt4PM();
         } else {
-          setOutDisabled(false);
+          // Not marked out yet, check if it's past 4 PM
+          if (currentHour >= 16) {
+            setOutDisabled(false);
+          } else {
+            // Before 4 PM, disable and schedule enable at 4 PM
+            setOutDisabled(true);
+            scheduleEnableAt4PM();
+          }
         }
         setTodayLocked(true);
       } else {
         setTodayAttendanceId(null);
-        setOutDisabled(false);
+        // No attendance record, but still respect 4 PM rule
+        if (currentHour >= 16) {
+          setOutDisabled(false);
+        } else {
+          setOutDisabled(true);
+          scheduleEnableAt4PM();
+        }
         setTodayLocked(false);
       }
     } catch (e) {
@@ -402,7 +434,7 @@ export default function TeacherMyAttendancePage() {
 
       toast.success("OUT time recorded");
       setOutDisabled(true);
-      scheduleEnableAtMidnight();
+      scheduleEnableAt4PM();
       window.location.reload();
     } catch (error) {
       console.error("Error marking OUT:", error);
@@ -612,6 +644,13 @@ export default function TeacherMyAttendancePage() {
       }
     };
     fetchSchoolSettings();
+
+    // Periodic refresh every 5 minutes to detect cron job auto-out
+    const refreshInterval = setInterval(() => {
+      fetchAttendance(user.id, new Date());
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   useEffect(() => {
