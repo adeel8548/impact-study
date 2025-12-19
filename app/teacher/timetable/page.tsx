@@ -18,6 +18,7 @@ interface TimetableEntry {
   id: string;
   teacher_id?: string;
   teacher_name?: string;
+  class_id?: string;
   day_of_week: number;
   start_time: string;
   end_time: string;
@@ -61,6 +62,7 @@ export default function TeacherTimetablePage() {
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [filterClass, setFilterClass] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<number | "all">("all");
+  const [filterTime, setFilterTime] = useState<string>("all");
 
   useEffect(() => {
     // Load subjects and timetable
@@ -134,6 +136,7 @@ export default function TeacherTimetablePage() {
     const filtered = timetable.filter(entry => {
       if (filterClass !== "all" && entry.class_id !== filterClass) return false;
       if (filterDay !== "all" && entry.day_of_week !== filterDay) return false;
+      if (filterTime !== "all" && entry.start_time !== filterTime) return false;
       return true;
     });
 
@@ -213,6 +216,23 @@ export default function TeacherTimetablePage() {
                     {DAYS.map((day) => (
                       <SelectItem key={day.value} value={day.value.toString()}>
                         {day.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Filter by Time</Label>
+                <Select value={filterTime} onValueChange={setFilterTime}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Times</SelectItem>
+                    {TIME_SLOTS.map(time => (
+                      <SelectItem key={time} value={time}>
+                        {formatTo12Hour(time)}
                       </SelectItem>
                     ))}
                   </SelectContent>
