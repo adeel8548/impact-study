@@ -644,13 +644,6 @@ export default function TeacherMyAttendancePage() {
       }
     };
     fetchSchoolSettings();
-
-    // Periodic refresh every 5 minutes to detect cron job auto-out
-    const refreshInterval = setInterval(() => {
-      fetchAttendance(user.id, new Date());
-    }, 5 * 60 * 1000); // 5 minutes
-
-    return () => clearInterval(refreshInterval);
   }, []);
 
   useEffect(() => {
