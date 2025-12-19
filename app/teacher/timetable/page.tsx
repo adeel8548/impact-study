@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Calendar, Clock } from "lucide-react";
 
@@ -50,10 +58,14 @@ export default function TeacherTimetablePage() {
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [teacherName, setTeacherName] = useState("");
   const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [filterClass, setFilterClass] = useState<string>("all");
+  const [filterDay, setFilterDay] = useState<number | "all">("all");
 
   useEffect(() => {
     // Load subjects and timetable
     fetchSubjects();
+    fetchClasses();
     fetchTimetable();
   }, []);
 
@@ -67,7 +79,16 @@ export default function TeacherTimetablePage() {
       console.warn("Failed to load subjects for timetable", err);
     }
   };
-
+  const fetchClasses = async () => {
+    try {
+      const res = await fetch(`/api/classes`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setClasses(data.classes || []);
+    } catch (err) {
+      console.warn("Failed to load classes for timetable", err);
+    }
+  };
   const fetchTimetable = async () => {
     try {
       setLoading(true);
@@ -110,12 +131,18 @@ export default function TeacherTimetablePage() {
   };
 
   const getTimetableGrid = () => {
+    const filtered = timetable.filter(entry => {
+      if (filterClass !== "all" && entry.class_id !== filterClass) return false;
+      if (filterDay !== "all" && entry.day_of_week !== filterDay) return false;
+      return true;
+    });
+
     const grid: { [key: string]: TimetableEntry[] } = {};
 
     DAYS.forEach(({ value }) => {
       TIME_SLOTS.forEach((time) => {
         const key = `${value}-${time}`;
-        grid[key] = timetable.filter(
+        grid[key] = filtered.filter(
           (e) => e.day_of_week === value && e.start_time === time
         );
       });
@@ -151,6 +178,48 @@ export default function TeacherTimetablePage() {
               </p>
             </div>
           </div>
+
+          {/* Filters */}
+          <Card className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="space-y-2">
+                <Label>Filter by Class</Label>
+                <Select value={filterClass} onValueChange={setFilterClass}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Classes</SelectItem>
+                    {classes.map(cls => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Filter by Day</Label>
+                <Select 
+                  value={filterDay.toString()} 
+                  onValueChange={(val) => setFilterDay(val === "all" ? "all" : parseInt(val))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Days</SelectItem>
+                    {DAYS.map((day) => (
+                      <SelectItem key={day.value} value={day.value.toString()}>
+                        {day.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </Card>
 
           {timetable.length === 0 ? (
             <Card className="p-8 text-center">
@@ -191,7 +260,7 @@ export default function TeacherTimetablePage() {
                           return (
                             <td
                               key={day.value}
-                              className="border border-border p-2 align-top min-h-[70px]"
+                              className="border-blue-900 border-3 p-2 align-top min-h-[70px]"
                             >
                               {entries.map((entry) => (
                                 <div
@@ -199,7 +268,7 @@ export default function TeacherTimetablePage() {
                                   className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-950 border-l-4 border-blue-500 rounded p-3 shadow-sm mb-2"
                                 >
                                   <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                                    {entry.class_name}
+                                   Class: {entry.class_name}
                                   </div>
                                   {entry.teacher_name && (
                                     <div className="text-sm text-blue-800 dark:text-blue-200 mb-1">
@@ -215,7 +284,7 @@ export default function TeacherTimetablePage() {
                                   </div>
                                   {entry.room_number && (
                                     <div className="text-xs text-blue-500 dark:text-blue-500 mt-1">
-                                      📍 {entry.room_number}
+                                      Room: {entry.room_number}
                                     </div>
                                   )}
                                 </div>

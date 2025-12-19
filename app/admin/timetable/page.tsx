@@ -106,6 +106,7 @@ export default function TimetablePage() {
   const [roomNumber, setRoomNumber] = useState("");
 
   const [filterTeacher, setFilterTeacher] = useState<string>("all");
+  const [filterClass, setFilterClass] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<number | "all">("all");
 
   const resolveTeacherName = (entry: TimetableEntry) =>
@@ -395,6 +396,7 @@ export default function TimetablePage() {
   const getFilteredTimetable = () => {
     return timetable.filter(entry => {
       if (filterTeacher !== "all" && entry.teacher_id !== filterTeacher) return false;
+      if (filterClass !== "all" && entry.class_id !== filterClass) return false;
       if (filterDay !== "all" && entry.day_of_week !== filterDay) return false;
       return true;
     });
@@ -460,7 +462,7 @@ export default function TimetablePage() {
 
           {/* Filters */}
           <Card className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="space-y-2">
                 <Label>Filter by Teacher</Label>
                 <Select value={filterTeacher} onValueChange={setFilterTeacher}>
@@ -472,6 +474,23 @@ export default function TimetablePage() {
                     {teachers.map(teacher => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Filter by Class</Label>
+                <Select value={filterClass} onValueChange={setFilterClass}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Classes</SelectItem>
+                    {classes.map(cls => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -503,7 +522,7 @@ export default function TimetablePage() {
           {/* Timetable Grid */}
           <Card className="p-6 overflow-x-auto">
             <div className="min-w-[1200px]">
-              <table className="w-full border-collapse overflow-x-auto">
+              <table className="w-full border-black overflow-x-auto ">
                 <thead>
                   <tr>
                     <th className="border border-border bg-secondary p-2 text-sm font-semibold">
@@ -527,7 +546,7 @@ export default function TimetablePage() {
                         const entries = timetableGrid[key] || [];
                         
                         return (
-                          <td key={day.value} className="border border-border p-1 align-top min-h-[60px]">
+                          <td key={day.value} className="border-blue-800 border-3 p-1 align-top min-h-[60px]">
                             {entries.map(entry => (
                               <div
                                 key={entry.id}
