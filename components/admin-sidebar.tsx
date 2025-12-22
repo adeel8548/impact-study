@@ -160,7 +160,7 @@ export function AdminSidebar() {
           </h1>
         </div>
 
-        <nav className="flex flex-col gap-1 p-4 flex-1 h-[500px] overflow-y-auto">
+        <nav className="flex flex-col gap-1 p-4 flex-1 h-[380px] overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive =

@@ -18,19 +18,30 @@ export async function getClasses() {
 export async function getClassesForTeacher(teacherId: string) {
   const supabase = await createClient();
 
-  // Use the teacher_classes junction table to get classes for a teacher
-  const { data, error } = await supabase
-    .from("teacher_classes")
-    .select("classes(*)")
-    .eq("teacher_id", teacherId);
+  // Fetch class_ids from profiles, then fetch classes by ids
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("class_ids")
+    .eq("id", teacherId)
+    .maybeSingle();
+
+  if (profileErr) {
+    console.error("Error fetching teacher profile class_ids:", profileErr);
+    return { classes: [], error: profileErr.message };
+  }
+
+  const classIds: string[] = (profile?.class_ids as string[]) || [];
+  if (classIds.length === 0) return { classes: [], error: null };
+
+  const { data: classes, error } = await supabase
+    .from("classes")
+    .select("*")
+    .in("id", classIds);
 
   if (error) {
-    console.error("Error fetching teacher classes:", error);
+    console.error("Error fetching classes by ids:", error);
     return { classes: [], error: error.message };
   }
 
-  // Flatten the response to get the classes array
-  const classes = (data || []).map((item: any) => item.classes).filter(Boolean);
-
-  return { classes, error: null };
+  return { classes: classes || [], error: null };
 }

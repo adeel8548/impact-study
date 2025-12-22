@@ -70,31 +70,27 @@ export async function GET(request: NextRequest) {
       throw fetchError;
     }
 
+    let outTimeUpdated = 0;
     if (!records || records.length === 0) {
       console.log("[Auto Teacher Out] No teachers found without out_time");
-      return NextResponse.json({
-        success: true,
-        message: "No teachers to update",
-        updated: 0,
-        date: today,
-      });
+    } else {
+      console.log(`[Auto Teacher Out] Found ${records.length} teachers without out_time`);
+
+      // Update all records to set out_time to 7 PM
+      const recordIds = records.map(r => r.id);
+      const { error: updateError } = await adminClient
+        .from("teacher_attendance")
+        .update({ out_time: outTime })
+        .in("id", recordIds);
+
+      if (updateError) {
+        console.error("[Auto Teacher Out] Update error:", updateError);
+        throw updateError;
+      }
+
+      outTimeUpdated = records.length;
+      console.log(`[Auto Teacher Out] Successfully updated ${outTimeUpdated} records`);
     }
-
-    console.log(`[Auto Teacher Out] Found ${records.length} teachers without out_time`);
-
-    // Update all records to set out_time to 7 PM
-    const recordIds = records.map(r => r.id);
-    const { error: updateError } = await adminClient
-      .from("teacher_attendance")
-      .update({ out_time: outTime })
-      .in("id", recordIds);
-
-    if (updateError) {
-      console.error("[Auto Teacher Out] Update error:", updateError);
-      throw updateError;
-    }
-
-    console.log(`[Auto Teacher Out] Successfully updated ${records.length} records`);
 
     // ========================================
     // PART 2: Auto-mark absent for teachers with NO attendance record
@@ -116,8 +112,8 @@ export async function GET(request: NextRequest) {
       console.log("[Auto Teacher Out] No active teachers found");
       return NextResponse.json({
         success: true,
-        message: `Auto-marked out time for ${records.length} teachers, no teachers to mark absent`,
-        outTimeUpdated: records.length,
+        message: `Auto-marked out time for ${outTimeUpdated} teachers, no teachers to mark absent`,
+        outTimeUpdated,
         absenceMarked: 0,
         date: today,
         outTime: outTime,
@@ -148,8 +144,8 @@ export async function GET(request: NextRequest) {
       console.log("[Auto Teacher Out] All teachers have attendance marked");
       return NextResponse.json({
         success: true,
-        message: `Auto-marked out time for ${records.length} teachers, all others have attendance`,
-        outTimeUpdated: records.length,
+        message: `Auto-marked out time for ${outTimeUpdated} teachers, all others have attendance`,
+        outTimeUpdated,
         absenceMarked: 0,
         date: today,
         outTime: outTime,
@@ -187,8 +183,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Auto-marked out time for ${records.length} teachers and ${absenceCount} as absent`,
-      outTimeUpdated: records.length,
+      message: `Auto-marked out time for ${outTimeUpdated} teachers and ${absenceCount} as absent`,
+      outTimeUpdated,
       absenceMarked: absenceCount,
       absentTeachers: teachersWithoutAttendance.map((t) => ({ id: t.id, name: t.name })),
       date: today,

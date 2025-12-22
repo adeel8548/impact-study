@@ -4,17 +4,19 @@ This project uses Vercel Cron for scheduling automatic tasks that run on specifi
 
 ## Scheduled Jobs
 
-### 1. Reset Teacher Salaries to Unpaid
+### 1. Monthly Billing (Combined)
 
-**Schedule:** `0 0 1 * *` (1st of every month at 00:00 UTC)
-**Endpoint:** `/api/cron/reset-teacher-salary`
-**Function:** Resets all teacher salaries from "paid" to "unpaid" on the first day of each month
+- **Schedule:** `0 0 1 * *` (1st of every month at 00:00 UTC)
+- **Endpoint:** `/api/cron/monthly-billing`
+- **Function:** Creates monthly student fees and teacher salary rows (if missing), resets teacher salaries to unpaid, and checks student fee expiration.
 
-### 2. Reset Student Fees to Unpaid
+### 2. Auto Teacher Out + Auto Absent (Daily)
 
-**Schedule:** `0 0 1 * *` (1st of every month at 00:00 UTC)
-**Endpoint:** `/api/cron/reset-student-fees`
-**Function:** Resets all student fees that have passed their monthly expiration (end-of-month) back to "unpaid"
+- **Schedule:** `0 14 * * *` (14:00 UTC = 19:00 PKT / 7:00 PM)
+- **Endpoint:** `/api/cron/auto-teacher-out`
+- **Function:**
+  - Sets `out_time` to 7:00 PM for teachers marked `present`/`late` without an out_time
+  - Auto-marks `absent` for teachers with no attendance record for the day
 
 ## Configuration
 
@@ -23,14 +25,8 @@ The cron schedules are defined in `vercel.json`:
 ```json
 {
   "crons": [
-    {
-      "path": "/api/cron/reset-teacher-salary",
-      "schedule": "0 0 1 * *"
-    },
-    {
-      "path": "/api/cron/reset-student-fees",
-      "schedule": "0 0 1 * *"
-    }
+    { "path": "/api/cron/monthly-billing", "schedule": "0 0 1 * *" },
+    { "path": "/api/cron/auto-teacher-out", "schedule": "0 14 * * *" }
   ]
 }
 ```

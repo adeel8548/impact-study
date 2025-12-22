@@ -22,21 +22,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // If teacherId is provided, use the junction table `teacher_classes` to fetch assigned classes
+    // If teacherId is provided, fetch class_ids from profiles, then fetch classes
     if (teacherId) {
-      const { data: tcData, error: tcErr } = await supabase
-        .from("teacher_classes")
-        .select("classes(*)")
-        .eq("teacher_id", teacherId);
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("class_ids")
+        .eq("id", teacherId)
+        .maybeSingle();
 
-      if (tcErr) throw tcErr;
+      if (profileErr) throw profileErr;
 
-      // Flatten to classes array
-      const classes = (tcData || [])
-        .map((row: any) => row.classes)
-        .filter(Boolean);
+      const classIds: string[] = (profile?.class_ids as string[]) || [];
+      if (classIds.length === 0) {
+        return NextResponse.json({ classes: [], success: true });
+      }
 
-      return NextResponse.json({ classes: classes || [], success: true });
+      const { data: classesData, error: classesErr } = await supabase
+        .from("classes")
+        .select("*")
+        .in("id", classIds);
+
+      if (classesErr) throw classesErr;
+
+      return NextResponse.json({ classes: classesData || [], success: true });
     }
 
     // Otherwise return all classes

@@ -253,15 +253,14 @@ export async function deleteTeacher(teacherId: string) {
   const adminClient = await createAdminClient();
 
   try {
-    // 1. Delete teacher class assignments first (junction table)
-    const { error: classError } = await adminClient
-      .from("teacher_classes")
-      .delete()
-      .eq("teacher_id", teacherId);
-
-    if (classError) {
-      console.error("Error deleting teacher class assignments:", classError);
-      return { error: classError.message };
+    // 1. Clear class_ids and incharge_class_ids from profiles (no junction table)
+    const { error: clearClassesErr } = await adminClient
+      .from("profiles")
+      .update({ class_ids: [], incharge_class_ids: [] })
+      .eq("id", teacherId);
+    if (clearClassesErr) {
+      console.error("Error clearing assigned classes:", clearClassesErr);
+      return { error: clearClassesErr.message };
     }
 
     const { error: salaryError } = await adminClient
@@ -294,7 +293,7 @@ export async function deleteTeacher(teacherId: string) {
     revalidatePath("/admin/teachers");
 
     console.log(
-      `Teacher ${teacherId} deleted successfully from auth, profiles, and teacher_classes.`,
+      `Teacher ${teacherId} deleted successfully from auth and profiles.`,
     );
     return { error: null };
   } catch (err) {
@@ -304,16 +303,24 @@ export async function deleteTeacher(teacherId: string) {
 }
 
 export async function assignTeacherToClass(teacherId: string, classId: string) {
-  const supabase = await createClient();
+  const adminClient = await createAdminClient();
+  // Push classId into profiles.class_ids (unique)
+  const { data: profile, error: fetchErr } = await adminClient
+    .from("profiles")
+    .select("class_ids")
+    .eq("id", teacherId)
+    .maybeSingle();
+  if (fetchErr) return { error: fetchErr.message };
 
-  const { error } = await supabase.from("teacher_classes").insert({
-    teacher_id: teacherId,
-    class_id: classId,
-  });
+  const existing: string[] = ((profile?.class_ids as string[]) || []).slice();
+  if (!existing.includes(classId)) existing.push(classId);
 
-  if (error) {
-    return { error: error.message };
-  }
+  const { error } = await adminClient
+    .from("profiles")
+    .update({ class_ids: existing })
+    .eq("id", teacherId);
+
+  if (error) return { error: error.message };
 
   revalidatePath("/admin/teachers");
   return { error: null };
@@ -323,17 +330,23 @@ export async function removeTeacherFromClass(
   teacherId: string,
   classId: string,
 ) {
-  const supabase = await createClient();
+  const adminClient = await createAdminClient();
+  const { data: profile, error: fetchErr } = await adminClient
+    .from("profiles")
+    .select("class_ids")
+    .eq("id", teacherId)
+    .maybeSingle();
+  if (fetchErr) return { error: fetchErr.message };
 
-  const { error } = await supabase
-    .from("teacher_classes")
-    .delete()
-    .eq("teacher_id", teacherId)
-    .eq("class_id", classId);
+  const existing: string[] = ((profile?.class_ids as string[]) || []).slice();
+  const updated = existing.filter((id) => id !== classId);
 
-  if (error) {
-    return { error: error.message };
-  }
+  const { error } = await adminClient
+    .from("profiles")
+    .update({ class_ids: updated })
+    .eq("id", teacherId);
+
+  if (error) return { error: error.message };
 
   revalidatePath("/admin/teachers");
   return { error: null };
@@ -342,17 +355,17 @@ export async function removeTeacherFromClass(
 export async function getTeacherClasses(teacherId: string) {
   const supabase = await createClient();
 
-  const { data: classRow, error } = await supabase
-    .from("teacher_classes")
+  const { data: profile, error } = await supabase
+    .from("profiles")
     .select("class_ids")
-    .eq("teacher_id", teacherId)
+    .eq("id", teacherId)
     .maybeSingle();
 
   if (error) {
     return { classes: [], error: error.message };
   }
 
-  const classIds: string[] = (classRow?.class_ids as string[]) || [];
+  const classIds: string[] = (profile?.class_ids as string[]) || [];
   if (classIds.length === 0) {
     return { classes: [], error: null };
   }
@@ -375,15 +388,29 @@ async function persistTeacherClasses(
   classIds: string[] = [],
 ) {
   const uniqueClassIds = Array.from(new Set(classIds || []));
-  const { error } = await adminClient.from("teacher_classes").upsert(
-    {
-      teacher_id: teacherId,
-      class_ids: uniqueClassIds,
-    },
-    { onConflict: "teacher_id" },
-  );
 
-  if (error) {
-    console.error("Failed to persist teacher_classes:", error);
+  // Remove existing mappings for this teacher
+  const { error: delErr } = await adminClient
+    .from("teacher_classes")
+    .delete()
+    .eq("teacher_id", teacherId);
+  if (delErr) {
+    console.error("Failed to clear existing teacher_classes:", delErr);
+    return;
+  }
+
+  if (uniqueClassIds.length === 0) return;
+
+  const rows = uniqueClassIds.map((cid) => ({
+    teacher_id: teacherId,
+    class_id: cid,
+  }));
+
+  const { error: insErr } = await adminClient
+    .from("teacher_classes")
+    .insert(rows);
+
+  if (insErr) {
+    console.error("Failed to insert teacher_classes:", insErr);
   }
 }
