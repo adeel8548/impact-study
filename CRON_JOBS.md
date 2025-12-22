@@ -10,13 +10,14 @@ This project uses Vercel Cron for scheduling automatic tasks that run on specifi
 - **Endpoint:** `/api/cron/monthly-billing`
 - **Function:** Creates monthly student fees and teacher salary rows (if missing), resets teacher salaries to unpaid, and checks student fee expiration.
 
-### 2. Auto Teacher Out + Auto Absent (Daily)
+### 2. Auto Teacher Out + Absent (Daily)
 
 - **Schedule:** `0 14 * * *` (14:00 UTC = 19:00 PKT / 7:00 PM)
 - **Endpoint:** `/api/cron/auto-teacher-out`
 - **Function:**
-  - Sets `out_time` to 7:00 PM for teachers marked `present`/`late` without an out_time
+  - Auto “out” at 7:00 PM by setting `updated_at` as the out timestamp for teachers marked `present`/`late`
   - Auto-marks `absent` for teachers with no attendance record for the day
+  - The API maps `updated_at` to `out_time` in responses for UI compatibility
 
 ## Configuration
 
@@ -45,11 +46,11 @@ The cron schedules are defined in `vercel.json`:
 To test cron endpoints locally, you can manually call them:
 
 ```bash
-# Reset teacher salaries
-curl -X POST http://localhost:3000/api/cron/reset-teacher-salary
+# Monthly billing
+curl -X POST http://localhost:3000/api/cron/monthly-billing
 
-# Reset student fees
-curl -X POST http://localhost:3000/api/cron/reset-student-fees
+# Auto teacher absent (runs same handler as daily cron)
+curl -X POST "http://localhost:3000/api/cron/auto-teacher-out"
 ```
 
 ## Button Behavior
@@ -72,5 +73,5 @@ curl -X POST http://localhost:3000/api/cron/reset-student-fees
 After deployment to Vercel, verify cron jobs are active:
 
 1. Go to Vercel Dashboard → Project Settings → Crons
-2. You should see both `/api/cron/reset-teacher-salary` and `/api/cron/reset-student-fees` listed
+2. You should see both `/api/cron/monthly-billing` and `/api/cron/auto-teacher-out` listed
 3. Check the "Last Runs" tab to verify they executed successfully

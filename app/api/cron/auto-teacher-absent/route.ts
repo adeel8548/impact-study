@@ -92,14 +92,12 @@ export async function GET(request: NextRequest) {
       `[Auto Teacher Absent] Found ${teachersWithoutAttendance.length} teachers without attendance marked`
     );
 
-    // Mark these teachers as absent
+    // Mark these teachers as absent (schema-aligned: no in_time/out_time/approval_status)
     const absenceRecords = teachersWithoutAttendance.map((teacher) => ({
       teacher_id: teacher.id,
       date: today,
       status: "absent",
-      in_time: null,
-      out_time: null,
-      approval_status: "auto_marked", // Track that this was auto-marked
+      remarks: "auto_marked",
     }));
 
     const { data: insertedRecords, error: insertError } = await adminClient

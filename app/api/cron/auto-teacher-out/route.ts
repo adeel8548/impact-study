@@ -2,10 +2,13 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Combined Cron Job: Auto mark teacher out time + auto-absent at 7 PM PKT
+ * Cron Job: Auto-mark teacher ABSENT at 7 PM PKT
  * Runs daily at 7 PM Pakistan time (UTC+5)
- * 1. Finds all teachers marked present today without out_time and sets it to 7 PM
- * 2. Finds all teachers with NO attendance record for today and marks them ABSENT
+ * - Sets updated_at to 7 PM for teachers marked present/late (acts as out time)
+ * - Finds all teachers with NO attendance record for today and marks them ABSENT
+ *
+ * Note: The current teacher_attendance schema does not include in_time/out_time,
+ * so auto "out" marking is intentionally disabled to avoid schema mismatches.
  *
  * Schedule (Vercel, UTC): "0 14 * * *" → 19:00 PKT
  */
@@ -40,56 +43,49 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     
-    // Set out_time to exactly 19:00 PKT = 14:00 UTC for today
+    console.log(`[Auto Teacher Out] Running for date: ${today}`);
+
+    // Compute 7:00 PM PKT (14:00 UTC) for today
     const outTime = new Date(
       Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
         now.getUTCDate(),
-        14, // 14:00 UTC = 19:00 PKT
+        14,
         0,
-        0
-      )
+        0,
+      ),
     ).toISOString();
+    console.log(`[Auto Teacher Out] Target out timestamp (updated_at): ${outTime}`);
 
-    console.log(`[Auto Teacher Out] Running for date: ${today}`);
-    console.log(`[Auto Teacher Out] Setting out_time to: ${outTime}`);
-
-    // Find all teacher attendance records for today that are:
-    // 1. Status = "present" OR "late"
-    // 2. out_time is null
-    const { data: records, error: fetchError } = await adminClient
+    // PART 1: Auto-mark OUT by setting updated_at to 7 PM for present/late
+    const { data: presentLate, error: plErr } = await adminClient
       .from("teacher_attendance")
-      .select("id, teacher_id, date, status, out_time")
+      .select("id")
       .eq("date", today)
-      .in("status", ["present", "late"])
-      .is("out_time", null);
+      .in("status", ["present", "late"]);
 
-    if (fetchError) {
-      console.error("[Auto Teacher Out] Fetch error:", fetchError);
-      throw fetchError;
+    if (plErr) {
+      console.error("[Auto Teacher Out] Error fetching present/late records:", plErr);
+      throw plErr;
     }
 
     let outTimeUpdated = 0;
-    if (!records || records.length === 0) {
-      console.log("[Auto Teacher Out] No teachers found without out_time");
-    } else {
-      console.log(`[Auto Teacher Out] Found ${records.length} teachers without out_time`);
-
-      // Update all records to set out_time to 7 PM
-      const recordIds = records.map(r => r.id);
-      const { error: updateError } = await adminClient
+    if (presentLate && presentLate.length > 0) {
+      const ids = presentLate.map((r: any) => r.id);
+      const { error: updErr } = await adminClient
         .from("teacher_attendance")
-        .update({ out_time: outTime })
-        .in("id", recordIds);
+        .update({ updated_at: outTime })
+        .in("id", ids);
 
-      if (updateError) {
-        console.error("[Auto Teacher Out] Update error:", updateError);
-        throw updateError;
+      if (updErr) {
+        console.error("[Auto Teacher Out] Error updating updated_at:", updErr);
+        throw updErr;
       }
-
-      outTimeUpdated = records.length;
-      console.log(`[Auto Teacher Out] Successfully updated ${outTimeUpdated} records`);
+      outTimeUpdated = ids.length;
+      console.log(`[Auto Teacher Out] Auto-out updated for ${outTimeUpdated} records`);
+    } else {
+      console.log("[Auto Teacher Out] No present/late records found for today");
     }
 
     // ========================================
@@ -112,11 +108,10 @@ export async function GET(request: NextRequest) {
       console.log("[Auto Teacher Out] No active teachers found");
       return NextResponse.json({
         success: true,
-        message: `Auto-marked out time for ${outTimeUpdated} teachers, no teachers to mark absent`,
+        message: `No teachers to mark absent`,
         outTimeUpdated,
         absenceMarked: 0,
         date: today,
-        outTime: outTime,
       });
     }
 
@@ -144,11 +139,10 @@ export async function GET(request: NextRequest) {
       console.log("[Auto Teacher Out] All teachers have attendance marked");
       return NextResponse.json({
         success: true,
-        message: `Auto-marked out time for ${outTimeUpdated} teachers, all others have attendance`,
+        message: `All teachers have attendance`,
         outTimeUpdated,
         absenceMarked: 0,
         date: today,
-        outTime: outTime,
       });
     }
 
@@ -161,9 +155,7 @@ export async function GET(request: NextRequest) {
       teacher_id: teacher.id,
       date: today,
       status: "absent",
-      in_time: null,
-      out_time: null,
-      approval_status: "auto_marked", // Track that this was auto-marked
+      remarks: "auto_marked",
     }));
 
     const { data: insertedRecords, error: insertError } = await adminClient
@@ -183,12 +175,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Auto-marked out time for ${outTimeUpdated} teachers and ${absenceCount} as absent`,
+      message: `Auto-out updated ${outTimeUpdated}, auto-absent ${absenceCount}`,
       outTimeUpdated,
       absenceMarked: absenceCount,
       absentTeachers: teachersWithoutAttendance.map((t) => ({ id: t.id, name: t.name })),
       date: today,
-      outTime: outTime,
     });
 
   } catch (error) {
