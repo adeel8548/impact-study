@@ -2,13 +2,10 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Cron Job: Auto-mark teacher ABSENT at 7 PM PKT
+ * Cron Job: Auto-mark teacher OUT + ABSENT at 7 PM PKT
  * Runs daily at 7 PM Pakistan time (UTC+5)
- * - Sets updated_at to 7 PM for teachers marked present/late (acts as out time)
+ * - Sets explicit out_time to 7 PM for teachers marked present/late (only if out_time is null)
  * - Finds all teachers with NO attendance record for today and marks them ABSENT
- *
- * Note: The current teacher_attendance schema does not include in_time/out_time,
- * so auto "out" marking is intentionally disabled to avoid schema mismatches.
  *
  * Schedule (Vercel, UTC): "0 14 * * *" → 19:00 PKT
  */
@@ -58,12 +55,13 @@ export async function GET(request: NextRequest) {
     ).toISOString();
     console.log(`[Auto Teacher Out] Target out timestamp (updated_at): ${outTime}`);
 
-    // PART 1: Auto-mark OUT by setting updated_at to 7 PM for present/late
+    // PART 1: Auto-mark OUT by setting out_time to 7 PM for present/late records missing out_time
     const { data: presentLate, error: plErr } = await adminClient
       .from("teacher_attendance")
-      .select("id")
+      .select("id, out_time")
       .eq("date", today)
-      .in("status", ["present", "late"]);
+      .in("status", ["present", "late"])
+      .is("out_time", null);
 
     if (plErr) {
       console.error("[Auto Teacher Out] Error fetching present/late records:", plErr);
@@ -75,7 +73,7 @@ export async function GET(request: NextRequest) {
       const ids = presentLate.map((r: any) => r.id);
       const { error: updErr } = await adminClient
         .from("teacher_attendance")
-        .update({ updated_at: outTime })
+        .update({ out_time: outTime })
         .in("id", ids);
 
       if (updErr) {
@@ -83,7 +81,7 @@ export async function GET(request: NextRequest) {
         throw updErr;
       }
       outTimeUpdated = ids.length;
-      console.log(`[Auto Teacher Out] Auto-out updated for ${outTimeUpdated} records`);
+      console.log(`[Auto Teacher Out] Auto-out set for ${outTimeUpdated} records`);
     } else {
       console.log("[Auto Teacher Out] No present/late records found for today");
     }
