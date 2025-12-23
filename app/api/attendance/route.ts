@@ -65,12 +65,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { records, teacherId } = body;
+    // Support both array payloads and single-record payloads
+    const teacherId = body?.teacherId;
+    const records = Array.isArray(body?.records)
+      ? body.records
+      : Array.isArray(body)
+        ? body
+        : body && body.student_id && body.date && body.status
+          ? [body]
+          : [];
 
-    if (!records || !Array.isArray(records)) {
+    if (records.length === 0) {
       return NextResponse.json(
         {
-          error: "Invalid request body. Expected 'records' array.",
+          error:
+            "Invalid request body. Provide 'records' array or a single attendance object.",
           success: false,
         },
         { status: 400 },
@@ -97,26 +106,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // First, delete existing attendance records for these students/teachers on these dates
-    if (records.length > 0) {
-      const firstRecord = records[0];
-      if (firstRecord.class_id) {
-        const { error: deleteError } = await supabase
-          .from("student_attendance")
-          .delete()
-          .eq("class_id", firstRecord.class_id)
-          .eq("date", firstRecord.date);
-
-        if (deleteError) {
-          console.error("Error deleting old records:", deleteError);
-        }
-      }
-    }
-
-    // Insert new attendance records
+    // Upsert per student/date to avoid wiping other students' records for the day
     const { data, error } = await supabase
       .from("student_attendance")
-      .insert(records)
+      .upsert(records, { onConflict: ["student_id", "date"] })
       .select();
 
     if (error) throw error;

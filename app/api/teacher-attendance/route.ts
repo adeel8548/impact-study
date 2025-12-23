@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    const mapped = (data || []).map((r: any) => ({ ...r, out_time: r.updated_at }));
-    return NextResponse.json({ attendance: mapped, success: true });
+    // Return actual out_time column; do not map from updated_at
+    return NextResponse.json({ attendance: data || [], success: true });
   } catch (error) {
     console.error("Error fetching teacher attendance:", error);
     return NextResponse.json(
@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    const mapped = (data || []).map((r: any) => ({ ...r, out_time: r.updated_at }));
-    return NextResponse.json({ attendance: mapped, success: true });
+    // Return records as-is; out_time is an explicit column
+    return NextResponse.json({ attendance: data || [], success: true });
   } catch (error) {
     console.error("Error creating teacher attendance:", error);
     return NextResponse.json(
@@ -124,14 +124,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // If client sent out_time, map it to updated_at to represent OUT
+    // Accept out_time as a direct column update
     const normalizedUpdates: any = { ...updates };
-    if (Object.prototype.hasOwnProperty.call(normalizedUpdates, "out_time")) {
-      if (normalizedUpdates.out_time) {
-        normalizedUpdates.updated_at = normalizedUpdates.out_time;
-      }
-      delete normalizedUpdates.out_time;
-    }
 
     const { data, error } = await supabase
       .from("teacher_attendance")
@@ -142,8 +136,7 @@ export async function PUT(request: NextRequest) {
 
     if (error) throw error;
 
-    const mapped = data ? { ...data, out_time: data.updated_at } : data;
-    return NextResponse.json({ attendance: mapped, success: true });
+    return NextResponse.json({ attendance: data, success: true });
   } catch (error) {
     console.error("Error updating teacher attendance:", error);
     return NextResponse.json(
