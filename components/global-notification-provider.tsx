@@ -48,79 +48,122 @@ export function GlobalNotificationProvider() {
     };
   }, []);
 
-  // Play notification sound
+  // Play notification sound - primary method with fallbacks
   const playNotificationSound = useCallback(() => {
+    console.log("playNotificationSound called");
+    
     try {
-      // Try to play audio file first (better compatibility)
+      // Method 1: Try to play mp3 audio file
       const audio = new Audio("/notification.mp3");
       audio.volume = 0.8;
-      audio.play().catch((err) => {
-        console.warn("Audio file playback failed, falling back to Web Audio API:", err);
-        // Fallback to Web Audio API
-        playWebAudioSound();
-      });
+      
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log("Notification sound played via mp3 file");
+          })
+          .catch((err) => {
+            console.warn("MP3 playback failed:", err.message);
+            // Fallback to Web Audio API
+            playWebAudioSound();
+          });
+      }
     } catch (error) {
-      console.error("Error playing notification sound:", error);
+      console.error("Error with audio file:", error);
+      playWebAudioSound();
     }
   }, []);
 
-  // Fallback: Play sound using Web Audio API
+  // Force initialize audio context even without user interaction for other screens
+  useEffect(() => {
+    // Try to initialize audio context immediately
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext && !audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+        isInitializedRef.current = true;
+        console.log("Audio context initialized");
+        
+        // Resume if suspended
+        if (audioContextRef.current.state === "suspended") {
+          // Create an empty audio node to trigger context resume
+          const silence = audioContextRef.current.createBufferSource();
+          silence.connect(audioContextRef.current.destination);
+          audioContextRef.current.resume().then(() => {
+            console.log("Audio context resumed");
+          });
+        }
+      }
+    } catch (error) {
+      console.warn("Could not initialize audio context:", error);
+    }
+  }, []);
+
+  // Fallback: Play sound using Web Audio API with simpler approach
   const playWebAudioSound = useCallback(() => {
     try {
-      if (!isInitializedRef.current) return;
-
-      if (!audioContextRef.current) return;
+      console.log("Playing notification via Web Audio API, audioContext initialized:", isInitializedRef.current);
+      
+      // Try to create audio context if not already done
+      if (!audioContextRef.current) {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) {
+          console.warn("Web Audio API not available");
+          return;
+        }
+        audioContextRef.current = new AudioContext();
+      }
 
       const audioContext = audioContextRef.current;
 
+      // Resume context if needed
       if (audioContext.state === "suspended") {
-        audioContext.resume().catch(err => console.error("Failed to resume audio context:", err));
+        audioContext.resume().catch(err => console.warn("Could not resume audio context:", err));
       }
 
-      const currentTime = audioContext.currentTime;
-
-      // First beep
+      // Create a simple notification sound
+      const now = audioContext.currentTime;
+      
+      // First beep: 800Hz
       const osc1 = audioContext.createOscillator();
       const gain1 = audioContext.createGain();
 
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(800, now);
       osc1.connect(gain1);
       gain1.connect(audioContext.destination);
+      
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      
+      osc1.start(now);
+      osc1.stop(now + 0.15);
 
-      osc1.frequency.setValueAtTime(800, currentTime);
-      osc1.type = "sine";
+      // Second beep: 1000Hz with delay
+      const osc2 = audioContext.createOscillator();
+      const gain2 = audioContext.createGain();
 
-      gain1.gain.setValueAtTime(0.3, currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.2);
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(1000, now + 0.2);
+      osc2.connect(gain2);
+      gain2.connect(audioContext.destination);
+      
+      gain2.gain.setValueAtTime(0.3, now + 0.2);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      
+      osc2.start(now + 0.2);
+      osc2.stop(now + 0.35);
 
-      osc1.start(currentTime);
-      osc1.stop(currentTime + 0.2);
-
-      // Second beep with delay
-      setTimeout(() => {
-        const newTime = audioContext.currentTime;
-        const osc2 = audioContext.createOscillator();
-        const gain2 = audioContext.createGain();
-
-        osc2.connect(gain2);
-        gain2.connect(audioContext.destination);
-
-        osc2.frequency.setValueAtTime(1000, newTime);
-        osc2.type = "sine";
-
-        gain2.gain.setValueAtTime(0.3, newTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, newTime + 0.2);
-
-        osc2.start(newTime);
-        osc2.stop(newTime + 0.2);
-      }, 250);
+      console.log("Web Audio notification sound queued");
     } catch (error) {
-      console.error("Error playing Web Audio:", error);
+      console.error("Error playing Web Audio sound:", error);
     }
   }, []);
 
   // Subscribe to all conversations and play sound on new messages
   useEffect(() => {
-    // Wait for Firebase to be ready
+    // Wait for Firebase to be ready and conversations to load
     const checkAuthAndSetup = async () => {
       const user =
         typeof window !== "undefined"
@@ -132,6 +175,9 @@ export function GlobalNotificationProvider() {
         console.log("User not found in localStorage, skipping notification setup");
         return;
       }
+
+      // Wait a bit for app to fully initialize (conversations to load)
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       try {
         // Ensure Firebase is initialized
@@ -152,6 +198,7 @@ export function GlobalNotificationProvider() {
         );
 
         const convSubsRef: Record<string, () => void> = {};
+        let hasLoadedAny = false;
 
         // Subscribe to admin conversations
         const unsubAdminConv = onSnapshot(adminConvQ, (snap) => {
@@ -175,17 +222,21 @@ export function GlobalNotificationProvider() {
             );
 
             convSubsRef[convId] = onSnapshot(msgsQ, (msgsSnap) => {
+              console.log(`Messages snapshot for conversation ${convId}:`, msgsSnap.size, "docs");
               msgsSnap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                   const msgData = change.doc.data();
                   const msgId = change.doc.id;
                   const msgTimestamp = msgData.createdAt?.toMillis?.() || Date.now();
 
+                  console.log(`Message added: ${msgId}, from: ${msgData.senderId}, timestamp: ${msgTimestamp}`);
+
                   // Only play sound for messages not from this user AND not too old
-                  // This prevents playing sound for old messages on first load
                   if (msgData.senderId !== userId) {
                     const now = Date.now();
                     const messageAge = now - msgTimestamp;
+
+                    console.log(`Message age: ${messageAge}ms, userId: ${userId}`);
 
                     // Only play if message is less than 5 seconds old
                     if (messageAge < 5000) {
@@ -193,9 +244,11 @@ export function GlobalNotificationProvider() {
 
                       if (msgTimestamp > lastTimestamp) {
                         lastMessageTimestampRef.current[convId] = msgTimestamp;
-                        console.log("New message received, playing sound. Age:", messageAge, "ms");
+                        console.log("Triggering notification sound...");
                         playNotificationSound();
                       }
+                    } else {
+                      console.log(`Message too old (${messageAge}ms), skipping sound`);
                     }
                   }
                 }
@@ -217,24 +270,31 @@ export function GlobalNotificationProvider() {
             );
 
             convSubsRef[convId] = onSnapshot(msgsQ, (msgsSnap) => {
+              console.log(`Messages snapshot for teacher conversation ${convId}:`, msgsSnap.size, "docs");
               msgsSnap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                   const msgData = change.doc.data();
                   const msgTimestamp = msgData.createdAt?.toMillis?.() || Date.now();
+
+                  console.log(`Teacher message added: from: ${msgData.senderId}, timestamp: ${msgTimestamp}`);
 
                   // Only play sound for messages not from this user AND not too old
                   if (msgData.senderId !== userId) {
                     const now = Date.now();
                     const messageAge = now - msgTimestamp;
 
+                    console.log(`Teacher message age: ${messageAge}ms, userId: ${userId}`);
+
                     if (messageAge < 5000) {
                       const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
 
                       if (msgTimestamp > lastTimestamp) {
                         lastMessageTimestampRef.current[convId] = msgTimestamp;
-                        console.log("New message received, playing sound. Age:", messageAge, "ms");
+                        console.log("Triggering notification sound for teacher message...");
                         playNotificationSound();
                       }
+                    } else {
+                      console.log(`Teacher message too old (${messageAge}ms), skipping sound`);
                     }
                   }
                 }
