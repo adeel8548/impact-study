@@ -101,10 +101,15 @@ export function ChatWindow({
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
-    });
 
-    // Mark conversation as read when opened
-    markConversationAsRead(conversationId, currentUserId).catch(console.error);
+      // Mark conversation as read after a small delay (give user time to read)
+      // Only mark if user is actively viewing this conversation
+      if (!document.hidden) {
+        setTimeout(() => {
+          markConversationAsRead(conversationId, currentUserId).catch(console.error);
+        }, 2000); // Wait 2 seconds before marking as read
+      }
+    });
 
     return () => unsubscribe();
   }, [conversationId, currentUserId, playNotificationSound]);

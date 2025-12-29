@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { ensureConversation, sendMessage, subscribeUnreadCount } from "@/lib/firestore-chat";
 import { db, ensureFirebaseAuth } from "@/lib/firebase";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 
 interface TeacherRow {
   id: string;
@@ -52,6 +53,9 @@ export default function AdminChatPage() {
   
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({}); // Track unread per conversation
+
+  // Enable web push + sound notifications for the active conversation
+  useChatNotifications(conversationId, { userId: currentUserId });
 
   // Persist selectedTeacher in ref to prevent unwanted clearing
   useEffect(() => {

@@ -51,12 +51,25 @@ export function GlobalNotificationProvider() {
   // Play notification sound
   const playNotificationSound = useCallback(() => {
     try {
+      // Try to play audio file first (better compatibility)
+      const audio = new Audio("/notification.mp3");
+      audio.volume = 0.8;
+      audio.play().catch((err) => {
+        console.warn("Audio file playback failed, falling back to Web Audio API:", err);
+        // Fallback to Web Audio API
+        playWebAudioSound();
+      });
+    } catch (error) {
+      console.error("Error playing notification sound:", error);
+    }
+  }, []);
+
+  // Fallback: Play sound using Web Audio API
+  const playWebAudioSound = useCallback(() => {
+    try {
       if (!isInitializedRef.current) return;
 
-      if (!audioContextRef.current) {
-        console.warn("Audio context not available");
-        return;
-      }
+      if (!audioContextRef.current) return;
 
       const audioContext = audioContextRef.current;
 
@@ -101,24 +114,31 @@ export function GlobalNotificationProvider() {
         osc2.stop(newTime + 0.2);
       }, 250);
     } catch (error) {
-      console.error("Error playing notification sound:", error);
+      console.error("Error playing Web Audio:", error);
     }
   }, []);
 
   // Subscribe to all conversations and play sound on new messages
   useEffect(() => {
-    const user =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("currentUser") || "{}")
-        : {};
+    // Wait for Firebase to be ready
+    const checkAuthAndSetup = async () => {
+      const user =
+        typeof window !== "undefined"
+          ? JSON.parse(localStorage.getItem("currentUser") || "{}")
+          : {};
 
-    const userId = user?.id;
-    if (!userId) return;
+      const userId = user?.id;
+      if (!userId) {
+        console.log("User not found in localStorage, skipping notification setup");
+        return;
+      }
 
-    const setupGlobalListener = async () => {
       try {
-        const { collection, query, where, onSnapshot } = await import("firebase/firestore");
+        // Ensure Firebase is initialized
         const { db } = await import("@/lib/firebase");
+        const { collection, query, where, onSnapshot } = await import("firebase/firestore");
+
+        console.log("Setting up global notification listener for user:", userId);
 
         // Get all conversations for this user (both admin and teacher)
         const adminConvQ = query(
@@ -136,6 +156,7 @@ export function GlobalNotificationProvider() {
         // Subscribe to admin conversations
         const unsubAdminConv = onSnapshot(adminConvQ, (snap) => {
           const convIds = snap.docs.map(doc => doc.id);
+          console.log("Admin conversations:", convIds.length);
 
           // Clean up removed conversations
           Object.keys(convSubsRef).forEach((id) => {
@@ -158,17 +179,23 @@ export function GlobalNotificationProvider() {
                 if (change.type === "added") {
                   const msgData = change.doc.data();
                   const msgId = change.doc.id;
+                  const msgTimestamp = msgData.createdAt?.toMillis?.() || Date.now();
 
-                  // Only play sound for messages not from this user
+                  // Only play sound for messages not from this user AND not too old
+                  // This prevents playing sound for old messages on first load
                   if (msgData.senderId !== userId) {
-                    // Avoid duplicate sounds for same message
-                    const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
-                    const msgTimestamp = msgData.createdAt?.toMillis?.() || Date.now();
+                    const now = Date.now();
+                    const messageAge = now - msgTimestamp;
 
-                    if (msgTimestamp > lastTimestamp) {
-                      lastMessageTimestampRef.current[convId] = msgTimestamp;
-                      console.log("New message received, playing sound");
-                      playNotificationSound();
+                    // Only play if message is less than 5 seconds old
+                    if (messageAge < 5000) {
+                      const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
+
+                      if (msgTimestamp > lastTimestamp) {
+                        lastMessageTimestampRef.current[convId] = msgTimestamp;
+                        console.log("New message received, playing sound. Age:", messageAge, "ms");
+                        playNotificationSound();
+                      }
                     }
                   }
                 }
@@ -180,6 +207,7 @@ export function GlobalNotificationProvider() {
         // Subscribe to teacher conversations
         const unsubTeacherConv = onSnapshot(teacherConvQ, (snap) => {
           const convIds = snap.docs.map(doc => doc.id);
+          console.log("Teacher conversations:", convIds.length);
 
           convIds.forEach((convId) => {
             if (convSubsRef[convId]) return;
@@ -192,16 +220,21 @@ export function GlobalNotificationProvider() {
               msgsSnap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                   const msgData = change.doc.data();
+                  const msgTimestamp = msgData.createdAt?.toMillis?.() || Date.now();
 
-                  // Only play sound for messages not from this user
+                  // Only play sound for messages not from this user AND not too old
                   if (msgData.senderId !== userId) {
-                    const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
-                    const msgTimestamp = msgData.createdAt?.toMillis?.() || Date.now();
+                    const now = Date.now();
+                    const messageAge = now - msgTimestamp;
 
-                    if (msgTimestamp > lastTimestamp) {
-                      lastMessageTimestampRef.current[convId] = msgTimestamp;
-                      console.log("New message received, playing sound");
-                      playNotificationSound();
+                    if (messageAge < 5000) {
+                      const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
+
+                      if (msgTimestamp > lastTimestamp) {
+                        lastMessageTimestampRef.current[convId] = msgTimestamp;
+                        console.log("New message received, playing sound. Age:", messageAge, "ms");
+                        playNotificationSound();
+                      }
                     }
                   }
                 }
@@ -220,11 +253,7 @@ export function GlobalNotificationProvider() {
       }
     };
 
-    const unsubscribe = setupGlobalListener();
-
-    return () => {
-      unsubscribe?.then((fn) => fn?.());
-    };
+    checkAuthAndSetup();
   }, [playNotificationSound]);
 
   // Component doesn't render anything, just listens
