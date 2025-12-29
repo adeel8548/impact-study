@@ -35,6 +35,7 @@ messaging.onBackgroundMessage((payload) => {
     tag: "chat-notification",
     requireInteraction: false,
     silent: false,
+    vibrate: [200, 100, 200], // Vibration for mobile
   };
 
   // Try to play sound

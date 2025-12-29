@@ -20,10 +20,12 @@ export function GlobalNotificationProvider() {
 
         if (!audioContextRef.current) {
           audioContextRef.current = new AudioContext();
+          console.log("Audio context created on user interaction");
         }
 
         if (audioContextRef.current.state === "suspended") {
           audioContextRef.current.resume();
+          console.log("Audio context resumed on user interaction");
         }
 
         isInitializedRef.current = true;
@@ -31,10 +33,13 @@ export function GlobalNotificationProvider() {
         console.error("Failed to initialize audio context:", error);
       }
 
-      // Remove listeners after first interaction
-      document.removeEventListener("click", handleUserInteraction);
-      document.removeEventListener("keydown", handleUserInteraction);
-      document.removeEventListener("touchstart", handleUserInteraction);
+      // Keep listeners for mobile - user may interact multiple times
+      // Remove listeners only on web after first interaction
+      if (!(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))) {
+        document.removeEventListener("click", handleUserInteraction);
+        document.removeEventListener("keydown", handleUserInteraction);
+        document.removeEventListener("touchstart", handleUserInteraction);
+      }
     };
 
     document.addEventListener("click", handleUserInteraction);
@@ -53,9 +58,16 @@ export function GlobalNotificationProvider() {
     console.log("playNotificationSound called");
     
     try {
+      // Mobile vibration API
+      if ("vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]); // Vibrate pattern
+        console.log("Vibration triggered");
+      }
+
       // Method 1: Try to play mp3 audio file
       const audio = new Audio("/notification.mp3");
-      audio.volume = 0.8;
+      audio.volume = 1.0; // Max volume for mobile
+      audio.currentTime = 0; // Reset to start
       
       const playPromise = audio.play();
       if (playPromise !== undefined) {
@@ -68,6 +80,10 @@ export function GlobalNotificationProvider() {
             // Fallback to Web Audio API
             playWebAudioSound();
           });
+      } else {
+        // Old browser - try to play anyway
+        console.log("No play promise, trying Web Audio API");
+        playWebAudioSound();
       }
     } catch (error) {
       console.error("Error with audio file:", error);
