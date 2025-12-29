@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -53,7 +53,8 @@ export function AdminSidebar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [conversationIds, setConversationIds] = useState<string[]>([]);
+  const [unreadByConversation, setUnreadByConversation] = useState<Record<string, number>>({});
+  const convSubsRef = useRef<Record<string, () => void>>({});
   const supabase = useMemo(() => createClient(), []);
 
   const clearUser = () => {
@@ -85,49 +86,49 @@ export function AdminSidebar() {
       const userId = data.user?.id;
       if (!userId) return;
 
-      const { data: convs, error: convErr } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("admin_id", userId);
-      if (convErr) return;
-      const ids = (convs || []).map((c) => c.id);
-      setConversationIds(ids);
+      // Use Firestore to get unread count across conversations (initial snapshot)
+      const { getUnreadCountForUser, subscribeUnreadCount } = await import("@/lib/firestore-chat");
+      const { collection, query, where, onSnapshot } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
 
-      if (ids.length > 0) {
-        const { count } = await supabase
-          .from("messages")
-          .select("id", { count: "exact", head: true })
-          .eq("is_read", false)
-          .neq("sender_id", userId)
-          .in("conversation_id", ids);
-        setUnreadCount(count || 0);
-      }
+      const totalUnread = await getUnreadCountForUser(userId);
+      setUnreadCount(totalUnread);
 
-      const channel = supabase
-        .channel(`admin-messages-${userId}`)
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "messages" },
-          (payload) => {
-            const row: any = payload.new;
-            if (row.sender_id === userId) return;
-            if (ids.includes(row.conversation_id)) setUnreadCount((c) => c + 1);
-          },
-        )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "messages" },
-          (payload) => {
-            const row: any = payload.new;
-            if (row.is_read && row.sender_id !== userId && ids.includes(row.conversation_id)) {
-              setUnreadCount((c) => Math.max(0, c - 1));
-            }
-          },
-        )
-        .subscribe();
+      // Subscribe to real-time changes for all conversations and per-conversation unread counts
+      const q = query(
+        collection(db, "conversations"),
+        where("adminId", "==", userId)
+      );
+      
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const convIds = snap.docs.map((d) => d.id);
 
+        // Clean up removed conversations
+        Object.keys(convSubsRef.current).forEach((id) => {
+          if (!convIds.includes(id)) {
+            convSubsRef.current[id]();
+            delete convSubsRef.current[id];
+          }
+        });
+
+        // Subscribe to new conversations for unread counts
+        convIds.forEach((convId) => {
+          if (convSubsRef.current[convId]) return;
+          convSubsRef.current[convId] = subscribeUnreadCount(convId, userId, (count) => {
+            setUnreadByConversation((prev) => {
+              const next = { ...prev, [convId]: count };
+              const total = Object.values(next).reduce((sum, c) => sum + c, 0);
+              setUnreadCount(total);
+              return next;
+            });
+          });
+        });
+      });
+      
       return () => {
-        supabase.removeChannel(channel);
+        unsubscribe();
+        Object.values(convSubsRef.current).forEach((fn) => fn());
+        convSubsRef.current = {};
       };
     });
   }, [supabase]);
@@ -160,7 +161,7 @@ export function AdminSidebar() {
           </h1>
         </div>
 
-        <nav className="flex flex-col gap-1 p-4 flex-1 h-[380px] overflow-y-auto">
+        <nav className="flex flex-col gap-1 p-4 flex-1 h-[420px] overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -193,7 +194,7 @@ export function AdminSidebar() {
         <div className="p-4 border-t border-sidebar-border">
           <Button
             onClick={handleLogout}
-            className="w-full justify-center gap-2 bg-red-500 hover:bg-red-600 text-white"
+            className="w-[90%] absolute bottom-4 left-3 justify-center gap-2 bg-red-500 hover:bg-red-600 text-white"
           >
             <LogOut className="w-4 h-4" />
             Logout

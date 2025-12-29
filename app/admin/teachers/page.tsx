@@ -14,6 +14,9 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Eye,
+  EyeOff,
+  CalendarDays,
 } from "lucide-react";
 import { TeacherModal } from "@/components/modals/teacher-modal";
 import { TeacherAssignmentsModal } from "@/components/modals/teacher-assignments-modal";
@@ -117,6 +120,7 @@ export default function TeacherManagement() {
   const [assignmentsModalOpen, setAssignmentsModalOpen] = useState(false);
   const [selectedTeacherForAssignments, setSelectedTeacherForAssignments] =
     useState<Teacher | null>(null);
+  const [showSalaryValues, setShowSalaryValues] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -436,37 +440,48 @@ export default function TeacherManagement() {
           {/* Salary Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card className="p-6 border-l-4 border-l-blue-500">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
                   <p className="text-muted-foreground text-sm font-medium mb-1">
                     Total Salary Budget
                   </p>
                   <p className="text-3xl font-bold text-foreground">
-                    PKR {salarySummary.totalAmount.toLocaleString()}
+                    {showSalaryValues
+                      ? `PKR ${salarySummary.totalAmount.toLocaleString()}`
+                      : "PKR *****"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Combined salaries for all teachers
                   </p>
                 </div>
-                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                  <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowSalaryValues(!showSalaryValues)}
+                    className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title={showSalaryValues ? "Hide values" : "Show values"}
+                  >
+                    {showSalaryValues ? (
+                      <EyeOff className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    ) : (
+                      <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    )}
+                  </button>
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </div>
               </div>
             </Card>
-            <Card
-              className="p-6 border-l-4 border-l-green-500 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => {
-                setSalaryListStatus("paid");
-                setSalaryListModalOpen(true);
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
+            <Card className="p-6 border-l-4 border-l-green-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
                   <p className="text-muted-foreground text-sm font-medium mb-1">
                     Total Paid (Current Month)
                   </p>
                   <p className="text-3xl font-bold text-foreground">
-                    PKR {salarySummary.paidAmount.toLocaleString()}
+                    {showSalaryValues
+                      ? `PKR ${salarySummary.paidAmount.toLocaleString()}`
+                      : "PKR *****"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {salarySummary.paidCount}{" "}
@@ -474,26 +489,42 @@ export default function TeacherManagement() {
                     paid
                   </p>
                 </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-                  <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowSalaryValues(!showSalaryValues)}
+                    className="p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    title={showSalaryValues ? "Hide values" : "Show values"}
+                  >
+                    {showSalaryValues ? (
+                      <EyeOff className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSalaryListStatus("paid");
+                      setSalaryListModalOpen(true);
+                    }}
+                    className="p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    title="View paid salaries"
+                  >
+                    <CalendarDays className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </button>
                 </div>
               </div>
             </Card>
 
-            <Card
-              className="p-6 border-l-4 border-l-red-500 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => {
-                setSalaryListStatus("unpaid");
-                setSalaryListModalOpen(true);
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
+            <Card className="p-6 border-l-4 border-l-red-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
                   <p className="text-muted-foreground text-sm font-medium mb-1">
                     Total Unpaid (Current Month)
                   </p>
                   <p className="text-3xl font-bold text-foreground">
-                    PKR {salarySummary.unpaidAmount.toLocaleString()}
+                    {showSalaryValues
+                      ? `PKR ${salarySummary.unpaidAmount.toLocaleString()}`
+                      : "PKR *****"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {salarySummary.unpaidCount}{" "}
@@ -501,8 +532,28 @@ export default function TeacherManagement() {
                     pending
                   </p>
                 </div>
-                <div className="p-3 bg-red-100 dark:bg-red-900 rounded-lg">
-                  <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowSalaryValues(!showSalaryValues)}
+                    className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title={showSalaryValues ? "Hide values" : "Show values"}
+                  >
+                    {showSalaryValues ? (
+                      <EyeOff className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    ) : (
+                      <Eye className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSalaryListStatus("unpaid");
+                      setSalaryListModalOpen(true);
+                    }}
+                    className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="View unpaid salaries"
+                  >
+                    <CalendarDays className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </button>
                 </div>
               </div>
             </Card>

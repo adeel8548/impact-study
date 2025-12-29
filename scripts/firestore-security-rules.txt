@@ -1,0 +1,69 @@
+// Firestore Security Rules
+// Copy this to Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== Helper Functions =====
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role == 'admin';
+    }
+    
+    function isTeacher(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role == 'teacher';
+    }
+    
+    function isConversationParticipant(conversationId, uid) {
+      let conv = get(/databases/$(database)/documents/conversations/$(conversationId)).data;
+      return uid == conv.adminId || uid == conv.teacherId;
+    }
+    
+    // ===== Users Collection =====
+    // Users can only read/write their own profile
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
+      allow delete: if false;
+    }
+    
+    // ===== Conversations Collection =====
+    match /conversations/{conversationId} {
+      // Only conversation participants can read
+      allow read: if isSignedIn() && isConversationParticipant(conversationId, request.auth.uid);
+      
+      // Admin can create conversations with any teacher
+      allow create: if isSignedIn() && isAdmin(request.auth.uid) && 
+                       request.resource.data.adminId == request.auth.uid &&
+                       exists(/databases/$(database)/documents/users/$(request.resource.data.teacherId));
+      
+      // Only participants can update
+      allow update: if isSignedIn() && isConversationParticipant(conversationId, request.auth.uid);
+      
+      allow delete: if false;
+      
+      // ===== Messages Subcollection =====
+      match /messages/{messageId} {
+        // Only conversation participants can read messages
+        allow read: if isSignedIn() && isConversationParticipant(conversationId, request.auth.uid);
+        
+        // Only sender can create messages
+        allow create: if isSignedIn() && 
+                        request.resource.data.senderId == request.auth.uid &&
+                        isConversationParticipant(conversationId, request.auth.uid);
+        
+        // Users can only update their own messages' isRead status
+        allow update: if isSignedIn() && isConversationParticipant(conversationId, request.auth.uid) &&
+                        (request.resource.data.isRead == true && resource.data.senderId != request.auth.uid);
+        
+        allow delete: if false;
+      }
+    }
+  }
+}

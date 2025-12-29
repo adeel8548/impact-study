@@ -52,54 +52,66 @@ export function TeacherHeader() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      const userId = data.user?.id;
+    const loadUnreadCount = async () => {
+      const user =
+        typeof window !== "undefined"
+          ? JSON.parse(localStorage.getItem("currentUser") || "{}")
+          : {};
+      
+      const userId = user?.id;
       if (!userId) return;
 
-      const { data: convs } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("teacher_id", userId);
-      const ids = (convs || []).map((c) => c.id);
-
-      if (ids.length > 0) {
-        const { count } = await supabase
-          .from("messages")
-          .select("id", { count: "exact", head: true })
-          .eq("is_read", false)
-          .neq("sender_id", userId)
-          .in("conversation_id", ids);
-        setUnreadCount(count || 0);
+      try {
+        // Import Firebase functions
+        const { collection, query, where, onSnapshot, getDocs } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        
+        // Get all conversations where this teacher is involved
+        const q = query(
+          collection(db, "conversations"),
+          where("teacherId", "==", userId)
+        );
+        
+        const unsubscribe = onSnapshot(q, async (snap) => {
+          let totalUnread = 0;
+          
+          // For each conversation, count unread messages from admin
+          for (const doc of snap.docs) {
+            const convId = doc.id;
+            const msgsQ = query(
+              collection(db, "conversations", convId, "messages"),
+              where("isRead", "==", false)
+            );
+            const msgsSnap = await getDocs(msgsQ);
+            
+            // Count messages NOT from this teacher (i.e., from admin)
+            msgsSnap.docs.forEach(msgDoc => {
+              if (msgDoc.data().senderId !== userId) {
+                totalUnread++;
+              }
+            });
+          }
+          
+          console.log("Teacher header unread count:", totalUnread);
+          setUnreadCount(totalUnread);
+        });
+        
+        return unsubscribe;
+      } catch (err) {
+        console.error("Error getting unread count:", err);
       }
-
-      const channel = supabase
-        .channel(`teacher-messages-${userId}`)
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "messages" },
-          (payload) => {
-            const row: any = payload.new;
-            if (row.sender_id === userId) return;
-            if (ids.includes(row.conversation_id)) setUnreadCount((c) => c + 1);
-          },
-        )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "messages" },
-          (payload) => {
-            const row: any = payload.new;
-            if (row.is_read && row.sender_id !== userId && ids.includes(row.conversation_id)) {
-              setUnreadCount((c) => Math.max(0, c - 1));
-            }
-          },
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    };
+    
+    let unsubscribe: (() => void) | undefined;
+    
+    loadUnreadCount().then((unsub) => {
+      unsubscribe = unsub;
     });
-  }, [supabase]);
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const clearUser = () => {
     localStorage.removeItem("currentUser");

@@ -13,6 +13,9 @@ import {
   User,
   Calendar,
   DollarSign,
+  Eye,
+  EyeOff,
+  CalendarDays,
 } from "lucide-react";
 import { StudentModal } from "@/components/modals/student-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
@@ -108,6 +111,7 @@ export function StudentsClientComponent({
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [selectedStudentForAttendance, setSelectedStudentForAttendance] =
     useState<Student | null>(null);
+  const [showFeeValues, setShowFeeValues] = useState(false);
 
   // Keep local students in sync when server data (initialStudents) changes
   // This ensures router.refresh() and server revalidate update the table
@@ -191,60 +195,129 @@ export function StudentsClientComponent({
 
       {/* Fee Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="p-6 bg-white border-2 border-gray-100 ">
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
-              Total Fees
-            </span>
-            <span className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-              {feeSummary.totalFees.toLocaleString("en-US", {
-                style: "currency",
-                currency: "PkR",
-                minimumFractionDigits: 0,
-              })}
-            </span>
+        <Card className="p-6 bg-white border-2 border-gray-100 group relative">
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col flex-1">
+              <span className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
+                Total Fees
+              </span>
+              <span className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                {showFeeValues
+                  ? feeSummary.totalFees.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "PKR",
+                      minimumFractionDigits: 0,
+                    })
+                  : "PKR *****"}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowFeeValues(!showFeeValues)}
+                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title={showFeeValues ? "Hide values" : "Show values"}
+              >
+                {showFeeValues ? (
+                  <EyeOff className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setFeesListStatus("paid");
+                  setFeesListModalOpen(true);
+                }}
+                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="View details"
+              >
+                <CalendarDays className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </button>
+            </div>
           </div>
         </Card>
 
-        <Card
-          className="p-6 bg-white border-2 border-gray-100 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => {
-            setFeesListStatus("paid");
-            setFeesListModalOpen(true);
-          }}
-        >
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
-              Paid
-            </span>
-            <span className="text-3xl font-bold text-green-900 dark:text-green-100">
-              {feeSummary.paidFees.toLocaleString("en-US", {
-                style: "currency",
-                currency: "PKR",
-                minimumFractionDigits: 0,
-              })}
-            </span>
+        <Card className="p-6 bg-white border-2 border-gray-100 group relative">
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col flex-1">
+              <span className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
+                Paid
+              </span>
+              <span className="text-3xl font-bold text-green-900 dark:text-green-100">
+                {showFeeValues
+                  ? feeSummary.paidFees.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "PKR",
+                      minimumFractionDigits: 0,
+                    })
+                  : "PKR *****"}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowFeeValues(!showFeeValues)}
+                className="p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                title={showFeeValues ? "Hide values" : "Show values"}
+              >
+                {showFeeValues ? (
+                  <EyeOff className="w-5 h-5 text-green-600 dark:text-green-400" />
+                ) : (
+                  <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setFeesListStatus("paid");
+                  setFeesListModalOpen(true);
+                }}
+                className="p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                title="View details"
+              >
+                <CalendarDays className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </button>
+            </div>
           </div>
         </Card>
 
-        <Card
-          className="p-6  bg-white border-2 border-gray-100 cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => {
-            setFeesListStatus("unpaid");
-            setFeesListModalOpen(true);
-          }}
-        >
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
-              Unpaid
-            </span>
-            <span className="text-3xl font-bold text-red-900 dark:text-red-100">
-              {feeSummary.unpaidFees.toLocaleString("en-US", {
-                style: "currency",
-                currency: "PKR",
-                minimumFractionDigits: 0,
-              })}
-            </span>
+        <Card className="p-6  bg-white border-2 border-gray-100 group relative">
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col flex-1">
+              <span className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+                Unpaid
+              </span>
+              <span className="text-3xl font-bold text-red-900 dark:text-red-100">
+                {showFeeValues
+                  ? feeSummary.unpaidFees.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "PKR",
+                      minimumFractionDigits: 0,
+                    })
+                  : "PKR *****"}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowFeeValues(!showFeeValues)}
+                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                title={showFeeValues ? "Hide values" : "Show values"}
+              >
+                {showFeeValues ? (
+                  <EyeOff className="w-5 h-5 text-red-600 dark:text-red-400" />
+                ) : (
+                  <Eye className="w-5 h-5 text-red-600 dark:text-red-400" />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setFeesListStatus("unpaid");
+                  setFeesListModalOpen(true);
+                }}
+                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                title="View details"
+              >
+                <CalendarDays className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </button>
+            </div>
           </div>
         </Card>
       </div>

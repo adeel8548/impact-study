@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isParticipant(conv) {
+      return isSignedIn() && (
+        request.auth.uid == conv.data.adminId ||
+        request.auth.uid == conv.data.teacherId
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /conversations/{conversationId} {
+      allow read, update: if isParticipant(resource);
+      allow create: if isSignedIn();
+
+      match /messages/{messageId} {
+        allow read: if isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)));
+        allow create: if isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)))
+          && request.resource.data.senderId == request.auth.uid;
+        allow update: if isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)))
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(["isRead"]) 
+          && request.resource.data.isRead in [true, false];
+      }
+    }
+  }
+}
