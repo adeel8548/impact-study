@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 // Initialize Firebase
 import "@/lib/firebase";
+import { GlobalNotificationProvider } from "@/components/global-notification-provider";
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
+        <GlobalNotificationProvider />
         {children}
         <Analytics />
       </body>
