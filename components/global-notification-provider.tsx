@@ -10,6 +10,7 @@ export function GlobalNotificationProvider() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const isInitializedRef = useRef(false);
   const lastMessageTimestampRef = useRef<Record<string, number>>({});
+  const playedMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Initialize audio context on first user interaction
   useEffect(() => {
@@ -252,6 +253,11 @@ export function GlobalNotificationProvider() {
 
                   console.log(`Message added: ${msgId}, from: ${msgData.senderId}, timestamp: ${msgTimestamp}`);
 
+                  // Deduplicate by message id
+                  if (playedMessageIdsRef.current.has(msgId)) {
+                    return;
+                  }
+
                   // Only play sound for messages not from this user AND not too old
                   if (msgData.senderId !== userId) {
                     const now = Date.now();
@@ -266,6 +272,7 @@ export function GlobalNotificationProvider() {
                       if (msgTimestamp > lastTimestamp) {
                         lastMessageTimestampRef.current[convId] = msgTimestamp;
                         console.log("Triggering notification sound...");
+                        playedMessageIdsRef.current.add(msgId);
                         playNotificationSound();
                       }
                     } else {
@@ -295,9 +302,15 @@ export function GlobalNotificationProvider() {
               msgsSnap.docChanges().forEach((change) => {
                 if (change.type === "added") {
                   const msgData = change.doc.data();
+                  const msgId = change.doc.id;
                   const msgTimestamp = msgData.createdAt?.toMillis?.() || Date.now();
 
-                  console.log(`Teacher message added: from: ${msgData.senderId}, timestamp: ${msgTimestamp}`);
+                  console.log(`Teacher message added: ${msgId}, from: ${msgData.senderId}, timestamp: ${msgTimestamp}`);
+
+                  // Deduplicate by message id
+                  if (playedMessageIdsRef.current.has(msgId)) {
+                    return;
+                  }
 
                   // Only play sound for messages not from this user AND not too old
                   if (msgData.senderId !== userId) {
@@ -312,6 +325,7 @@ export function GlobalNotificationProvider() {
                       if (msgTimestamp > lastTimestamp) {
                         lastMessageTimestampRef.current[convId] = msgTimestamp;
                         console.log("Triggering notification sound for teacher message...");
+                        playedMessageIdsRef.current.add(msgId);
                         playNotificationSound();
                       }
                     } else {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import dayjs from "dayjs";
 import { sendMessage, subscribeMessages, markConversationAsRead } from "@/lib/firestore-chat";
 import { ensureFirebaseAuth } from "@/lib/firebase";
 import { Card } from "@/components/ui/card";
@@ -14,6 +15,7 @@ interface ChatWindowProps {
   currentUserId: string;
   currentUserName?: string;
   onUnreadChange?: (count: number) => void;
+  timeFormat12h?: boolean; // optional 12-hour format
 }
 
 export function ChatWindow({
@@ -21,6 +23,7 @@ export function ChatWindow({
   currentUserId,
   currentUserName = "You",
   onUnreadChange,
+  timeFormat12h = false,
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<Array<{ id: string; senderId: string; text: string; createdAt: Date; senderName?: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -195,8 +198,8 @@ export function ChatWindow({
                   >
                     <p className="text-sm">{msg.text}</p>
                     <p className="text-xs opacity-70 mt-1">
-                      {msg.createdAt instanceof Date 
-                        ? msg.createdAt.toLocaleTimeString()
+                      {msg.createdAt instanceof Date
+                        ? dayjs(msg.createdAt).format(timeFormat12h ? "hh:mm A" : "HH:mm")
                         : "sending..."}
                     </p>
                   </div>

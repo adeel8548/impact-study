@@ -18,6 +18,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
+// Track played message IDs to avoid duplicate sounds
+const playedMessageIds = new Set();
 
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
@@ -25,6 +27,18 @@ messaging.onBackgroundMessage((payload) => {
     "[firebase-messaging-sw.js] Received background message ",
     payload
   );
+
+  // Attempt to dedupe by message id
+  const messageId = payload.messageId || (payload.data && (payload.data.message_id || payload.data.id));
+  if (messageId && playedMessageIds.has(messageId)) {
+    console.log("Duplicate background message, skipping sound:", messageId);
+  } else {
+    if (messageId) {
+      playedMessageIds.add(messageId);
+    }
+    // Try to play sound
+    playNotificationSound();
+  }
 
   // Show notification with sound
   const notificationTitle = payload.notification.title || "New Message";
@@ -37,9 +51,6 @@ messaging.onBackgroundMessage((payload) => {
     silent: false,
     vibrate: [200, 100, 200], // Vibration for mobile
   };
-
-  // Try to play sound
-  playNotificationSound();
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
