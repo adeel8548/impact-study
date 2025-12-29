@@ -64,29 +64,32 @@ export function GlobalNotificationProvider() {
         console.log("Vibration triggered");
       }
 
-      // Method 1: Try to play mp3 audio file
-      const audio = new Audio("/notification.mp3");
-      audio.volume = 1.0; // Max volume for mobile
-      audio.currentTime = 0; // Reset to start
+      // Try base64 encoded notification sound first (works in browsers)
+      const audioData = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==";
+      const audio = new Audio(audioData);
+      audio.volume = 1.0;
       
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log("Notification sound played via mp3 file");
+            console.log("Notification sound played via base64");
           })
           .catch((err) => {
-            console.warn("MP3 playback failed:", err.message);
-            // Fallback to Web Audio API
-            playWebAudioSound();
+            console.warn("Base64 audio playback failed:", err.message);
+            // Fallback to mp3 file
+            const audio2 = new Audio("/notification.mp3");
+            audio2.volume = 1.0;
+            audio2.play().catch((err2) => {
+              console.warn("MP3 playback also failed:", err2.message);
+              playWebAudioSound();
+            });
           });
       } else {
-        // Old browser - try to play anyway
-        console.log("No play promise, trying Web Audio API");
         playWebAudioSound();
       }
     } catch (error) {
-      console.error("Error with audio file:", error);
+      console.error("Error playing notification sound:", error);
       playWebAudioSound();
     }
   }, []);
@@ -192,15 +195,17 @@ export function GlobalNotificationProvider() {
         return;
       }
 
-      // Wait a bit for app to fully initialize (conversations to load)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log("GlobalNotificationProvider: Setting up for user:", userId);
+
+      // Shorter delay for mobile responsiveness
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
         // Ensure Firebase is initialized
         const { db } = await import("@/lib/firebase");
         const { collection, query, where, onSnapshot } = await import("firebase/firestore");
 
-        console.log("Setting up global notification listener for user:", userId);
+        console.log("GlobalNotificationProvider: Firebase ready, setting up listeners");
 
         // Get all conversations for this user (both admin and teacher)
         const adminConvQ = query(
@@ -320,16 +325,27 @@ export function GlobalNotificationProvider() {
         });
 
         return () => {
+          console.log("GlobalNotificationProvider: Cleaning up listeners");
           unsubAdminConv();
           unsubTeacherConv();
           Object.values(convSubsRef).forEach((fn) => fn());
         };
       } catch (err) {
-        console.error("Error setting up global notification listener:", err);
+        console.error("GlobalNotificationProvider error:", err);
       }
     };
 
-    checkAuthAndSetup();
+    let cleanup: (() => void) | undefined;
+    checkAuthAndSetup().then((cleanupFn) => {
+      cleanup = cleanupFn;
+      console.log("GlobalNotificationProvider: Setup complete");
+    });
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
   }, [playNotificationSound]);
 
   // Component doesn't render anything, just listens

@@ -59,12 +59,19 @@ export function TeacherHeader() {
           : {};
       
       const userId = user?.id;
-      if (!userId) return;
+      if (!userId) {
+        console.log("No user ID found");
+        return;
+      }
+
+      console.log("Loading unread count for user:", userId);
 
       try {
         // Import Firebase functions
         const { collection, query, where, onSnapshot } = await import("firebase/firestore");
         const { db } = await import("@/lib/firebase");
+        
+        console.log("Firebase imported, setting up listeners");
         
         // Get all conversations where this teacher is involved
         const q = query(
@@ -75,6 +82,7 @@ export function TeacherHeader() {
         const convSubsRef: Record<string, () => void> = {};
         
         const unsubscribe = onSnapshot(q, (snap) => {
+          console.log("Conversations loaded:", snap.docs.length);
           const convIds = snap.docs.map(doc => doc.id);
           
           // Clean up subscriptions for removed conversations
@@ -87,10 +95,11 @@ export function TeacherHeader() {
           
           // Subscribe to unread messages for each conversation in real-time
           const unreadByConv: Record<string, number> = {};
-          let activeSubscriptions = convIds.length;
           
           convIds.forEach((convId) => {
             if (convSubsRef[convId]) return; // Already subscribed
+            
+            console.log("Setting up unread listener for conversation:", convId);
             
             const msgsQ = query(
               collection(db, "conversations", convId, "messages"),
@@ -110,21 +119,19 @@ export function TeacherHeader() {
               
               // Calculate total unread from all conversations
               const totalUnread = Object.values(unreadByConv).reduce((sum, count) => sum + count, 0);
-              console.log("Teacher header unread count:", totalUnread);
+              console.log("Teacher header unread count updated:", totalUnread, "in conversation", convId);
               setUnreadCount(totalUnread);
             });
           });
           
           // If no conversations, set unread to 0
           if (convIds.length === 0) {
+            console.log("No conversations found, setting unread to 0");
             setUnreadCount(0);
           }
         });
         
-        return () => {
-          unsubscribe();
-          Object.values(convSubsRef).forEach((fn) => fn());
-        };
+        return unsubscribe;
       } catch (err) {
         console.error("Error getting unread count:", err);
       }
@@ -134,10 +141,14 @@ export function TeacherHeader() {
     
     loadUnreadCount().then((unsub) => {
       unsubscribe = unsub;
+      console.log("Unread count listener setup complete");
     });
     
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribe) {
+        console.log("Cleaning up unread count listeners");
+        unsubscribe();
+      }
     };
   }, []);
 
