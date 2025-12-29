@@ -162,7 +162,7 @@ export function useChatNotifications(
     };
   }, [conversationId, onNewMessage, soundEnabled]);
 
-  // Listen to Firestore messages (v2)
+  // Listen to Firestore messages (v2) - play sound even if on different screen/tab
   useEffect(() => {
     if (!conversationId) return;
 
@@ -173,11 +173,17 @@ export function useChatNotifications(
       lastMessageIdRef.current = last.id;
 
       const uid = userId || localStorage.getItem("currentUserId");
+      
+      // Play sound if message is from someone else, regardless of page focus
       if (soundEnabled && last.senderId !== uid) {
         playNotificationSound();
         const text = (last as any).text || "New message";
         const sender = (last as any).senderName || "Message";
-        toast.info(`${sender}: ${text.substring(0, 50)}${text.length > 50 ? "..." : ""}`);
+        
+        // Show toast only if page is focused
+        if (!document.hidden) {
+          toast.info(`${sender}: ${text.substring(0, 50)}${text.length > 50 ? "..." : ""}`);
+        }
       }
     });
 
