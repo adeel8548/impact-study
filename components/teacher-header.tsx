@@ -63,7 +63,7 @@ export function TeacherHeader() {
 
       try {
         // Import Firebase functions
-        const { collection, query, where, onSnapshot, getDocs } = await import("firebase/firestore");
+        const { collection, query, where, onSnapshot } = await import("firebase/firestore");
         const { db } = await import("@/lib/firebase");
         
         // Get all conversations where this teacher is involved
@@ -72,31 +72,59 @@ export function TeacherHeader() {
           where("teacherId", "==", userId)
         );
         
-        const unsubscribe = onSnapshot(q, async (snap) => {
-          let totalUnread = 0;
+        const convSubsRef: Record<string, () => void> = {};
+        
+        const unsubscribe = onSnapshot(q, (snap) => {
+          const convIds = snap.docs.map(doc => doc.id);
           
-          // For each conversation, count unread messages from admin
-          for (const doc of snap.docs) {
-            const convId = doc.id;
+          // Clean up subscriptions for removed conversations
+          Object.keys(convSubsRef).forEach((id) => {
+            if (!convIds.includes(id)) {
+              convSubsRef[id]();
+              delete convSubsRef[id];
+            }
+          });
+          
+          // Subscribe to unread messages for each conversation in real-time
+          const unreadByConv: Record<string, number> = {};
+          let activeSubscriptions = convIds.length;
+          
+          convIds.forEach((convId) => {
+            if (convSubsRef[convId]) return; // Already subscribed
+            
             const msgsQ = query(
               collection(db, "conversations", convId, "messages"),
               where("isRead", "==", false)
             );
-            const msgsSnap = await getDocs(msgsQ);
             
-            // Count messages NOT from this teacher (i.e., from admin)
-            msgsSnap.docs.forEach(msgDoc => {
-              if (msgDoc.data().senderId !== userId) {
-                totalUnread++;
-              }
+            convSubsRef[convId] = onSnapshot(msgsQ, (msgsSnap) => {
+              // Count messages NOT from this teacher (i.e., from admin)
+              let unread = 0;
+              msgsSnap.docs.forEach(msgDoc => {
+                if (msgDoc.data().senderId !== userId) {
+                  unread++;
+                }
+              });
+              
+              unreadByConv[convId] = unread;
+              
+              // Calculate total unread from all conversations
+              const totalUnread = Object.values(unreadByConv).reduce((sum, count) => sum + count, 0);
+              console.log("Teacher header unread count:", totalUnread);
+              setUnreadCount(totalUnread);
             });
-          }
+          });
           
-          console.log("Teacher header unread count:", totalUnread);
-          setUnreadCount(totalUnread);
+          // If no conversations, set unread to 0
+          if (convIds.length === 0) {
+            setUnreadCount(0);
+          }
         });
         
-        return unsubscribe;
+        return () => {
+          unsubscribe();
+          Object.values(convSubsRef).forEach((fn) => fn());
+        };
       } catch (err) {
         console.error("Error getting unread count:", err);
       }

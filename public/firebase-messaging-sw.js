@@ -26,10 +26,7 @@ messaging.onBackgroundMessage((payload) => {
     payload
   );
 
-  // Play notification sound
-  playNotificationSound();
-
-  // Show notification
+  // Show notification with sound
   const notificationTitle = payload.notification.title || "New Message";
   const notificationOptions = {
     body: payload.notification.body || "You have a new message",
@@ -37,33 +34,42 @@ messaging.onBackgroundMessage((payload) => {
     badge: "/badge.png",
     tag: "chat-notification",
     requireInteraction: false,
+    silent: false,
   };
+
+  // Try to play sound
+  playNotificationSound();
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Function to play notification sound
 function playNotificationSound() {
-  // Play sound using Web Audio API
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
+  try {
+    // Create audio context to play sound
+    const audioContext = new (self.AudioContext || self.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
 
-  // Set frequency and duration for notification sound
-  oscillator.frequency.value = 800; // Frequency in Hz
-  oscillator.type = "sine";
+    // Set frequency and duration for notification sound
+    oscillator.frequency.value = 800; // Frequency in Hz
+    oscillator.type = "sine";
 
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(
-    0.01,
-    audioContext.currentTime + 0.5
-  );
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + 0.5
+    );
 
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + 0.5);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  } catch (err) {
+    console.warn("Failed to play notification sound:", err);
+    // Fallback: notification visual is already shown
+  }
 }
 
 // Handle notification click
