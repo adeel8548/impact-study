@@ -16,12 +16,15 @@ import {
   Eye,
   EyeOff,
   CalendarDays,
+  Printer,
 } from "lucide-react";
 import { StudentModal } from "@/components/modals/student-modal";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import { StudentFeesListModal } from "@/components/modals/student-fees-list-modal";
 import { StudentAttendanceViewModal } from "@/components/modals/student-attendance-view-modal";
 import { StudentUnpaidFeesModal } from "@/components/modals/student-unpaid-fees-modal";
+import { FeeVoucherPrintDialog } from "@/components/modals/fee-voucher-print-dialog";
+import { BulkFeeVoucherPrintDialog } from "@/components/modals/bulk-fee-voucher-print-dialog";
 import { FeeStatusButton } from "@/components/fee-status-button";
 import { deleteStudent } from "@/lib/actions/students";
 import type { Student, Class as SchoolClass } from "@/lib/types";
@@ -112,6 +115,9 @@ export function StudentsClientComponent({
   const [selectedStudentForAttendance, setSelectedStudentForAttendance] =
     useState<Student | null>(null);
   const [showFeeValues, setShowFeeValues] = useState(false);
+  const [feeVoucherPrintOpen, setFeeVoucherPrintOpen] = useState(false);
+  const [bulkFeeVoucherPrintOpen, setBulkFeeVoucherPrintOpen] = useState(false);
+  const [selectedStudentForVoucher, setSelectedStudentForVoucher] = useState<Student | null>(null);
 
   // Keep local students in sync when server data (initialStudents) changes
   // This ensures router.refresh() and server revalidate update the table
@@ -182,13 +188,21 @@ export function StudentsClientComponent({
   return (
     <>
       <div className="flex justify-between items-center mb-6">
-        <div className="flex-1">
+        <div className="flex-1 flex gap-3">
           <Button
             onClick={() => handleOpenModal()}
             className="gap-2 bg-primary text-primary-foreground"
           >
             <Plus className="w-4 h-4" />
             Add Student
+          </Button>
+          <Button
+            onClick={() => setBulkFeeVoucherPrintOpen(true)}
+            variant="outline"
+            className="gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            Print Fee Vouchers
           </Button>
         </div>
       </div>
@@ -323,7 +337,7 @@ export function StudentsClientComponent({
       </div>
 
       <Card className="p-4 mb-6">
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex gap-4 flex-wrap items-center">
           <div className="flex-1 min-w-64">
             <div className="relative">
               <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
@@ -347,6 +361,15 @@ export function StudentsClientComponent({
               </option>
             ))}
           </select>
+          <Button
+            onClick={() => setBulkFeeVoucherPrintOpen(true)}
+            variant="outline"
+            className="gap-2"
+            title={classFilter ? "Print vouchers for selected class" : "Print vouchers for all students"}
+          >
+            <Printer className="w-4 h-4" />
+            Print Class
+          </Button>
         </div>
       </Card>
 
@@ -522,6 +545,18 @@ export function StudentsClientComponent({
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => {
+                            setSelectedStudentForVoucher(student);
+                            setFeeVoucherPrintOpen(true);
+                          }}
+                          className="gap-1 bg-transparent"
+                          title="Print fee voucher"
+                        >
+                          <Printer className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleOpenModal(student)}
                           className="gap-1 bg-transparent"
                         >
@@ -598,6 +633,22 @@ export function StudentsClientComponent({
           studentName={selectedStudentForUnpaidFees.name}
         />
       )}
+
+      {selectedStudentForVoucher && (
+        <FeeVoucherPrintDialog
+          open={feeVoucherPrintOpen}
+          onOpenChange={setFeeVoucherPrintOpen}
+          studentId={selectedStudentForVoucher.id}
+          studentName={selectedStudentForVoucher.name}
+        />
+      )}
+
+      <BulkFeeVoucherPrintDialog
+        open={bulkFeeVoucherPrintOpen}
+        onOpenChange={setBulkFeeVoucherPrintOpen}
+        students={orderedStudents || []}
+        classes={classes}
+      />
     </>
   );
 }

@@ -81,15 +81,22 @@ export async function updateStudent(
     guardian_name: string;
     fees: string;
     joining_date: string;
+    class_id: string;
   }>,
 ) {
   const supabase = await createClient();
 
   const { fees, ...studentUpdates } = updates;
 
+  // Fix: Convert empty joining_date to null to prevent date parsing error
+  const sanitizedUpdates = {
+    ...studentUpdates,
+    joining_date: studentUpdates.joining_date || null,
+  };
+
   const { data, error } = await supabase
     .from("students")
-    .update(studentUpdates)
+    .update(sanitizedUpdates)
     .eq("id", studentId)
     .select();
 

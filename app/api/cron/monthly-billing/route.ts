@@ -82,6 +82,81 @@ export async function POST(request: NextRequest) {
       throw upsertStudentError;
     }
 
+    // STEP 2: Auto-create fee vouchers for all students
+    console.log("[Cron] Creating fee vouchers for all students...");
+    const vouchersToInsert = [];
+    const now = new Date();
+    const issueDate = now.toISOString().split("T")[0];
+    const dueDate = `${currentYear}-${String(currentMonth).padStart(2, "0")}-12`;
+    
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const monthName = monthNames[currentMonth - 1];
+
+    // Get the latest serial number
+    const { data: lastVoucher } = await adminClient
+      .from("fee_vouchers")
+      .select("serial_number")
+      .order("serial_number", { ascending: false })
+      .limit(1)
+      .single();
+
+    let nextSerialNumber = (lastVoucher?.serial_number || 0) + 1;
+
+    for (const student of students) {
+      // Get student fees for current month
+      const { data: studentFees } = await adminClient
+        .from("student_fees")
+        .select("amount")
+        .eq("student_id", student.id)
+        .eq("month", currentMonth)
+        .eq("year", currentYear)
+        .single();
+
+      // Get arrears (unpaid previous months)
+      const { data: arrearsFees } = await adminClient
+        .from("student_fees")
+        .select("amount")
+        .eq("student_id", student.id)
+        .eq("status", "unpaid")
+        .lt("year", currentYear)
+        .or(`and(year.eq.${currentYear},month.lt.${currentMonth})`);
+
+      const monthlyFee = studentFees?.amount || 0;
+      const arrears = (arrearsFees || []).reduce((sum, fee) => sum + fee.amount, 0);
+      const totalAmount = monthlyFee + arrears;
+
+      vouchersToInsert.push({
+        serial_number: nextSerialNumber++,
+        student_id: student.id,
+        issue_date: issueDate,
+        due_date: dueDate,
+        monthly_fee: monthlyFee,
+        arrears: arrears,
+        fines: 0,
+        annual_charges: 0,
+        exam_fee: 0,
+        other_charges: 0,
+        total_amount: totalAmount,
+        month: monthName,
+      });
+    }
+
+    if (vouchersToInsert.length > 0) {
+      const { error: voucherError } = await adminClient
+        .from("fee_vouchers")
+        .insert(vouchersToInsert);
+
+      if (voucherError) {
+        console.error("[Cron] Fee vouchers creation error:", voucherError);
+        // Don't throw - continue with other operations even if vouchers fail
+      } else {
+        console.log(`[Cron] Created ${vouchersToInsert.length} fee vouchers`);
+      }
+    }
+
     // Get all teachers
     const { data: teachers, error: teacherError } = await adminClient
       .from("profiles")
