@@ -31,6 +31,7 @@ export function FeeVoucherPrintDialog({
   const [loading, setLoading] = useState(false);
   const [includeFine, setIncludeFine] = useState(false);
   const [voucherData, setVoucherData] = useState<any>(null);
+   const [error, setError] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
@@ -40,12 +41,25 @@ export function FeeVoucherPrintDialog({
   const loadVoucherData = async () => {
     setLoading(true);
     try {
+      setError(null);
+      // Don't reset voucherData if it already exists (to avoid flicker when toggling fine)
+
       const { data, error } = await getFeeVoucherData(studentId, includeFine);
-      if (data) {
+
+      if (error) {
+        console.error("Error from getFeeVoucherData:", error);
+        setError(error || "Failed to load voucher data");
+        setVoucherData(null);
+      } else if (data) {
         setVoucherData(data);
+      } else {
+        setError("No fee data available for this student.");
+        setVoucherData(null);
       }
     } catch (err) {
       console.error("Error loading voucher data:", err);
+      setError("Failed to load voucher data");
+      setVoucherData(null);
     } finally {
       setLoading(false);
     }
@@ -59,24 +73,33 @@ export function FeeVoucherPrintDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Print Fee Voucher - {studentName}</DialogTitle>
-          <DialogDescription>
-            Configure and print the fee voucher
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="!max-w-[100vw] w-screen h-screen max-h-screen overflow-y-auto p-1 ">
+        {!voucherData && (
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Print Fee Voucher - {studentName}</DialogTitle>
+            <DialogDescription>
+              Configure and print the fee voucher
+            </DialogDescription>
+          </DialogHeader>
+        )}
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
+        <div className="space-y-4 px-6">
+          {/* Include fine option - always visible */}
+          <div className="flex items-center gap-2 pt-3">
             <Checkbox
               id="includeFine"
               checked={includeFine}
-              onCheckedChange={(checked) => setIncludeFine(checked as boolean)}
+              onCheckedChange={(checked) => {
+                setIncludeFine(checked as boolean);
+                // Reload voucher data when fine option changes
+                if (voucherData) {
+                  loadVoucherData();
+                }
+              }}
             />
             <label
               htmlFor="includeFine"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 "
             >
               Include fine (20 Rs per day after 12th)
             </label>
@@ -88,19 +111,19 @@ export function FeeVoucherPrintDialog({
             </div>
           ) : voucherData ? (
             <>
-              {/* Print Preview */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <h3 className="text-sm font-semibold mb-4">Preview</h3>
-                <div ref={printRef} className="bg-white">
-                  <div className="flex gap-4">
-                    <FeeVoucher {...voucherData} copyType="head" />
-                    <FeeVoucher {...voucherData} copyType="student" />
-                  </div>
+              {/* Print Preview - side by side, A4 landscape-friendly, full screen */}
+              <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
+                <div
+                  ref={printRef}
+                  className="bg-white flex flex-row gap-4 justify-center items-start print:w-[297mm] print:h-[210mm] print:p-4 print:flex-row print:gap-4"
+                >
+                  <FeeVoucher {...voucherData} copyType="head" />
+                  <FeeVoucher {...voucherData} copyType="student" />
                 </div>
               </div>
 
-              {/* Print Button */}
-              <div className="flex justify-end gap-2">
+              {/* Print Button - Fixed at bottom */}
+              <div className="flex justify-end gap-2 pb-4 bg-background border-t pt-4">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
@@ -111,11 +134,29 @@ export function FeeVoucherPrintDialog({
               </div>
             </>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              No fee data available
+            <div className="text-center py-12 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {error || "No fee data available"}
+              </p>
+              {error === "Student not found" && (
+                <p className="text-xs text-muted-foreground">
+                  Please make sure this student exists in the{" "}
+                  <span className="font-medium">students</span> table and that
+                  the ID in the list matches the database record.
+                </p>
+              )}
             </div>
           )}
         </div>
+
+        <style jsx global>{`
+          @media print {
+            @page {
+              size: A4 landscape;
+              margin: 0;
+            }
+          }
+        `}</style>
       </DialogContent>
     </Dialog>
   );

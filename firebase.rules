@@ -4,11 +4,22 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
     function isParticipant(conv) {
       return isSignedIn() && (
         request.auth.uid == conv.data.adminId ||
         request.auth.uid == conv.data.teacherId
       );
+    }
+    
+    function isTeacherConversation(conv) {
+      return conv.data.teacherId != null && conv.data.teacherId != '';
     }
 
     match /users/{userId} {
@@ -17,11 +28,29 @@ service cloud.firestore {
     }
 
     match /conversations/{conversationId} {
-      allow read, update: if isParticipant(resource);
+      // Allow read if:
+      // 1. User is a participant in the conversation, OR
+      // 2. User is an admin AND conversation has a teacherId (all admins see all teacher conversations)
+      allow read: if isSignedIn() && (
+        isParticipant(resource) ||
+        (isAdmin() && isTeacherConversation(resource))
+      );
+      
+      // Allow update if user is a participant
+      allow update: if isParticipant(resource);
+      
+      // Allow create if signed in
       allow create: if isSignedIn();
 
       match /messages/{messageId} {
-        allow read: if isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)));
+        // Allow read if:
+        // 1. User is a participant in the conversation, OR
+        // 2. User is an admin AND conversation has a teacherId
+        allow read: if isSignedIn() && (
+          isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId))) ||
+          (isAdmin() && isTeacherConversation(get(/databases/$(database)/documents/conversations/$(conversationId))))
+        );
+        
         allow create: if isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)))
           && request.resource.data.senderId == request.auth.uid;
         allow update: if isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)))

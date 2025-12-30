@@ -112,14 +112,16 @@ export async function getOrCreateConversation(
 
 /**
  * Get all conversations for an admin
+ * Now returns ALL teacher conversations (any admin can see all teacher conversations)
  */
 export function subscribeToAdminConversations(
   adminId: string,
   callback: (conversations: Conversation[]) => void
 ): Unsubscribe {
+  // Query all conversations and filter to only teacher conversations
+  // This allows all admins to see all teacher conversations
   const q = query(
     collection(db, "conversations"),
-    where("adminId", "==", adminId),
     orderBy("updatedAt", "desc")
   );
 
@@ -127,13 +129,16 @@ export function subscribeToAdminConversations(
     const conversations: Conversation[] = [];
     for (const doc of snapshot.docs) {
       const data = doc.data();
-      conversations.push({
-        id: doc.id,
-        adminId: data.adminId,
-        teacherId: data.teacherId,
-        lastMessage: data.lastMessage,
-        updatedAt: data.updatedAt,
-      });
+      // Only include conversations with teachers (teacherId exists)
+      if (data.teacherId != null && data.teacherId !== "") {
+        conversations.push({
+          id: doc.id,
+          adminId: data.adminId,
+          teacherId: data.teacherId,
+          lastMessage: data.lastMessage,
+          updatedAt: data.updatedAt,
+        });
+      }
     }
     callback(conversations);
   });

@@ -95,13 +95,19 @@ export function AdminSidebar() {
       setUnreadCount(totalUnread);
 
       // Subscribe to real-time changes for all conversations and per-conversation unread counts
+      // All admins can see all teacher conversations
       const q = query(
         collection(db, "conversations"),
-        where("adminId", "==", userId)
+        orderBy("updatedAt", "desc")
       );
       
       const unsubscribe = onSnapshot(q, (snap) => {
-        const convIds = snap.docs.map((d) => d.id);
+        // Filter to only teacher conversations (teacherId exists)
+        const teacherConversations = snap.docs.filter(doc => {
+          const data = doc.data();
+          return data.teacherId != null && data.teacherId !== "";
+        });
+        const convIds = teacherConversations.map((d) => d.id);
 
         // Clean up removed conversations
         Object.keys(convSubsRef.current).forEach((id) => {
@@ -194,7 +200,7 @@ export function AdminSidebar() {
         <div className="p-4 border-t border-sidebar-border">
           <Button
             onClick={handleLogout}
-            className="w-[90%] absolute bottom-4 left-3 justify-center gap-2 bg-red-500 hover:bg-red-600 text-white"
+            className="w-[90%] cursor-pointer absolute bottom-4 left-3 justify-center gap-2 bg-red-500 hover:bg-red-600 text-white"
           >
             <LogOut className="w-4 h-4" />
             Logout

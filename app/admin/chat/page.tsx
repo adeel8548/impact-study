@@ -126,16 +126,24 @@ export default function AdminChatPage() {
     
     console.log("Admin loading conversations for:", currentUserId);
     
+    // Query for ALL teacher conversations (any admin can see all teacher conversations)
+    // Since all conversations are teacher-admin conversations, we query all and filter client-side
+    // Note: This requires all conversations to have a teacherId field
     const q = query(
       collection(db, "conversations"),
-      where("adminId", "==", currentUserId),
       orderBy("updatedAt", "desc")
     );
     
     const unsub = onSnapshot(
       q,
       async (snap) => {
-        console.log("Firestore conversations loaded:", snap.docs.length);
+        // Filter to only show conversations with teachers (teacherId exists)
+        const teacherConversations = snap.docs.filter(doc => {
+          const data = doc.data();
+          return data.teacherId != null && data.teacherId !== "";
+        });
+        
+        console.log("Firestore conversations loaded:", teacherConversations.length, "out of", snap.docs.length);
         
         // If Firestore has no results, fall back to Supabase
         if (snap.docs.length === 0) {
@@ -202,12 +210,12 @@ export default function AdminChatPage() {
           return;
         }
         
-        // Process Firestore documents if any exist
+        // Process Firestore documents if any exist (using filtered teacher conversations)
         const items: ConversationItem[] = [];
         
         // Collect all teacher IDs that need profile lookup
         const teacherIdsToFetch: string[] = [];
-        for (const d of snap.docs) {
+        for (const d of teacherConversations) {
           const data: any = d.data();
           console.log("Conversation data:", d.id, data);
           // Use stored name from Firestore or lookup, otherwise mark for batch fetch
@@ -231,7 +239,7 @@ export default function AdminChatPage() {
         }
         
         // Build items with name priority: Firestore > teacherLookup > profileMap > fallback
-        for (const d of snap.docs) {
+        for (const d of teacherConversations) {
           const data: any = d.data();
           const teacherName = 
             data.teacherName || 

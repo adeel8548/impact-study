@@ -14,6 +14,8 @@ interface FeeVoucherData {
   dueDate: string;
   monthlyFee: number;
   arrears: number;
+  /** Human readable breakdown like "Jan 2025, Feb 2025" for pending months */
+  arrearsMonthsLabel?: string;
   fines: number;
   annualCharges: number;
   examFee: number;
@@ -49,22 +51,39 @@ export async function getFeeVoucherData(
 ): Promise<{ data: FeeVoucherData | null; error: string | null }> {
   const supabase = await createClient();
 
-  // Fetch student data with class info
+  // Fetch basic student data first (without relying on Supabase FK relationship names)
   const { data: student, error: studentError } = await supabase
     .from("students")
-    .select(`
-      id,
-      name,
-      roll_number,
-      guardian_name,
-      class_id,
-      classes(name)
-    `)
+    .select("id, name, roll_number, guardian_name, class_id")
     .eq("id", studentId)
     .single();
 
   if (studentError || !student) {
+    console.error("getFeeVoucherData: student lookup failed", {
+      studentId,
+      studentError,
+    });
     return { data: null, error: "Student not found" };
+  }
+
+  // Try to resolve class name separately (non-fatal if it fails)
+  let className = "";
+  if (student.class_id) {
+    const { data: classRow, error: classError } = await supabase
+      .from("classes")
+      .select("name")
+      .eq("id", student.class_id)
+      .single();
+
+    if (classError) {
+      console.warn("getFeeVoucherData: class lookup failed", {
+        studentId,
+        classId: student.class_id,
+        classError,
+      });
+    } else {
+      className = classRow?.name || "";
+    }
   }
 
   // Get current date
@@ -85,17 +104,52 @@ export async function getFeeVoucherData(
     return { data: null, error: "Error fetching fees data" };
   }
 
-  // Calculate arrears (previous months unpaid)
+  // If no unpaid fees found, check if student has ANY fees (for current month)
+  let currentMonthFeeRecord = null;
+  if (!fees || fees.length === 0) {
+    const { data: currentFee } = await supabase
+      .from("student_fees")
+      .select("*")
+      .eq("student_id", studentId)
+      .eq("month", currentMonth)
+      .eq("year", currentYear)
+      .single();
+    
+    if (currentFee) {
+      currentMonthFeeRecord = currentFee;
+    }
+  }
+
+  // Calculate arrears (previous months unpaid) and collect month labels
   let arrears = 0;
   let currentMonthFee = 0;
+  const arrearsMonthLabels: string[] = [];
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
 
   fees?.forEach((fee) => {
-    if (fee.year < currentYear || (fee.year === currentYear && fee.month < currentMonth)) {
+    const isPreviousMonth =
+      fee.year < currentYear ||
+      (fee.year === currentYear && fee.month < currentMonth);
+
+    if (isPreviousMonth) {
       arrears += fee.amount;
+      const label = `${monthNames[fee.month - 1]} ${fee.year}`;
+      if (!arrearsMonthLabels.includes(label)) {
+        arrearsMonthLabels.push(label);
+      }
     } else if (fee.year === currentYear && fee.month === currentMonth) {
       currentMonthFee = fee.amount;
     }
   });
+
+  // If currentMonthFee is still 0, use the current month fee record (even if paid)
+  if (currentMonthFee === 0 && currentMonthFeeRecord) {
+    currentMonthFee = currentMonthFeeRecord.amount;
+  }
 
   // Calculate fine if enabled
   let fines = 0;
@@ -119,11 +173,7 @@ export async function getFeeVoucherData(
   const issueDate = now.toISOString().split("T")[0];
   const dueDate = `${currentYear}-${String(currentMonth).padStart(2, "0")}-12`;
 
-  // Get month name
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+  // Get current month name
   const month = monthNames[currentMonth - 1];
 
   const voucherData: FeeVoucherData = {
@@ -131,13 +181,17 @@ export async function getFeeVoucherData(
     rollNumber: student.roll_number || "",
     studentName: student.name,
     fatherName: student.guardian_name || "",
-    className: (student.classes as any)?.[0]?.name || "",
+    className,
     month,
     serialNumber,
     issueDate,
     dueDate,
     monthlyFee: currentMonthFee,
     arrears,
+    arrearsMonthsLabel:
+      arrears > 0 && arrearsMonthLabels.length > 0
+        ? arrearsMonthLabels.join(", ")
+        : undefined,
     fines,
     annualCharges: 0,
     examFee: 0,

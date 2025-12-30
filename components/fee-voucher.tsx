@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
-
+import React from "react";  
+import Logo from "@/app/Assests/imgs/logo_2.png"
+import Image from "next/image";
 interface FeeVoucherProps {
   rollNumber: string;
   serialNumber: number;
@@ -13,6 +14,7 @@ interface FeeVoucherProps {
   month: string;
   monthlyFee: number;
   arrears: number;
+  arrearsMonthsLabel?: string;
   fines: number;
   annualCharges: number;
   examFee: number;
@@ -33,6 +35,7 @@ export function FeeVoucher({
   month,
   monthlyFee,
   arrears,
+  arrearsMonthsLabel,
   fines,
   annualCharges,
   examFee,
@@ -47,20 +50,56 @@ export function FeeVoucher({
   };
 
   return (
-    <div className="w-[450px] h-[650px] border-2 border-black bg-white text-black font-serif p-4 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-16 h-16 border border-black flex items-center justify-center bg-gray-100">
-            <span className="text-2xl font-bold">ISI</span>
-          </div>
-          <div className="text-center">
-            <h1 className="text-xl font-bold uppercase">Impact Study Institute</h1>
+    <>
+      <style jsx>{`
+        @media print {
+          img {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          }
+        }
+      `}</style>
+      <div className="w-full max-w-[920px] border-2 border-black bg-white text-black font-serif p-4 flex flex-col">
+        {/* Header */}
+        <div className="border-b-2 border-black "> 
+        <div className="text-right font-bold text-sm uppercase">
+          {copyType === "head" ? "Head Office Copy" : "Student Copy"}
+        </div>
+        </div>
+        <div className="flex items-center justify-between  pb-2 ">
+          <div className="flex items-center gap-3">
+            <div className="relative w-20 h-20   overflow-hidden flex items-center justify-center">
+              <img
+                src={Logo.src}
+                alt="Institute logo"
+                className="w-full h-full object-contain p-1"
+                style={{ 
+                  display: 'block',
+                  WebkitPrintColorAdjust: 'exact',
+                  printColorAdjust: 'exact'
+                }}
+                onError={(e) => {
+                  // Fallback to logo_2.png if Logo.png doesn't exist
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== '/Assests/imgs/logo_2.png') {
+                    target.src = '/Assests/imgs/logo_2.png';
+                  }
+                }}
+              />
+            </div>
+          <div className="text-left">
+            <h1 className="text-xl font-bold uppercase">
+              Impact Study Institute
+            </h1>
+            {/* <p className="text-xs font-medium tracking-wide">
+              AYUB PARK # 04 NEAR ZAIQA BAKAERY OKARA — T 0300 5086344
+            </p> */}
           </div>
         </div>
-        <div className="text-right font-bold">
-          {copyType === "head" ? "Head Office" : "Student Copy"}
-        </div>
+       
       </div>
 
       {/* Student Info */}
@@ -74,30 +113,26 @@ export function FeeVoucher({
           <div className="border-t border-black mt-1 pt-1"></div>
         </div>
         <div>
-          <span className="font-bold">Serial No.</span>
-          <div className="border-t border-black mt-1 pt-1">{serialNumber}</div>
+          <div className="font-bold border-b border-black pb-1">Serial No.<span className="text-xs font-normal"> {serialNumber}</span></div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm border-b border-black pb-2 mb-2">
         <div className="border-r border-black pr-2">
-          <span className="font-bold">Issue Date</span>
-          <div className="border-t border-black mt-1 pt-1">{formatDate(issueDate)}</div>
+          <div className="font-bold border-b border-black pb-1">Issue Date : <span className="text-xs font-normal">{formatDate(issueDate)}</span></div>
+          
         </div>
         <div>
-          <span className="font-bold">Due Date</span>
-          <div className="border-t border-black mt-1 pt-1">{formatDate(dueDate)}</div>
+          <div className="font-bold border-b border-black pb-1">Due Date :  <span className="text-xs font-normal">{formatDate(dueDate)}</span></div>
         </div>
       </div>
 
       <div className="border-b border-black pb-2 mb-2">
-        <div className="font-bold text-sm">Student Name</div>
-        <div className="border-t border-black mt-1 pt-1 text-sm">{studentName}</div>
+        <div className="font-normal text-xs uppercase">Student Name : <span className="text-sm font-bold">{studentName}</span></div>
       </div>
 
       <div className="border-b border-black pb-2 mb-2">
-        <div className="font-bold text-sm">Father Name</div>
-        <div className="border-t border-black mt-1 pt-1 text-sm">{fatherName}</div>
+        <div className="font-normal text-xs uppercase">Father Name : <span className="text-sm font-bold">{fatherName}</span></div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm border-b border-black pb-2 mb-2">
@@ -105,10 +140,11 @@ export function FeeVoucher({
           <span className="font-bold">Class / Section</span>
           <div className="border-t border-black mt-1 pt-1">{className}</div>
         </div>
-        <div>
+        <div className="border-r border-black pr-2">
           <span className="font-bold">Month</span>
           <div className="border-t border-black mt-1 pt-1">{month}</div>
         </div>
+       
       </div>
 
       {/* Fee Details Table */}
@@ -126,9 +162,18 @@ export function FeeVoucher({
         )}
         
         {arrears > 0 && (
-          <div className="grid grid-cols-2 border-b border-black">
-            <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Arrears</div>
-            <div className="text-right px-2 py-1 text-sm">{arrears.toLocaleString()}</div>
+          <div className="grid grid-cols-2 border-b border-black text-sm">
+            <div className="font-bold border-r-2 border-black px-2 py-1">
+              Arrears
+              {arrearsMonthsLabel && (
+                <div className="text-[11px] font-normal mt-1">
+                  ({arrearsMonthsLabel})
+                </div>
+              )}
+            </div>
+            <div className="text-right px-2 py-1">
+              {arrears.toLocaleString()}
+            </div>
           </div>
         )}
         
@@ -195,5 +240,6 @@ export function FeeVoucher({
         AYUB PARK # 04 NEAR ZAIQA BAKAERY OKARA T 0300 5086344
       </div>
     </div>
+    </>
   );
 }

@@ -25,7 +25,7 @@ export function ChatWindow({
   onUnreadChange,
   timeFormat12h = false,
 }: ChatWindowProps) {
-  const [messages, setMessages] = useState<Array<{ id: string; senderId: string; text: string; createdAt: Date; senderName?: string }>>([]);
+  const [messages, setMessages] = useState<Array<{ id: string; senderId: string; text: string; createdAt: Date; senderName?: string; isRead?: boolean }>>([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -83,9 +83,11 @@ export function ChatWindow({
       setMessages(msgs);
       setLoading(false);
       
-      // Report unread count to parent
+      // Report unread count to parent - only count messages that are actually unread
       if (onUnreadChange) {
-        const unreadCount = msgs.filter(m => m.senderId !== currentUserId).length;
+        const unreadCount = msgs.filter(m => 
+          m.senderId !== currentUserId && (m.isRead === false || m.isRead === undefined)
+        ).length;
         onUnreadChange(unreadCount);
       }
 
@@ -105,12 +107,11 @@ export function ChatWindow({
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
 
-      // Mark conversation as read after a small delay (give user time to read)
-      // Only mark if user is actively viewing this conversation
-      if (!document.hidden) {
-        setTimeout(() => {
-          markConversationAsRead(conversationId, currentUserId).catch(console.error);
-        }, 2000); // Wait 2 seconds before marking as read
+      // Mark conversation as read immediately when user opens/viewing it
+      // This prevents showing unread messages when user first loads the page
+      if (!document.hidden && msgs.length > 0) {
+        // Mark as read immediately if user is viewing the conversation
+        markConversationAsRead(conversationId, currentUserId).catch(console.error);
       }
     });
 

@@ -85,7 +85,7 @@ export async function sendMessage(
 
 export function subscribeMessages(
   conversationId: string,
-  cb: (msgs: Array<{ id: string; senderId: string; text: string; createdAt: Date; senderName?: string }>) => void,
+  cb: (msgs: Array<{ id: string; senderId: string; text: string; createdAt: Date; senderName?: string; isRead?: boolean }>) => void,
 ) {
   const q = query(
     collection(db, "conversations", conversationId, "messages"),
@@ -101,6 +101,7 @@ export function subscribeMessages(
         text: data.text,
         createdAt: ts,
         senderName: data.senderName,
+        isRead: data.isRead !== undefined ? data.isRead : true, // Default to true if not set
       };
     });
     cb(items);
@@ -149,20 +150,36 @@ export function subscribeUnreadCount(
 
 export async function getUnreadCountForUser(userId: string) {
   // Get all conversations where user is admin or teacher, then sum unread
+  // For admins: get all teacher conversations (any admin can see all)
+  // For teachers: get conversations where they are the teacher
   const convsQ = query(
     collection(db, "conversations"),
-    where("adminId", "==", userId)
+    orderBy("updatedAt", "desc")
   );
   const convsQ2 = query(
     collection(db, "conversations"),
     where("teacherId", "==", userId)
   );
   const [s1, s2] = await Promise.all([getDocs(convsQ), getDocs(convsQ2)]);
-  const convIds = [...s1.docs, ...s2.docs].map((d) => ({ id: d.id }));
+  
+  // For admins: filter to only teacher conversations (teacherId exists)
+  // For teachers: use their specific conversations
+  const adminConvs = s1.docs.filter(d => {
+    const data = d.data();
+    return data.teacherId != null && data.teacherId !== "";
+  });
+  const teacherConvs = s2.docs;
+  
+  // Combine and deduplicate
+  const allConvIds = new Set([
+    ...adminConvs.map(d => d.id),
+    ...teacherConvs.map(d => d.id)
+  ]);
+  
   let total = 0;
-  for (const c of convIds) {
+  for (const convId of allConvIds) {
     const msgsQ = query(
-      collection(db, "conversations", c.id, "messages"),
+      collection(db, "conversations", convId, "messages"),
       where("isRead", "==", false)
     );
     const s = await getDocs(msgsQ);
