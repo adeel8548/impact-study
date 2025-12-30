@@ -218,21 +218,6 @@ export function BulkFeeVoucherPrintDialog({
                   ))}
                 </div>
               </div>
-                <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
-                  <div
-                    ref={printRef}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '210mm', minWidth: '297mm', background: 'white' }}
-                  >
-                    <div style={{ width: '280mm', height: '200mm', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {vouchersData.map((voucher, index) => (
-                        <div key={index} className="voucher-print-wrapper" style={{ width: '140mm', height: '200mm', border: '2px solid #000', boxSizing: 'border-box', display: 'inline-block', margin: 0, verticalAlign: 'top' }}>
-                          <FeeVoucher {...voucher} copyType="head" />
-                          <FeeVoucher {...voucher} copyType="student" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
 
               {/* Print Button - Fixed at bottom */}
               <div className="flex justify-end gap-2 pb-4 bg-background border-t pt-4">
