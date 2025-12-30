@@ -62,7 +62,7 @@ export function FeeVoucher({
           }
         }
       `}</style>
-      <div className="w-full max-w-[920px] border-2 border-black bg-white text-black font-serif p-4 flex flex-col">
+      <div className="w-full max-w-[720px] print:flex-1 print:min-w-0 print:max-w-[calc(50%-4px)] border-2 border-black bg-white text-black font-serif p-4 print:p-1 flex flex-col">
         {/* Header */}
         <div className="border-b-2 border-black "> 
         <div className="text-right font-bold text-sm uppercase">
@@ -82,7 +82,7 @@ export function FeeVoucher({
                   printColorAdjust: 'exact'
                 }}
                 onError={(e) => {
-                  // Fallback to logo_2.png if Logo.png doesn't exist
+                  // Fallback to logo_2.png if Logo.png doesn't ex:ist
                   const target = e.target as HTMLImageElement;
                   if (target.src !== '/Assests/imgs/logo_2.png') {
                     target.src = '/Assests/imgs/logo_2.png';
@@ -105,8 +105,8 @@ export function FeeVoucher({
       {/* Student Info */}
       <div className="grid grid-cols-3 gap-2 text-sm border-b border-black pb-2 mb-2">
         <div className="border-r border-black pr-2">
-          <span className="font-bold">Roll No.</span>
-          <div className="border-t border-black mt-1 pt-1">{rollNumber}</div>
+          <div className="font-bold border-b border-black">Roll No : <span className="text-xs font-normal">{rollNumber}</div>
+          
         </div>
         <div className="border-r border-black pr-2">
           <span className="font-bold">Fee A/C</span>
@@ -138,11 +138,11 @@ export function FeeVoucher({
       <div className="grid grid-cols-2 gap-2 text-sm border-b border-black pb-2 mb-2">
         <div className="border-r border-black pr-2">
           <span className="font-bold">Class / Section</span>
-          <div className="border-t border-black mt-1 pt-1">{className}</div>
+          <div className="border-t border-black mt-1 pt-1 text-right">{className}</div>
         </div>
         <div className="border-r border-black pr-2">
           <span className="font-bold">Month</span>
-          <div className="border-t border-black mt-1 pt-1">{month}</div>
+          <div className="border-t border-black mt-1 pt-1 text-right">{month}</div>
         </div>
        
       </div>
@@ -161,35 +161,29 @@ export function FeeVoucher({
           </div>
         )}
         
-        {arrears > 0 && (
-          <div className="grid grid-cols-2 border-b border-black text-sm">
-            <div className="font-bold border-r-2 border-black px-2 py-1">
-              Arrears
-              {arrearsMonthsLabel && (
-                <div className="text-[11px] font-normal mt-1">
-                  ({arrearsMonthsLabel})
-                </div>
-              )}
-            </div>
-            <div className="text-right px-2 py-1">
-              {arrears.toLocaleString()}
-            </div>
+        <div className="grid grid-cols-2 border-b border-black text-sm">
+          <div className="font-bold border-r-2 border-black px-2 py-1">
+            Arrears
+            {arrearsMonthsLabel && (
+              <div className="text-[11px] font-normal mt-1">
+                ({arrearsMonthsLabel})
+              </div>
+            )}
           </div>
-        )}
+          <div className="text-right px-2 py-1">
+            {arrears.toLocaleString()}
+          </div>
+        </div>
         
-        {fines > 0 && (
-          <div className="grid grid-cols-2 border-b border-black">
-            <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Fines</div>
-            <div className="text-right px-2 py-1 text-sm">{fines.toLocaleString()}</div>
-          </div>
-        )}
+        <div className="grid grid-cols-2 border-b border-black">
+          <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Fines</div>
+          <div className="text-right px-2 py-1 text-sm">{fines.toLocaleString()}</div>
+        </div>
         
-        {annualCharges > 0 && (
-          <div className="grid grid-cols-2 border-b border-black">
-            <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Annual Charges</div>
-            <div className="text-right px-2 py-1 text-sm">{annualCharges.toLocaleString()}</div>
-          </div>
-        )}
+        <div className="grid grid-cols-2 border-b border-black">
+          <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Annual Charges</div>
+          <div className="text-right px-2 py-1 text-sm">{annualCharges.toLocaleString()}</div>
+        </div>
         
         {examFee > 0 && (
           <div className="grid grid-cols-2 border-b border-black">
@@ -198,12 +192,10 @@ export function FeeVoucher({
           </div>
         )}
         
-        {otherCharges > 0 && (
-          <div className="grid grid-cols-2 border-b border-black">
-            <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Other Charges</div>
-            <div className="text-right px-2 py-1 text-sm">{otherCharges.toLocaleString()}</div>
-          </div>
-        )}
+        <div className="grid grid-cols-2 border-b border-black">
+          <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Other Charges</div>
+          <div className="text-right px-2 py-1 text-sm">{otherCharges.toLocaleString()}</div>
+        </div>
         
         <div className="grid grid-cols-2 bg-gray-100">
           <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Total Amount</div>
@@ -215,7 +207,7 @@ export function FeeVoucher({
       <div className="border-2 border-black mb-2">
         <div className="grid grid-cols-2 border-b border-black">
           <div className="font-bold px-2 py-1 text-xs border-r-2 border-black">
-            Amount After 07 of Month(Per day 20 x __)
+            Amount After 12 of Month(Per day 20 x)
           </div>
           <div className="px-2 py-1 text-xs"></div>
         </div>
@@ -228,16 +220,20 @@ export function FeeVoucher({
       </div>
 
       {/* Footer Notes in Urdu */}
-      <div className="text-right text-xs space-y-1 border-t border-black pt-2">
-        <p>❌ یہ رسید قبل از وقت بھی جمع کروائی جا سکتی ہے۔</p>
-        <p>❌ اگر کوئی stamp پر Received stamp نہ ہو تو اس کی کوئی قانونی حیثیت نہیں ہو گی۔</p>
-        <p>❌ فیس کی جمع کرانے کے بعد 7 تاریخ کے بعد یا 300 روپے اضافی کرنے ہوں گے۔</p>
-        <p>❌ ادھم فیس پر سختی سے عمل کیا جائے گا۔</p>
-      </div>
+      <div dir="rtl" className="text-right text-xs border-t gap-1 border-black pt-2 space-y-1">
+  <div>۱۔ یہ رسید قبل از وقت بھی جمع کروائی جا سکتی ہے۔</div>
+  <div>۲۔ اگر کسی رسید پر Received stamp نہ ہو تو اس کی کوئی قانونی حیثیت نہیں ہو گی۔</div>
+  <div>۳۔ فیس 12 تاریخ کے بعد جمع کروانے پر 300 روپے اضافی ادا کرنا ہوں گے۔</div>
+  <div>۴۔ ادا شدہ فیس سلپ 3 ماہ تک سنبھال کر رکھیں۔</div>
+  <div>۵۔ رسید گم ہونے کی صورت میں ادارہ کسی قسم کا ذمہ دار نہیں ہو گا۔</div>
+</div>
+
+
+
 
       {/* Address */}
       <div className="bg-black text-white text-center py-1 text-xs mt-auto">
-        AYUB PARK # 04 NEAR ZAIQA BAKAERY OKARA T 0300 5086344
+        AYUB PARK # 04 NEAR ZAIQA BAKAERY OKARA  0300 5086344
       </div>
     </div>
     </>

@@ -181,27 +181,39 @@ export default function AdminChatPage() {
             
             const teacherMap = Object.fromEntries((teacherProfiles || []).map((t: any) => [t.id, t]));
             
-            const items: ConversationItem[] = await Promise.all(
+            // Deduplicate by teacherId, keeping the most recent conversation
+            const teacherConversationMap = new Map<string, ConversationItem>();
+            
+            await Promise.all(
               (convs as any[]).map(async (c: any) => {
                 const ensured = await ensureConversation(currentUserId, c.teacher_id);
-                return {
+                const teacherId = c.teacher_id;
+                
+                const item: ConversationItem = {
                   id: ensured.id,
-                  teacherId: c.teacher_id,
+                  teacherId,
                   lastMessage: null,
                   updatedAt: Date.now(),
                   teacherName:
-                    teacherMap[c.teacher_id]?.name ||
-                    teacherLookup[c.teacher_id]?.name ||
+                    teacherMap[teacherId]?.name ||
+                    teacherLookup[teacherId]?.name ||
                     "Teacher",
                   teacherEmail:
-                    teacherMap[c.teacher_id]?.email ||
-                    teacherLookup[c.teacher_id]?.email ||
+                    teacherMap[teacherId]?.email ||
+                    teacherLookup[teacherId]?.email ||
                     "",
-                } as ConversationItem;
+                };
+                
+                // Keep only the most recent conversation per teacher
+                const existing = teacherConversationMap.get(teacherId);
+                if (!existing || item.updatedAt > existing.updatedAt) {
+                  teacherConversationMap.set(teacherId, item);
+                }
               })
             );
             
-            console.log("Final conversation items from Supabase:", items);
+            const items = Array.from(teacherConversationMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+            console.log("Final conversation items from Supabase (deduplicated):", items);
             setConversations(items);
           } catch (err) {
             console.error("Exception in Supabase fallback:", err);
@@ -239,32 +251,45 @@ export default function AdminChatPage() {
         }
         
         // Build items with name priority: Firestore > teacherLookup > profileMap > fallback
+        // Use a Map to deduplicate by teacherId, keeping the most recent conversation
+        const teacherConversationMap = new Map<string, ConversationItem>();
+        
         for (const d of teacherConversations) {
           const data: any = d.data();
+          const teacherId = data.teacherId;
+          if (!teacherId) continue; // Skip if no teacherId
+          
           const teacherName = 
             data.teacherName || 
-            teacherLookup[data.teacherId]?.name || 
-            profileMap[data.teacherId]?.name || 
+            teacherLookup[teacherId]?.name || 
+            profileMap[teacherId]?.name || 
             "Teacher";
           const teacherEmail = 
             data.teacherEmail || 
-            teacherLookup[data.teacherId]?.email || 
-            profileMap[data.teacherId]?.email || 
+            teacherLookup[teacherId]?.email || 
+            profileMap[teacherId]?.email || 
             "";
           
-          console.log("Building item for:", data.teacherId, "name:", teacherName);
+          const updatedAt = data.updatedAt?.toMillis?.() || Date.now();
           
-          items.push({
-            id: d.id,
-            teacherId: data.teacherId,
-            lastMessage: data.lastMessage ?? null,
-            updatedAt: data.updatedAt?.toMillis?.() || Date.now(),
-            teacherName,
-            teacherEmail,
-          });
+          // If we already have a conversation for this teacher, keep the one with the latest updatedAt
+          const existing = teacherConversationMap.get(teacherId);
+          if (!existing || updatedAt > existing.updatedAt) {
+            teacherConversationMap.set(teacherId, {
+              id: d.id,
+              teacherId,
+              lastMessage: data.lastMessage ?? null,
+              updatedAt,
+              teacherName,
+              teacherEmail,
+            });
+          }
         }
-        console.log("Final conversations from Firestore:", items);
-        setConversations(items);
+        
+        // Convert map to array and sort by updatedAt
+        const deduplicatedItems = Array.from(teacherConversationMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+        console.log("Final conversations from Firestore (deduplicated):", deduplicatedItems);
+        setConversations(deduplicatedItems);
       },
       (error) => {
         console.error("Error loading conversations from Firestore:", error);
@@ -303,27 +328,39 @@ export default function AdminChatPage() {
             
             const teacherMap = Object.fromEntries((teacherProfiles || []).map((t: any) => [t.id, t]));
             
-            const items: ConversationItem[] = await Promise.all(
+            // Deduplicate by teacherId, keeping the most recent conversation
+            const teacherConversationMap = new Map<string, ConversationItem>();
+            
+            await Promise.all(
               (convs as any[]).map(async (c: any) => {
                 const ensured = await ensureConversation(currentUserId, c.teacher_id);
-                return {
+                const teacherId = c.teacher_id;
+                
+                const item: ConversationItem = {
                   id: ensured.id,
-                  teacherId: c.teacher_id,
+                  teacherId,
                   lastMessage: null,
                   updatedAt: Date.now(),
                   teacherName:
-                    teacherMap[c.teacher_id]?.name ||
-                    teacherLookup[c.teacher_id]?.name ||
+                    teacherMap[teacherId]?.name ||
+                    teacherLookup[teacherId]?.name ||
                     "Teacher",
                   teacherEmail:
-                    teacherMap[c.teacher_id]?.email ||
-                    teacherLookup[c.teacher_id]?.email ||
+                    teacherMap[teacherId]?.email ||
+                    teacherLookup[teacherId]?.email ||
                     "",
-                } as ConversationItem;
+                };
+                
+                // Keep only the most recent conversation per teacher
+                const existing = teacherConversationMap.get(teacherId);
+                if (!existing || item.updatedAt > existing.updatedAt) {
+                  teacherConversationMap.set(teacherId, item);
+                }
               })
             );
             
-            console.log("Final conversation items from Supabase:", items);
+            const items = Array.from(teacherConversationMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+            console.log("Final conversation items from Supabase (error fallback, deduplicated):", items);
             setConversations(items);
           } catch (err) {
             console.error("Exception in fallback:", err);

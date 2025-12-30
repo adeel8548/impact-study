@@ -275,12 +275,15 @@ export function GlobalNotificationProvider() {
                     const messageAge = now - msgTimestamp;
                     const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
 
-                    console.log(`Message age: ${messageAge}ms, userId: ${userId}, isRead: ${msgData.isRead}`);
+                    console.log(`Message age: ${messageAge}ms, userId: ${userId}, isRead: ${msgData.isRead}, document.hidden: ${document.hidden}`);
 
                     // Play sound if:
                     // 1. Message is new (timestamp > last seen) OR
                     // 2. Message is less than 30 seconds old (to catch messages when switching tabs)
-                    if (msgTimestamp > lastTimestamp || messageAge < 30000) {
+                    // 3. Always play if document is hidden (user on other screen/tab)
+                    const shouldPlay = msgTimestamp > lastTimestamp || messageAge < 30000 || document.hidden;
+                    
+                    if (shouldPlay) {
                       // Update last seen timestamp
                       if (msgTimestamp > lastTimestamp) {
                         lastMessageTimestampRef.current[convId] = msgTimestamp;
@@ -290,13 +293,23 @@ export function GlobalNotificationProvider() {
                       playedMessageIdsRef.current.add(msgId);
                       
                       // Resume audio context if suspended (important for background tabs)
-                      if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-                        audioContextRef.current.resume().catch(err => {
-                          console.warn("Failed to resume audio context:", err);
-                        });
+                      if (audioContextRef.current) {
+                        if (audioContextRef.current.state === "suspended") {
+                          audioContextRef.current.resume().then(() => {
+                            console.log("Audio context resumed, playing sound");
+                            playNotificationSound();
+                          }).catch(err => {
+                            console.warn("Failed to resume audio context:", err);
+                            // Try playing anyway
+                            playNotificationSound();
+                          });
+                        } else {
+                          playNotificationSound();
+                        }
+                      } else {
+                        // Try to initialize and play
+                        playNotificationSound();
                       }
-                      
-                      playNotificationSound();
                     } else {
                       console.log(`Message too old (${messageAge}ms) or already seen, skipping sound`);
                     }
@@ -334,20 +347,39 @@ export function GlobalNotificationProvider() {
                     return;
                   }
 
-                  // Only play sound for messages not from this user AND not too old
-                  if (msgData.senderId !== userId) {
+                  // Only play sound for messages not from this user AND unread
+                  if (msgData.senderId !== userId && (msgData.isRead === false || msgData.isRead === undefined)) {
                     const now = Date.now();
                     const messageAge = now - msgTimestamp;
+                    const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
 
-                    console.log(`Teacher message age: ${messageAge}ms, userId: ${userId}`);
+                    console.log(`Teacher message age: ${messageAge}ms, userId: ${userId}, document.hidden: ${document.hidden}`);
 
-                    if (messageAge < 5000) {
-                      const lastTimestamp = lastMessageTimestampRef.current[convId] || 0;
-
+                    // Play sound if message is new, less than 30 seconds old, or document is hidden
+                    const shouldPlay = msgTimestamp > lastTimestamp || messageAge < 30000 || document.hidden;
+                    
+                    if (shouldPlay) {
                       if (msgTimestamp > lastTimestamp) {
                         lastMessageTimestampRef.current[convId] = msgTimestamp;
-                        console.log("Triggering notification sound for teacher message...");
-                        playedMessageIdsRef.current.add(msgId);
+                      }
+                      
+                      console.log("Triggering notification sound for teacher message...");
+                      playedMessageIdsRef.current.add(msgId);
+                      
+                      // Resume audio context if suspended
+                      if (audioContextRef.current) {
+                        if (audioContextRef.current.state === "suspended") {
+                          audioContextRef.current.resume().then(() => {
+                            console.log("Audio context resumed for teacher message, playing sound");
+                            playNotificationSound();
+                          }).catch(err => {
+                            console.warn("Failed to resume audio context:", err);
+                            playNotificationSound();
+                          });
+                        } else {
+                          playNotificationSound();
+                        }
+                      } else {
                         playNotificationSound();
                       }
                     } else {

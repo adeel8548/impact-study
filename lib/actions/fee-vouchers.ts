@@ -48,6 +48,7 @@ export async function generateSerialNumber(): Promise<number> {
 export async function getFeeVoucherData(
   studentId: string,
   includeFine: boolean = false,
+  serialNumber?: number,
 ): Promise<{ data: FeeVoucherData | null; error: string | null }> {
   const supabase = await createClient();
 
@@ -166,8 +167,8 @@ export async function getFeeVoucherData(
     }
   }
 
-  // Generate serial number
-  const serialNumber = await generateSerialNumber();
+  // Generate serial number if not provided
+  const finalSerialNumber = serialNumber ?? await generateSerialNumber();
 
   // Format dates
   const issueDate = now.toISOString().split("T")[0];
@@ -183,7 +184,7 @@ export async function getFeeVoucherData(
     fatherName: student.guardian_name || "",
     className,
     month,
-    serialNumber,
+    serialNumber: finalSerialNumber,
     issueDate,
     dueDate,
     monthlyFee: currentMonthFee,
@@ -210,10 +211,15 @@ export async function getMultipleFeeVouchers(
 ): Promise<{ data: FeeVoucherData[]; error: string | null }> {
   const vouchers: FeeVoucherData[] = [];
 
+  // Generate sequential serial numbers for all students
+  let currentSerialNumber = await generateSerialNumber();
+
   for (const studentId of studentIds) {
-    const { data, error } = await getFeeVoucherData(studentId, includeFine);
+    const { data, error } = await getFeeVoucherData(studentId, includeFine, currentSerialNumber);
     if (data) {
       vouchers.push(data);
+      // Increment serial number for next student
+      currentSerialNumber++;
     }
   }
 

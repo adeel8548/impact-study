@@ -47,9 +47,12 @@ export function BulkFeeVoucherPrintDialog({
     contentRef: printRef,
   });
 
-  const loadVouchersData = async () => {
+  const loadVouchersData = async (fineValue?: boolean) => {
     setLoading(true);
     try {
+      // Use the passed fineValue or fall back to current state
+      const shouldIncludeFine = fineValue !== undefined ? fineValue : includeFine;
+      
       let studentIds: string[] = [];
 
       if (printType === "all") {
@@ -76,7 +79,7 @@ export function BulkFeeVoucherPrintDialog({
         return;
       }
 
-      const { data, error } = await getMultipleFeeVouchers(studentIds, includeFine);
+      const { data, error } = await getMultipleFeeVouchers(studentIds, shouldIncludeFine);
       if (data) {
         setVouchersData(data);
       }
@@ -175,9 +178,10 @@ export function BulkFeeVoucherPrintDialog({
                 id="includeFineLoaded"
                 checked={includeFine}
                 onCheckedChange={(checked) => {
-                  setIncludeFine(checked as boolean);
-                  // Reload vouchers when fine option changes
-                  loadVouchersData();
+                  const newFineValue = checked as boolean;
+                  setIncludeFine(newFineValue);
+                  // Reload vouchers when fine option changes, passing the new value directly
+                  loadVouchersData(newFineValue);
                 }}
               />
               <label
@@ -201,10 +205,10 @@ export function BulkFeeVoucherPrintDialog({
               <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
                 <div
                   ref={printRef}
-                  className="bg-white flex flex-col gap-8 items-center print:w-[297mm] print:h-[210mm] print:p-4"
+                  className="bg-white flex flex-col gap-8 items-center print:w-full print:h-[105mm] print:p-1 print:max-w-full"
                 >
                   {vouchersData.map((voucher, index) => (
-                    <div key={index} className="page-break w-full flex flex-row gap-4 justify-center items-start print:flex-row print:gap-4">
+                    <div key={index} className="page-break w-full flex flex-row gap-1 justify-between items-start print:flex-row print:gap-1 print:w-full print:max-w-full">
                       <FeeVoucher {...voucher} copyType="head" />
                       <FeeVoucher {...voucher} copyType="student" />
                       {index < vouchersData.length - 1 && (
@@ -239,8 +243,15 @@ export function BulkFeeVoucherPrintDialog({
         <style jsx global>{`
           @media print {
             @page {
-              size: A4 landscape;
+              size: A6 landscape;
               margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+            }
+            * {
+              box-sizing: border-box;
             }
             .page-break {
               page-break-after: always;

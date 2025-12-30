@@ -115,7 +115,7 @@ export function FeeVoucherPrintDialog({
               <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
                 <div
                   ref={printRef}
-                  className="bg-white flex flex-row gap-4 justify-center items-start print:w-[297mm] print:h-[210mm] print:p-4 print:flex-row print:gap-4"
+                  className="bg-white flex flex-row gap-2 justify-between items-start print:w-full print:h-[105mm] print:p-1 print:flex-row print:gap-1 print:max-w-full"
                 >
                   <FeeVoucher {...voucherData} copyType="head" />
                   <FeeVoucher {...voucherData} copyType="student" />
@@ -152,8 +152,15 @@ export function FeeVoucherPrintDialog({
         <style jsx global>{`
           @media print {
             @page {
-              size: A4 landscape;
+              size: A6 landscape;
               margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+            }
+            * {
+              box-sizing: border-box;
             }
           }
         `}</style>

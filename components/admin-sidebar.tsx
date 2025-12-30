@@ -88,11 +88,18 @@ export function AdminSidebar() {
 
       // Use Firestore to get unread count across conversations (initial snapshot)
       const { getUnreadCountForUser, subscribeUnreadCount } = await import("@/lib/firestore-chat");
-      const { collection, query, where, onSnapshot } = await import("firebase/firestore");
+      const { collection, query, where, onSnapshot, orderBy } = await import("firebase/firestore");
       const { db } = await import("@/lib/firebase");
 
-      const totalUnread = await getUnreadCountForUser(userId);
-      setUnreadCount(totalUnread);
+      // Load initial unread count immediately
+      try {
+        const totalUnread = await getUnreadCountForUser(userId);
+        console.log("Admin sidebar: Initial unread count loaded:", totalUnread);
+        setUnreadCount(totalUnread);
+      } catch (err) {
+        console.error("Error loading initial unread count:", err);
+        setUnreadCount(0);
+      }
 
       // Subscribe to real-time changes for all conversations and per-conversation unread counts
       // All admins can see all teacher conversations
