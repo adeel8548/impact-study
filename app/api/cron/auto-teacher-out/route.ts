@@ -2,11 +2,14 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Cron Job: Auto-mark teacher OUT + ABSENT at 7 PM PKT
+ * Combined Cron Job: Auto-mark teacher OUT + ABSENT at 7 PM PKT
  * Runs daily at 7 PM Pakistan time (UTC+5)
- * - Sets explicit out_time to 7 PM for teachers marked present/late (only if out_time is null)
- * - Finds all teachers with NO attendance record for today and marks them ABSENT
- *
+ * 
+ * DOES TWO THINGS:
+ * 1. Sets explicit out_time to 7 PM for teachers marked present/late (only if out_time is null)
+ * 2. Finds all teachers with NO attendance record for today and marks them ABSENT
+ * 
+ * This is a combined job (free Vercel plan limitation - max 2 crons)
  * Schedule (Vercel, UTC): "0 14 * * *" → 19:00 PKT
  */
 export async function GET(request: NextRequest) {

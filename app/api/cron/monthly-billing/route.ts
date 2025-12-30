@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
     // STEP 2: Auto-create fee vouchers for all students
     console.log("[Cron] Creating fee vouchers for all students...");
     const vouchersToInsert = [];
-    const now = new Date();
     const issueDate = now.toISOString().split("T")[0];
     const dueDate = `${currentYear}-${String(currentMonth).padStart(2, "0")}-12`;
     
