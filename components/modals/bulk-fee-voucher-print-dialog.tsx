@@ -205,7 +205,7 @@ export function BulkFeeVoucherPrintDialog({
               <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
                 <div
                   ref={printRef}
-                  className="bg-white flex flex-col gap-8 items-center print:w-full print:h-[105mm] print:p-1 print:max-w-full"
+                  className="bg-white flex flex-col gap-8 items-center print:w-full print:h-[105mm] print:px-3 print:py-3 print:max-w-full"
                 >
                   {vouchersData.map((voucher, index) => (
                     <div key={index} className="page-break w-full flex flex-row gap-1 justify-between items-start print:flex-row print:gap-1 print:w-full print:max-w-full">
@@ -218,6 +218,21 @@ export function BulkFeeVoucherPrintDialog({
                   ))}
                 </div>
               </div>
+                <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
+                  <div
+                    ref={printRef}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '210mm', minWidth: '297mm', background: 'white' }}
+                  >
+                    <div style={{ width: '280mm', height: '200mm', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {vouchersData.map((voucher, index) => (
+                        <div key={index} className="voucher-print-wrapper" style={{ width: '140mm', height: '200mm', border: '2px solid #000', boxSizing: 'border-box', display: 'inline-block', margin: 0, verticalAlign: 'top' }}>
+                          <FeeVoucher {...voucher} copyType="head" />
+                          <FeeVoucher {...voucher} copyType="student" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
               {/* Print Button - Fixed at bottom */}
               <div className="flex justify-end gap-2 pb-4 bg-background border-t pt-4">
@@ -243,15 +258,39 @@ export function BulkFeeVoucherPrintDialog({
         <style jsx global>{`
           @media print {
             @page {
-              size: A6 landscape;
+              size: A4 landscape;
               margin: 0;
             }
-            body {
-              margin: 0;
-              padding: 0;
+            html, body {
+              width: 297mm;
+              height: 210mm;
+              margin: 0 !important;
+              padding: 0 !important;
+              box-sizing: border-box;
             }
             * {
               box-sizing: border-box;
+            }
+            .voucher-print-wrapper {
+              width: 280mm;
+              height: 200mm;
+              display: block !important;
+              overflow: visible !important;
+              margin: 10mm auto;
+              padding: 0;
+              page-break-after: always;
+            }
+            .voucher-print-wrapper > * {
+              display: inline-block !important;
+              vertical-align: top;
+              width: 130mm;
+              height: 190mm;
+              max-width: 130mm;
+              max-height: 190mm;
+              margin: 0;
+              box-sizing: border-box;
+              overflow: visible !important;
+              border: 2px solid #000 !important;
             }
             .page-break {
               page-break-after: always;
