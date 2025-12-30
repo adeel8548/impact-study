@@ -18,10 +18,22 @@ import { checkFeeExpiration } from "@/lib/actions/fees";
 
 export async function POST(request: NextRequest) {
   // Verify cron secret for security
+  // For Vercel free plan: allow without auth header, but block if secret is provided but wrong
   const authHeader = request.headers.get("authorization");
+  const url = new URL(request.url);
+  const secret = url.searchParams.get("secret");
   const cronSecret = process.env.CRON_SECRET || "your-secret-key";
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  // Only block if secret is explicitly provided but wrong
+  if (secret && secret !== cronSecret) {
+    return NextResponse.json(
+      { error: "Unauthorized", success: false },
+      { status: 401 },
+    );
+  }
+  
+  // Allow if no secret provided (Vercel free plan) OR if authHeader matches
+  if (authHeader && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json(
       { error: "Unauthorized", success: false },
       { status: 401 },
@@ -243,10 +255,12 @@ export async function POST(request: NextRequest) {
 // GET endpoint to manually trigger the cron job
 export async function GET(request: NextRequest) {
   // Verify cron secret for security
+  // For Vercel free plan: allow without secret, but block if secret is provided but wrong
   const secret = request.nextUrl.searchParams.get("secret");
   const cronSecret = process.env.CRON_SECRET || "your-secret-key";
 
-  if (secret !== cronSecret) {
+  // Only block if secret is explicitly provided but wrong
+  if (secret && secret !== cronSecret) {
     return NextResponse.json(
       { error: "Unauthorized", success: false },
       { status: 401 },
