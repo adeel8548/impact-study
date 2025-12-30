@@ -828,7 +828,7 @@ export default function TeacherMyAttendancePage() {
       <TeacherHeader />
 
       <div className="p-4 md:p-8">
-        <div className="mb-8 flex justify-between items-start">
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-start">
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">
               My Attendance
