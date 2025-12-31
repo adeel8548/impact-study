@@ -103,9 +103,9 @@ export function FeeVoucher({
       </div>
 
       {/* Student Info */}
-      <div className="grid grid-cols-3 gap-2 text-sm border-b border-black pb-2 mb-2">
+      <div className="grid grid-cols-3 gap-2 text-sm  pb-2 mb-2">
         <div className="border-r border-black pr-2">
-          <div className="font-bold border-b border-black">Roll No : <span className="text-xs font-normal">{rollNumber} </span></div>
+          <div className="font-bold border-b border-black pt-1">Roll No : <span className="text-xs font-normal">{rollNumber} </span></div>
           
         </div>
         <div className="border-r border-black pr-2">
@@ -117,7 +117,7 @@ export function FeeVoucher({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-sm border-b border-black pb-2 mb-2">
+      <div className="grid grid-cols-2 gap-2 text-sm  pb-2 mb-2">
         <div className="border-r border-black pr-2">
           <div className="font-bold border-b border-black pb-1">Issue Date : <span className="text-xs font-normal">{formatDate(issueDate)}</span></div>
           
