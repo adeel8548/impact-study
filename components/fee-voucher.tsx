@@ -62,7 +62,7 @@ export function FeeVoucher({
           }
         }
       `}</style>
-      <div className="w-full max-w-[720px] print:flex-1 print:min-w-0 print:max-w-[calc(50%-4px)] border-2 border-black bg-white text-black font-serif p-4 print:p-1 flex flex-col">
+      <div className="w-full max-w-[720px] print:flex-1 print:min-w-0 print:max-w-[calc(50%-4px)] border-2 border-black bg-white text-black font-serif p-4 print:p-1 flex flex-col h-full min-h-[100%] justify-between">
         {/* Header */}
         <div className="border-b-2 border-black "> 
         <div className="text-right font-bold text-sm uppercase">
@@ -219,21 +219,18 @@ export function FeeVoucher({
         </div>
       </div>
 
-      {/* Footer Notes in Urdu */}
-      <div dir="rtl" className="text-right text-xs border-t gap-1 border-black pt-2 space-y-1">
-  <div>۱۔ یہ رسید قبل از وقت بھی جمع کروائی جا سکتی ہے۔</div>
-  <div>۲۔ اگر کسی رسید پر Received stamp نہ ہو تو اس کی کوئی قانونی حیثیت نہیں ہو گی۔</div>
-  <div>۳۔ فیس 12 تاریخ کے بعد جمع کروانے پر 300 روپے اضافی ادا کرنا ہوں گے۔</div>
-  <div>۴۔ ادا شدہ فیس سلپ 3 ماہ تک سنبھال کر رکھیں۔</div>
-  <div>۵۔ رسید گم ہونے کی صورت میں ادارہ کسی قسم کا ذمہ دار نہیں ہو گا۔</div>
-</div>
-
-
-
-
-      {/* Address */}
-      <div className="bg-black text-white text-center py-1 text-xs mt-auto">
-        AYUB PARK # 04 NEAR ZAIQA BAKAERY OKARA  0300 5086344
+      {/* Footer Notes in Urdu and Address, all inside border */}
+      <div>
+        <div dir="rtl" className="text-right text-[10px] border-t gap-0 border-black pt-1 space-y-0.5 leading-tight">
+          <div>۱۔ یہ رسید قبل از وقت بھی جمع کروائی جا سکتی ہے۔</div>
+          <div>۲۔ اگر کسی رسید پر Received stamp نہ ہو تو اس کی کوئی قانونی حیثیت نہیں ہو گی۔</div>
+          <div>۳۔ فیس 12 تاریخ کے بعد جمع کروانے پر 300 روپے اضافی ادا کرنا ہوں گے۔</div>
+          <div>۴۔ ادا شدہ فیس سلپ 3 ماہ تک سنبھال کر رکھیں۔</div>
+          <div>۵۔ رسید گم ہونے کی صورت میں ادارہ کسی قسم کا ذمہ دار نہیں ہو گا۔</div>
+        </div>
+        <div className="bg-black text-white text-center py-0.5 text-[10px] w-full mt-1 leading-tight">
+          AYUB PARK # 04 NEAR ZAIQA BAKAERY OKARA  0300 5086344
+        </div>
       </div>
     </div>
     </>

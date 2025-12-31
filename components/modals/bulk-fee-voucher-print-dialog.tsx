@@ -208,7 +208,7 @@ export function BulkFeeVoucherPrintDialog({
                   className="bg-white flex flex-col gap-8 items-center print:w-full print:h-[105mm] print:px-3 print:py-3 print:max-w-full"
                 >
                   {vouchersData.map((voucher, index) => (
-                    <div key={index} className="page-break w-full flex flex-row gap-1 justify-between items-start print:flex-row print:gap-1 print:w-full print:max-w-full">
+                    <div key={index} className="page-break w-full flex flex-row gap-1 justify-between items-start print:flex-row print:gap-5 print:w-full print:max-w-full">
                       <FeeVoucher {...voucher} copyType="head" />
                       <FeeVoucher {...voucher} copyType="student" />
                       {index < vouchersData.length - 1 && (
@@ -244,7 +244,7 @@ export function BulkFeeVoucherPrintDialog({
           @media print {
             @page {
               size: A4 landscape;
-              margin: 0;
+              margin: 5mm;
             }
             html, body {
               width: 297mm;
@@ -268,8 +268,9 @@ export function BulkFeeVoucherPrintDialog({
             .voucher-print-wrapper > * {
               display: inline-block !important;
               vertical-align: top;
+              
               width: 130mm;
-              height: 190mm;
+              height: 200mm;
               max-width: 130mm;
               max-height: 190mm;
               margin: 0;

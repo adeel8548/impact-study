@@ -31,7 +31,7 @@ export function FeeVoucherPrintDialog({
   const [loading, setLoading] = useState(false);
   const [includeFine, setIncludeFine] = useState(false);
   const [voucherData, setVoucherData] = useState<any>(null);
-   const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
@@ -111,14 +111,20 @@ export function FeeVoucherPrintDialog({
             </div>
           ) : voucherData ? (
             <>
-              {/* Print Preview - side by side, A4 landscape-friendly, full screen */}
+              {/* Print Preview - single or double voucher, A4 friendly */}
               <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
                 <div
                   ref={printRef}
-                  className="voucher-print-wrapper bg-white"
+                  className={`voucher-print-wrapper bg-white ${voucherData?.singleVoucher ? 'single-voucher' : 'flex flex-row gap-2 justify-between items-start print:p-1 print:flex-row print:gap-5 print:max-w-full'}`}
                 >
-                  <FeeVoucher {...voucherData} copyType="head" />
-                  <FeeVoucher {...voucherData} copyType="student" />
+                  {voucherData?.singleVoucher ? (
+                    <FeeVoucher {...voucherData} copyType="student" />
+                  ) : (
+                    <>
+                      <FeeVoucher {...voucherData} copyType="head" />
+                      <FeeVoucher {...voucherData} copyType="student" />
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -153,9 +159,10 @@ export function FeeVoucherPrintDialog({
           @media print {
             @page {
               size: A4 landscape;
-              margin: 0 !important;
+              margin: 0;
             }
-            html, body {
+            html,
+            body {
               width: 297mm;
               height: 210mm;
               margin: 0 !important;
@@ -170,20 +177,42 @@ export function FeeVoucherPrintDialog({
               height: 200mm;
               display: block !important;
               overflow: visible !important;
-              margin: 10mm auto;
+              margin: 5mm auto 0 auto;
               padding: 0;
+              page-break-after: avoid;
             }
             .voucher-print-wrapper > * {
               display: inline-block !important;
               vertical-align: top;
-              width: 140mm;
+              width: 135mm;
               height: 200mm;
-              max-width: 140mm;
-              max-height: 200mm;
-              margin: 0;
+              max-width: 135mm;
+              max-height: 180mm;
+              margin: 0 2mm;
               box-sizing: border-box;
               overflow: visible !important;
               border: 2px solid #000 !important;
+            }
+            .voucher-print-wrapper.single-voucher {
+              width: 210mm;
+              height: 297mm;
+              margin: 0 auto;
+              display: flex !important;
+              align-items: center;
+              justify-content: center;
+              page-break-after: always;
+            }
+            .voucher-print-wrapper.single-voucher > * {
+              width: 180mm;
+              height: 270mm;
+              max-width: 180mm;
+              max-height: 270mm;
+              border: 2px solid #000 !important;
+              margin: 0 auto;
+              display: block !important;
+            }
+            .page-break {
+              page-break-after: always;
             }
           }
         `}</style>
