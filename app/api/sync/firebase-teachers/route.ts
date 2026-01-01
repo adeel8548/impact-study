@@ -1,29 +1,16 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { initializeApp, cert, getApps } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-
-// Initialize Firebase Admin SDK
-const firebaseApps = getApps();
-const firebaseApp =
-  firebaseApps.length > 0
-    ? firebaseApps[0]
-    : initializeApp({
-        credential: cert(
-          JSON.parse(
-            process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||
-              '{"type":"service_account"}'
-          )
-        ),
-        projectId: process.env.FIREBASE_PROJECT_ID,
-      });
-
-const firestore = getFirestore(firebaseApp);
+import { db as firestore, isFirebaseAdminReady } from "@/lib/firebase-admin";
 
 /**
  * Sync teacher to Firebase chat_users collection
  */
 async function syncTeacherToFirebase(teacherId: string, teacherData: any) {
+    if (!isFirebaseAdminReady()) {
+      console.warn("⚠️ Firebase Admin not configured, skipping teacher sync");
+      return { success: true, skipped: true };
+    }
+
   try {
     const chatUserRef = firestore.collection("chat_users").doc(teacherId);
 
@@ -52,6 +39,11 @@ async function syncTeacherToFirebase(teacherId: string, teacherData: any) {
  * Delete teacher from Firebase and archive conversations
  */
 async function deleteTeacherFromFirebase(teacherId: string) {
+    if (!isFirebaseAdminReady()) {
+      console.warn("⚠️ Firebase Admin not configured, skipping teacher deletion");
+      return { success: true, skipped: true };
+    }
+
   try {
     const batch = firestore.batch();
 
@@ -89,6 +81,11 @@ async function deleteTeacherFromFirebase(teacherId: string) {
  * Sync all teachers from Supabase to Firebase
  */
 async function syncAllTeachers() {
+    if (!isFirebaseAdminReady()) {
+      console.warn("⚠️ Firebase Admin not configured, skipping bulk sync");
+      return { success: true, skipped: true, count: 0 };
+    }
+
   try {
     const supabase = await createAdminClient();
 
