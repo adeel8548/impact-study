@@ -22,6 +22,7 @@ interface FeeVoucherProps {
   totalAmount: number;
   finePerDay: number;
   copyType: "head" | "student";
+  acNumber?: string;
 }
 
 export function FeeVoucher({
@@ -43,6 +44,7 @@ export function FeeVoucher({
   totalAmount,
   finePerDay,
   copyType,
+  acNumber,
 }: FeeVoucherProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -109,8 +111,8 @@ export function FeeVoucher({
           
         </div>
         <div className="border-r border-black pr-2">
-          <span className="font-bold">Fee A/C</span>
-          <div className="border-t border-black mt-1 pt-1"></div>
+          <div className="font-bold border-b border-black pt-1">Fee A/C <span className="text-right font-normal">{acNumber || "—"}</span></div>
+          {/* <div className="border-t border-black mt-1 pt-1 text-right">{acNumber || "—"}</div> */}
         </div>
         <div>
           <div className="font-bold border-b border-black pb-1">Serial No.<span className="text-xs font-normal"> {serialNumber}</span></div>

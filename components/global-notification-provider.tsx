@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import { useForegroundNotifications } from "@/hooks/useForegroundNotifications";
 
 /**
  * Global notification provider that plays sound for new messages
  * across all pages/screens, regardless of which conversation is active
  */
 export function GlobalNotificationProvider() {
+  // Enable foreground notifications
+  useForegroundNotifications();
+  
   const audioContextRef = useRef<AudioContext | null>(null);
   const isInitializedRef = useRef(false);
   const lastMessageTimestampRef = useRef<Record<string, number>>({});

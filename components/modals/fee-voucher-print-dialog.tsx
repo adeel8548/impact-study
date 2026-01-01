@@ -30,6 +30,7 @@ export function FeeVoucherPrintDialog({
 }: FeeVoucherPrintDialogProps) {
   const [loading, setLoading] = useState(false);
   const [includeFine, setIncludeFine] = useState(false);
+  const [removeArrears, setRemoveArrears] = useState(false);
   const [voucherData, setVoucherData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -44,7 +45,7 @@ export function FeeVoucherPrintDialog({
       setError(null);
       // Don't reset voucherData if it already exists (to avoid flicker when toggling fine)
 
-      const { data, error } = await getFeeVoucherData(studentId, includeFine);
+      const { data, error } = await getFeeVoucherData(studentId, includeFine, undefined, removeArrears);
 
       if (error) {
         console.error("Error from getFeeVoucherData:", error);
@@ -69,7 +70,7 @@ export function FeeVoucherPrintDialog({
     if (open) {
       loadVoucherData();
     }
-  }, [open, includeFine]);
+  }, [open, includeFine, removeArrears]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -102,6 +103,27 @@ export function FeeVoucherPrintDialog({
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 "
             >
               Include fine (20 Rs per day after 12th)
+            </label>
+          </div>
+
+          {/* Remove arrears option */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="removeArrears"
+              checked={removeArrears}
+              onCheckedChange={(checked) => {
+                setRemoveArrears(checked as boolean);
+                // Reload voucher data when arrears option changes
+                if (voucherData) {
+                  loadVoucherData();
+                }
+              }}
+            />
+            <label
+              htmlFor="removeArrears"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 "
+            >
+              Remove Arrears
             </label>
           </div>
 

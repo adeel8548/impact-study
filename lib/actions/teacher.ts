@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { upsertTeacherSalary } from "@/lib/server/teacher-salary";
+import { syncTeacherToFirebase, deleteTeacherFromFirebase } from "@/lib/actions/sync-teachers-to-firebase";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -109,6 +110,14 @@ export async function createTeacher(teacherData: {
     if (assignErr) {
       console.error("Failed to insert assign_subjects:", assignErr);
     }
+  }
+
+  // Sync teacher to Firebase chat_users
+  try {
+    await syncTeacherToFirebase(teacherId!);
+  } catch (error) {
+    console.error("Failed to sync teacher to Firebase:", error);
+    // Don't fail the whole operation, just log the error
   }
 
   revalidatePath("/admin/teachers");
@@ -289,7 +298,15 @@ export async function deleteTeacher(teacherId: string) {
       return { error: authError.message };
     }
 
-    // 3. Revalidate the admin teachers page
+    // 3. Delete teacher from Firebase chat_users and archive conversations
+    try {
+      await deleteTeacherFromFirebase(teacherId);
+    } catch (error) {
+      console.error("Failed to delete teacher from Firebase:", error);
+      // Don't fail the whole operation, just log the error
+    }
+
+    // 4. Revalidate the admin teachers page
     revalidatePath("/admin/teachers");
 
     console.log(

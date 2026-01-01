@@ -23,6 +23,7 @@ interface FeeVoucherData {
   totalAmount: number;
   finePerDay: number;
   daysLate: number;
+  acNumber?: string;
 }
 
 export async function generateSerialNumber(): Promise<number> {
@@ -49,13 +50,14 @@ export async function getFeeVoucherData(
   studentId: string,
   includeFine: boolean = false,
   serialNumber?: number,
+  removeArrears: boolean = false,
 ): Promise<{ data: FeeVoucherData | null; error: string | null }> {
   const supabase = await createClient();
 
   // Fetch basic student data first (without relying on Supabase FK relationship names)
   const { data: student, error: studentError } = await supabase
     .from("students")
-    .select("id, name, roll_number, guardian_name, class_id")
+    .select("id, name, roll_number, guardian_name, class_id, ac_number")
     .eq("id", studentId)
     .single();
 
@@ -136,7 +138,7 @@ export async function getFeeVoucherData(
       fee.year < currentYear ||
       (fee.year === currentYear && fee.month < currentMonth);
 
-    if (isPreviousMonth) {
+    if (isPreviousMonth && !removeArrears) {
       arrears += fee.amount;
       const label = `${monthNames[fee.month - 1]} ${fee.year}`;
       if (!arrearsMonthLabels.includes(label)) {
@@ -200,6 +202,7 @@ export async function getFeeVoucherData(
     totalAmount: currentMonthFee + arrears + fines,
     finePerDay: FINE_PER_DAY,
     daysLate,
+    acNumber: student.ac_number || undefined,
   };
 
   return { data: voucherData, error: null };
@@ -208,6 +211,7 @@ export async function getFeeVoucherData(
 export async function getMultipleFeeVouchers(
   studentIds: string[],
   includeFine: boolean = false,
+  removeArrears: boolean = false,
 ): Promise<{ data: FeeVoucherData[]; error: string | null }> {
   const vouchers: FeeVoucherData[] = [];
 
@@ -215,7 +219,7 @@ export async function getMultipleFeeVouchers(
   let currentSerialNumber = await generateSerialNumber();
 
   for (const studentId of studentIds) {
-    const { data, error } = await getFeeVoucherData(studentId, includeFine, currentSerialNumber);
+    const { data, error } = await getFeeVoucherData(studentId, includeFine, currentSerialNumber, removeArrears);
     if (data) {
       vouchers.push(data);
       // Increment serial number for next student

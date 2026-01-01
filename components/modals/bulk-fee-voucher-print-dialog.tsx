@@ -38,6 +38,7 @@ export function BulkFeeVoucherPrintDialog({
 }: BulkFeeVoucherPrintDialogProps) {
   const [loading, setLoading] = useState(false);
   const [includeFine, setIncludeFine] = useState(false);
+  const [removeArrears, setRemoveArrears] = useState(false);
   const [printType, setPrintType] = useState<"all" | "class">("all");
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [vouchersData, setVouchersData] = useState<any[]>([]);
@@ -79,7 +80,7 @@ export function BulkFeeVoucherPrintDialog({
         return;
       }
 
-      const { data, error } = await getMultipleFeeVouchers(studentIds, shouldIncludeFine);
+      const { data, error } = await getMultipleFeeVouchers(studentIds, shouldIncludeFine, removeArrears);
       if (data) {
         setVouchersData(data);
       }
@@ -155,6 +156,20 @@ export function BulkFeeVoucherPrintDialog({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Include fine (20 Rs per day after 12th)
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="removeArrears"
+                  checked={removeArrears}
+                  onCheckedChange={(checked) => setRemoveArrears(checked as boolean)}
+                />
+                <label
+                  htmlFor="removeArrears"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Remove Arrears
                 </label>
               </div>
 

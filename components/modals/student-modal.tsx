@@ -49,6 +49,7 @@ export function StudentModal({
     guardian_name: student?.guardian_name || "",
     current_fees: "",
     joining_date: "",
+    ac_number: student?.ac_number || "",
   });
 
   // <-- Add this useEffect here
@@ -65,6 +66,7 @@ export function StudentModal({
       guardian_name: student?.guardian_name || "",
       current_fees: feesAmount,
       joining_date: (student as any)?.joining_date || "",
+      ac_number: student?.ac_number || "",
     });
   }, [open, student?.id]);
 
@@ -84,6 +86,7 @@ export function StudentModal({
           guardian_name: formData.guardian_name,
           fees: formData.current_fees,
           joining_date: formData.joining_date,
+          ac_number: formData.ac_number,
         });
         if (result.error) {
           setError(result.error);
@@ -96,6 +99,7 @@ export function StudentModal({
           ...formData,
           fees: formData.current_fees,
           joining_date: formData.joining_date,
+          ac_number: formData.ac_number,
         });
         if (result.error) {
           setError(result.error);
@@ -169,6 +173,19 @@ export function StudentModal({
                 setFormData({ ...formData, roll_number: e.target.value })
               }
               required
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1 block">
+              Account Number (A/C)
+            </label>
+            <Input
+              placeholder="Account number for fee voucher"
+              value={formData.ac_number}
+              onChange={(e) =>
+                setFormData({ ...formData, ac_number: e.target.value })
+              }
             />
           </div>
 

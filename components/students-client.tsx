@@ -391,6 +391,9 @@ export function StudentsClientComponent({
                   Class
                 </th>
                 <th className="text-left p-4 font-semibold text-foreground whitespace-nowrap">
+                  A/C No.
+                </th>
+                <th className="text-left p-4 font-semibold text-foreground whitespace-nowrap">
                   Join At
                 </th>
                 <th className="text-left p-4 font-semibold text-foreground">
@@ -445,6 +448,9 @@ export function StudentsClientComponent({
                     </td>
                     <td className="p-4 text-foreground">
                       {studentClass?.name}
+                    </td>
+                    <td className="p-4 text-foreground whitespace-nowrap">
+                      {student?.ac_number || "—"}
                     </td>
                     <td className="p-4 text-foreground whitespace-nowrap">
                       {(student as any)?.joining_date

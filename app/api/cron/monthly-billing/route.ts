@@ -80,29 +80,40 @@ export async function POST(request: NextRequest) {
       (previousMonthFees || []).map((fee: any) => [fee.student_id, fee.amount])
     );
 
-    const studentFeesToInsert = students.map((student: any) => ({
-      student_id: student.id,
-      month: currentMonth,
-      year: currentYear,
-      amount: feeMap.get(student.id) || 0, // Use previous month's amount or 0
-      status: "unpaid",
-      school_id: student.school_id,
-      paid_date: null,
-    }));
+    // Check which students already have fees for current month
+    const { data: existingCurrentMonthFees } = await adminClient
+      .from("student_fees")
+      .select("student_id")
+      .eq("month", currentMonth)
+      .eq("year", currentYear);
 
-    // Insert only if not already exists
-    const { error: upsertStudentError, data: upsertedStudents } =
-      await adminClient
+    const existingStudentIds = new Set(
+      (existingCurrentMonthFees || []).map((fee: any) => fee.student_id)
+    );
+
+    // Only insert fees for students who don't have current month fees yet
+    const studentFeesToInsert = students
+      .filter((student: any) => !existingStudentIds.has(student.id))
+      .map((student: any) => ({
+        student_id: student.id,
+        month: currentMonth,
+        year: currentYear,
+        amount: feeMap.get(student.id) || 0, // Use previous month's amount or 0
+        status: "unpaid",
+        school_id: student.school_id,
+        paid_date: null,
+      }));
+
+    // Insert only new fees (won't touch existing ones)
+    if (studentFeesToInsert.length > 0) {
+      const { error: insertStudentError } = await adminClient
         .from("student_fees")
-        .upsert(studentFeesToInsert, {
-          onConflict: "student_id,month,year",
-          ignoreDuplicates: true,
-        })
-        .select();
+        .insert(studentFeesToInsert);
 
-    if (upsertStudentError) {
-      console.error("[Cron] Student fees upsert error:", upsertStudentError);
-      throw upsertStudentError;
+      if (insertStudentError) {
+        console.error("[Cron] Student fees insert error:", insertStudentError);
+        throw insertStudentError;
+      }
     }
 
     // STEP 2: Auto-create fee vouchers for all students
@@ -137,14 +148,15 @@ export async function POST(request: NextRequest) {
         .eq("year", currentYear)
         .single();
 
-      // Get arrears (unpaid previous months)
+      // Get arrears (unpaid fees from ONLY previous months)
       const { data: arrearsFees } = await adminClient
         .from("student_fees")
         .select("amount")
         .eq("student_id", student.id)
         .eq("status", "unpaid")
-        .lt("year", currentYear)
-        .or(`and(year.eq.${currentYear},month.lt.${currentMonth})`);
+        .or(
+          `year.lt.${currentYear},and(year.eq.${currentYear},month.lt.${currentMonth})`
+        );
 
       // Use preserved amount from previous month (set via feeMap earlier)
       const monthlyFee = feeMap.get(student.id) || studentFees?.amount || 0;
@@ -204,31 +216,43 @@ export async function POST(request: NextRequest) {
         (previousTeacherSalaries || []).map((salary: any) => [salary.teacher_id, salary.amount])
       );
 
-      const teacherSalariesToInsert = teachers.map((teacher: any) => ({
-        teacher_id: teacher.id,
-        month: currentMonth,
-        year: currentYear,
-        amount: teacherSalaryMap.get(teacher.id) || 0, // Use previous month's amount or 0
-        status: "unpaid",
-        school_id: teacher.school_id,
-        paid_date: null,
-      }));
+      // Check which teachers already have salaries for current month
+      const { data: existingCurrentMonthSalaries } = await adminClient
+        .from("teacher_salary")
+        .select("teacher_id")
+        .eq("month", currentMonth)
+        .eq("year", currentYear);
 
-      const { error: upsertTeacherError, data: upsertedTeachers } =
-        await adminClient
+      const existingTeacherIds = new Set(
+        (existingCurrentMonthSalaries || []).map((salary: any) => salary.teacher_id)
+      );
+
+      // Only insert salaries for teachers who don't have current month salary yet
+      const teacherSalariesToInsert = teachers
+        .filter((teacher: any) => !existingTeacherIds.has(teacher.id))
+        .map((teacher: any) => ({
+          teacher_id: teacher.id,
+          month: currentMonth,
+          year: currentYear,
+          amount: teacherSalaryMap.get(teacher.id) || 0, // Use previous month's amount or 0
+          status: "unpaid",
+          school_id: teacher.school_id,
+          paid_date: null,
+        }));
+
+      // Insert only new salaries (won't touch existing ones)
+      if (teacherSalariesToInsert.length > 0) {
+        const { error: insertTeacherError } = await adminClient
           .from("teacher_salary")
-          .upsert(teacherSalariesToInsert, {
-            onConflict: "teacher_id,month,year",
-            ignoreDuplicates: true,
-          })
-          .select();
+          .insert(teacherSalariesToInsert);
 
-      if (upsertTeacherError) {
-        console.error(
-          "[Cron] Teacher salary upsert error:",
-          upsertTeacherError,
-        );
-        throw upsertTeacherError;
+        if (insertTeacherError) {
+          console.error(
+            "[Cron] Teacher salary insert error:",
+            insertTeacherError,
+          );
+          throw insertTeacherError;
+        }
       }
 
       teachersProcessed = teachers.length;
