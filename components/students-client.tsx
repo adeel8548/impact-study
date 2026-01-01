@@ -396,7 +396,7 @@ export function StudentsClientComponent({
                 <th className="text-left p-4 font-semibold text-foreground">
                   Phone
                 </th>
-                <th className="text-center p-4 font-semibold text-foreground whitespace-nowrap">
+                <th className="text-right p-4 font-semibold text-foreground whitespace-nowrap">
                   Fees Amount
                 </th>
                 <th className="text-center p-4 font-semibold text-foreground whitespace-nowrap">
@@ -457,8 +457,10 @@ export function StudentsClientComponent({
                     <td className="p-4 text-foreground">
                       {student?.phone || "—"}
                     </td>
-                    <td className="p-4 text-foreground">
-                      {student?.currentFee?.amount || "—"}
+                    <td className="p-4 text-foreground text-right font-semibold">
+                      {student?.currentFee?.amount
+                        ? `PKR ${student.currentFee.amount.toLocaleString()}`
+                        : "—"}
                     </td>
                     <td className="p-4">
                       {student.currentFee ? (

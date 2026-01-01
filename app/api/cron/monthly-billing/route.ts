@@ -69,11 +69,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Create student fees for current month if not exists
+    // First, get all students' fees from previous month to preserve amounts
+    const { data: previousMonthFees } = await adminClient
+      .from("student_fees")
+      .select("student_id, amount")
+      .eq("month", currentMonth === 1 ? 12 : currentMonth - 1)
+      .eq("year", currentMonth === 1 ? currentYear - 1 : currentYear);
+
+    const feeMap = new Map(
+      (previousMonthFees || []).map((fee: any) => [fee.student_id, fee.amount])
+    );
+
     const studentFeesToInsert = students.map((student: any) => ({
       student_id: student.id,
       month: currentMonth,
       year: currentYear,
-      amount: 0, // Default amount, should be set per student
+      amount: feeMap.get(student.id) || 0, // Use previous month's amount or 0
       status: "unpaid",
       school_id: student.school_id,
       paid_date: null,
@@ -117,7 +128,7 @@ export async function POST(request: NextRequest) {
     let nextSerialNumber = (lastVoucher?.serial_number || 0) + 1;
 
     for (const student of students) {
-      // Get student fees for current month
+      // Get student fees for current month (which now has preserved amount from previous month)
       const { data: studentFees } = await adminClient
         .from("student_fees")
         .select("amount")
@@ -135,7 +146,8 @@ export async function POST(request: NextRequest) {
         .lt("year", currentYear)
         .or(`and(year.eq.${currentYear},month.lt.${currentMonth})`);
 
-      const monthlyFee = studentFees?.amount || 0;
+      // Use preserved amount from previous month (set via feeMap earlier)
+      const monthlyFee = feeMap.get(student.id) || studentFees?.amount || 0;
       const arrears = (arrearsFees || []).reduce((sum, fee) => sum + fee.amount, 0);
       const totalAmount = monthlyFee + arrears;
 
@@ -181,11 +193,22 @@ export async function POST(request: NextRequest) {
 
     if (teachers && teachers.length > 0) {
       // Create teacher salaries for current month if not exists
+      // First, get all teachers' salaries from previous month to preserve amounts
+      const { data: previousTeacherSalaries } = await adminClient
+        .from("teacher_salary")
+        .select("teacher_id, amount")
+        .eq("month", currentMonth === 1 ? 12 : currentMonth - 1)
+        .eq("year", currentMonth === 1 ? currentYear - 1 : currentYear);
+
+      const teacherSalaryMap = new Map(
+        (previousTeacherSalaries || []).map((salary: any) => [salary.teacher_id, salary.amount])
+      );
+
       const teacherSalariesToInsert = teachers.map((teacher: any) => ({
         teacher_id: teacher.id,
         month: currentMonth,
         year: currentYear,
-        amount: 0, // Default amount, should be set per teacher
+        amount: teacherSalaryMap.get(teacher.id) || 0, // Use previous month's amount or 0
         status: "unpaid",
         school_id: teacher.school_id,
         paid_date: null,
