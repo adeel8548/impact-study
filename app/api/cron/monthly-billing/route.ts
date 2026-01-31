@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
 import { resetTeacherSalariesToUnpaid } from "@/lib/server/teacher-salary";
 import { checkFeeExpiration } from "@/lib/actions/fees";
+import { calculateFeeForMonth } from "@/lib/utils/partial-fee-calculator";
 
 /**
  * Combined Cron Job: Monthly billing + Reset fees/salaries
@@ -51,10 +52,10 @@ export async function POST(request: NextRequest) {
       `[Cron] Starting monthly billing process for ${currentMonth}/${currentYear}`,
     );
 
-    // Get all students
+    // Get all students with joining_date and full_fee
     const { data: students, error: studentError } = await adminClient
       .from("students")
-      .select("id, school_id")
+      .select("id, school_id, joining_date, full_fee")
       .order("id");
 
     if (studentError) throw studentError;
@@ -94,15 +95,31 @@ export async function POST(request: NextRequest) {
     // Only insert fees for students who don't have current month fees yet
     const studentFeesToInsert = students
       .filter((student: any) => !existingStudentIds.has(student.id))
-      .map((student: any) => ({
-        student_id: student.id,
-        month: currentMonth,
-        year: currentYear,
-        amount: feeMap.get(student.id) || 0, // Use previous month's amount or 0
-        status: "unpaid",
-        school_id: student.school_id,
-        paid_date: null,
-      }));
+      .map((student: any) => {
+        // Calculate fee using partial fee logic
+        const fullFee = student.full_fee || feeMap.get(student.id) || 0;
+        const feeCalculation = calculateFeeForMonth(
+          fullFee,
+          student.joining_date,
+          currentMonth,
+          currentYear
+        );
+
+        return {
+          student_id: student.id,
+          month: currentMonth,
+          year: currentYear,
+          amount: feeCalculation.calculatedFee,
+          full_fee: fullFee,
+          is_partial: feeCalculation.isPartial,
+          total_days_in_month: feeCalculation.totalDaysInMonth,
+          payable_days: feeCalculation.payableDays,
+          per_day_fee: feeCalculation.perDayFee,
+          status: "unpaid",
+          school_id: student.school_id,
+          paid_date: null,
+        };
+      });
 
     // Insert only new fees (won't touch existing ones)
     if (studentFeesToInsert.length > 0) {
@@ -139,10 +156,10 @@ export async function POST(request: NextRequest) {
     let nextSerialNumber = (lastVoucher?.serial_number || 0) + 1;
 
     for (const student of students) {
-      // Get student fees for current month (which now has preserved amount from previous month)
+      // Get student fees for current month (which now has partial fee calculation)
       const { data: studentFees } = await adminClient
         .from("student_fees")
-        .select("amount")
+        .select("amount, is_partial, total_days_in_month, payable_days, per_day_fee")
         .eq("student_id", student.id)
         .eq("month", currentMonth)
         .eq("year", currentYear)
@@ -158,8 +175,8 @@ export async function POST(request: NextRequest) {
           `year.lt.${currentYear},and(year.eq.${currentYear},month.lt.${currentMonth})`
         );
 
-      // Use preserved amount from previous month (set via feeMap earlier)
-      const monthlyFee = feeMap.get(student.id) || studentFees?.amount || 0;
+      // Use calculated amount (partial or full) from student_fees
+      const monthlyFee = studentFees?.amount || 0;
       const arrears = (arrearsFees || []).reduce((sum, fee) => sum + fee.amount, 0);
       const totalAmount = monthlyFee + arrears;
 
@@ -169,6 +186,10 @@ export async function POST(request: NextRequest) {
         issue_date: issueDate,
         due_date: dueDate,
         monthly_fee: monthlyFee,
+        is_partial: studentFees?.is_partial || false,
+        total_days_in_month: studentFees?.total_days_in_month || null,
+        payable_days: studentFees?.payable_days || null,
+        per_day_fee: studentFees?.per_day_fee || null,
         arrears: arrears,
         fines: 0,
         annual_charges: 0,

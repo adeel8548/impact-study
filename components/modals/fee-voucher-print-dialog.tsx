@@ -127,6 +127,23 @@ export function FeeVoucherPrintDialog({
             </label>
           </div>
 
+          {/* Full Fee Override - Show when partial fee exists */}
+          {voucherData?.isPartial && (
+            <div className="flex items-center gap-2 border-2 border-yellow-400 bg-yellow-50 p-3 rounded">
+              <Checkbox
+                id="useFullFee"
+                disabled
+                className="opacity-50"
+              />
+              <label
+                htmlFor="useFullFee"
+                className="text-sm font-semibold text-yellow-900"
+              >
+                ⚠️ Partial Fee Detected: Check the checkbox inside the voucher to use full fee ({voucherData?.fullFee?.toLocaleString()})
+              </label>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin" />
@@ -140,11 +157,26 @@ export function FeeVoucherPrintDialog({
                   className={`voucher-print-wrapper bg-white ${voucherData?.singleVoucher ? 'single-voucher' : 'flex flex-row gap-2 justify-between items-start print:p-1 print:flex-row print:gap-5 print:max-w-full'}`}
                 >
                   {voucherData?.singleVoucher ? (
-                    <FeeVoucher {...voucherData} copyType="student" />
+                    <FeeVoucher 
+                      {...voucherData} 
+                      copyType="student"
+                      fullFee={voucherData.fullFee}
+                      isPartialFee={voucherData.isPartial}
+                    />
                   ) : (
                     <>
-                      <FeeVoucher {...voucherData} copyType="head" />
-                      <FeeVoucher {...voucherData} copyType="student" />
+                      <FeeVoucher 
+                        {...voucherData} 
+                        copyType="head"
+                        fullFee={voucherData.fullFee}
+                        isPartialFee={voucherData.isPartial}
+                      />
+                      <FeeVoucher 
+                        {...voucherData} 
+                        copyType="student"
+                        fullFee={voucherData.fullFee}
+                        isPartialFee={voucherData.isPartial}
+                      />
                     </>
                   )}
                 </div>

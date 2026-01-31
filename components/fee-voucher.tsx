@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";  
+import React, { useState } from "react";  
 import Logo from "@/app/Assests/imgs/logo_2.png"
 import Image from "next/image";
 interface FeeVoucherProps {
@@ -13,6 +13,8 @@ interface FeeVoucherProps {
   className: string;
   month: string;
   monthlyFee: number;
+  fullFee?: number;
+  isPartialFee?: boolean;
   arrears: number;
   arrearsMonthsLabel?: string;
   fines: number;
@@ -35,6 +37,8 @@ export function FeeVoucher({
   className,
   month,
   monthlyFee,
+  fullFee,
+  isPartialFee = false,
   arrears,
   arrearsMonthsLabel,
   fines,
@@ -46,6 +50,23 @@ export function FeeVoucher({
   copyType,
   acNumber,
 }: FeeVoucherProps) {
+  const [useFullFee, setUseFullFee] = useState(false);
+
+  const displayFee = (useFullFee && fullFee) ? fullFee : monthlyFee;
+  const displayTotal = useFullFee && fullFee ? totalAmount + (fullFee - monthlyFee) : totalAmount;
+
+  // Debug log
+  React.useEffect(() => {
+    if (isPartialFee) {
+      console.log("Debug Voucher:", {
+        isPartialFee,
+        fullFee,
+        monthlyFee,
+        showCheckbox: isPartialFee && fullFee && fullFee !== monthlyFee,
+      });
+    }
+  }, [isPartialFee, fullFee, monthlyFee]);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-GB");
@@ -149,6 +170,23 @@ export function FeeVoucher({
        
       </div>
 
+      {/* Full Fee Checkbox - Partial Fee Override - Hidden on Print */}
+      {isPartialFee && (
+        <div className="border-2 border-yellow-500 bg-yellow-50 p-2 mb-2 rounded print:hidden">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useFullFee}
+              onChange={(e) => setUseFullFee(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-semibold text-yellow-800">
+              Use Full Fee ({fullFee?.toLocaleString() || monthlyFee.toLocaleString()}) instead of Partial ({monthlyFee.toLocaleString()})
+            </span>
+          </label>
+        </div>
+      )}
+
       {/* Fee Details Table */}
       <div className="border-2 border-black mb-2">
         <div className="grid grid-cols-2 border-b-2 border-black">
@@ -158,8 +196,10 @@ export function FeeVoucher({
         
         {monthlyFee > 0 && (
           <div className="grid grid-cols-2 border-b border-black">
-            <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Monthly Fee</div>
-            <div className="text-right px-2 py-1 text-sm">{monthlyFee.toLocaleString()}</div>
+            <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">
+              Monthly Fee {useFullFee && fullFee && fullFee !== monthlyFee ? "(Full)" : isPartialFee ? "(Partial)" : ""}
+            </div>
+            <div className="text-right px-2 py-1 text-sm">{displayFee.toLocaleString()}</div>
           </div>
         )}
         
@@ -201,7 +241,7 @@ export function FeeVoucher({
         
         <div className="grid grid-cols-2 bg-gray-100">
           <div className="font-bold border-r-2 border-black px-2 py-1 text-sm">Total Amount</div>
-          <div className="text-right px-2 py-1 font-bold text-sm">{totalAmount.toLocaleString()}</div>
+          <div className="text-right px-2 py-1 font-bold text-sm">{displayTotal.toLocaleString()}</div>
         </div>
       </div>
 

@@ -13,6 +13,7 @@ interface FeeVoucherData {
   issueDate: string;
   dueDate: string;
   monthlyFee: number;
+  fullFee?: number;  // Base/full fee (for override option)
   arrears: number;
   /** Human readable breakdown like "Jan 2025, Feb 2025" for pending months */
   arrearsMonthsLabel?: string;
@@ -24,6 +25,11 @@ interface FeeVoucherData {
   finePerDay: number;
   daysLate: number;
   acNumber?: string;
+  // Partial fee fields
+  isPartial?: boolean;
+  totalDaysInMonth?: number;
+  payableDays?: number;
+  perDayFee?: number;
 }
 
 export async function generateSerialNumber(): Promise<number> {
@@ -57,7 +63,7 @@ export async function getFeeVoucherData(
   // Fetch basic student data first (without relying on Supabase FK relationship names)
   const { data: student, error: studentError } = await supabase
     .from("students")
-    .select("id, name, roll_number, guardian_name, class_id, ac_number")
+    .select("id, name, roll_number, guardian_name, class_id, ac_number, full_fee")
     .eq("id", studentId)
     .single();
 
@@ -112,7 +118,7 @@ export async function getFeeVoucherData(
   if (!fees || fees.length === 0) {
     const { data: currentFee } = await supabase
       .from("student_fees")
-      .select("*")
+      .select("amount, is_partial, total_days_in_month, payable_days, per_day_fee")
       .eq("student_id", studentId)
       .eq("month", currentMonth)
       .eq("year", currentYear)
@@ -126,6 +132,10 @@ export async function getFeeVoucherData(
   // Calculate arrears (previous months unpaid) and collect month labels
   let arrears = 0;
   let currentMonthFee = 0;
+  let isPartial = false;
+  let totalDaysInMonth: number | undefined;
+  let payableDays: number | undefined;
+  let perDayFee: number | undefined;
   const arrearsMonthLabels: string[] = [];
 
   const monthNames = [
@@ -146,12 +156,20 @@ export async function getFeeVoucherData(
       }
     } else if (fee.year === currentYear && fee.month === currentMonth) {
       currentMonthFee = fee.amount;
+      isPartial = fee.is_partial || false;
+      totalDaysInMonth = fee.total_days_in_month;
+      payableDays = fee.payable_days;
+      perDayFee = fee.per_day_fee;
     }
   });
 
   // If currentMonthFee is still 0, use the current month fee record (even if paid)
   if (currentMonthFee === 0 && currentMonthFeeRecord) {
     currentMonthFee = currentMonthFeeRecord.amount;
+    isPartial = currentMonthFeeRecord.is_partial || false;
+    totalDaysInMonth = currentMonthFeeRecord.total_days_in_month;
+    payableDays = currentMonthFeeRecord.payable_days;
+    perDayFee = currentMonthFeeRecord.per_day_fee;
   }
 
   // Calculate fine if enabled
@@ -190,6 +208,7 @@ export async function getFeeVoucherData(
     issueDate,
     dueDate,
     monthlyFee: currentMonthFee,
+    fullFee: student.full_fee || undefined,  // Base fee for override checkbox
     arrears,
     arrearsMonthsLabel:
       arrears > 0 && arrearsMonthLabels.length > 0
@@ -203,6 +222,11 @@ export async function getFeeVoucherData(
     finePerDay: FINE_PER_DAY,
     daysLate,
     acNumber: student.ac_number || undefined,
+    // Partial fee fields
+    isPartial,
+    totalDaysInMonth,
+    payableDays,
+    perDayFee,
   };
 
   return { data: voucherData, error: null };
@@ -248,6 +272,10 @@ export async function saveFeeVoucher(voucherData: FeeVoucherData): Promise<{ err
       other_charges: voucherData.otherCharges,
       total_amount: voucherData.totalAmount,
       month: voucherData.month,
+      is_partial: voucherData.isPartial || false,
+      total_days_in_month: voucherData.totalDaysInMonth || null,
+      payable_days: voucherData.payableDays || null,
+      per_day_fee: voucherData.perDayFee || null,
     });
 
   if (error) {

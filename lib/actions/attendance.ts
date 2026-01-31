@@ -240,3 +240,47 @@ export async function updateLateReason(
   return { error: null };
 }
 
+/**
+ * Remove/Clear late marking from teacher attendance
+ * Clears is_late, late_reason and expected_time fields
+ */
+export async function clearTeacherLateAttendance(recordId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  // Only admin can clear late attendance
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { error: "Only admins can clear late attendance" };
+  }
+
+  const { error } = await supabase
+    .from("teacher_attendance")
+    .update({
+      is_late: false,
+      late_reason: null,
+      expected_time: null,
+    })
+    .eq("id", recordId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/teacher");
+  revalidatePath("/admin/attendance");
+  revalidatePath("/teacher/my-attendance");
+  return { error: null };
+}
+

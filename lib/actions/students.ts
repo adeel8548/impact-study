@@ -29,8 +29,9 @@ export async function createStudent(studentData: {
   email?: string;
   phone?: string;
   guardian_name?: string;
-  fees?: string | number;
+  full_fee?: string | number;
   joining_date?: string;
+  ac_number?: string;
 }) {
   const supabase = await createClient();
 
@@ -44,7 +45,9 @@ export async function createStudent(studentData: {
       email: studentData.email,
       phone: studentData.phone,
       guardian_name: studentData.guardian_name,
+      full_fee: studentData.full_fee ? Number(studentData.full_fee) : 0,
       joining_date: studentData.joining_date || null,
+      ac_number: studentData.ac_number || null,
     })
     .select();
 
@@ -53,19 +56,6 @@ export async function createStudent(studentData: {
   }
 
   const student = data?.[0];
-
-  // Create student fees entry for current month if fees amount is provided
-  if (student && studentData.fees && Number(studentData.fees) > 0) {
-    const now = new Date();
-    await supabase.from("student_fees").insert({
-      student_id: student.id,
-      month: now.getMonth() + 1,
-      year: now.getFullYear(),
-      amount: Number(studentData.fees),
-      status: "unpaid",
-      school_id: "00000000-0000-0000-0000-000000000000",
-    });
-  }
 
   revalidatePath("/admin/students");
   return { student, error: null };
@@ -79,20 +69,27 @@ export async function updateStudent(
     email: string;
     phone: string;
     guardian_name: string;
-    fees: string;
+    full_fee: string | number;
     joining_date: string;
     class_id: string;
+    ac_number: string;
   }>,
 ) {
   const supabase = await createClient();
 
-  const { fees, ...studentUpdates } = updates;
+  const { full_fee, ...studentUpdates } = updates;
 
   // Fix: Convert empty joining_date to null to prevent date parsing error
-  const sanitizedUpdates = {
+  const sanitizedUpdates: any = {
     ...studentUpdates,
     joining_date: studentUpdates.joining_date || null,
+    ac_number: studentUpdates.ac_number || null,
   };
+
+  // Always include full_fee in updates if provided (even if it's 0)
+  if (full_fee !== undefined) {
+    sanitizedUpdates.full_fee = Number(full_fee);
+  }
 
   const { data, error } = await supabase
     .from("students")
@@ -102,34 +99,6 @@ export async function updateStudent(
 
   if (error) {
     return { error: error.message, student: null };
-  }
-
-  // Update fees if provided
-  if (fees && Number(fees) > 0) {
-    const now = new Date();
-    const { data: existingFees } = await supabase
-      .from("student_fees")
-      .select("id")
-      .eq("student_id", studentId)
-      .eq("month", now.getMonth() + 1)
-      .eq("year", now.getFullYear())
-      .single();
-
-    if (existingFees) {
-      await supabase
-        .from("student_fees")
-        .update({ amount: Number(fees) })
-        .eq("id", existingFees.id);
-    } else {
-      await supabase.from("student_fees").insert({
-        student_id: studentId,
-        month: now.getMonth() + 1,
-        year: now.getFullYear(),
-        amount: Number(fees),
-        status: "unpaid",
-        school_id: "00000000-0000-0000-0000-000000000000",
-      });
-    }
   }
 
   revalidatePath("/admin/students");

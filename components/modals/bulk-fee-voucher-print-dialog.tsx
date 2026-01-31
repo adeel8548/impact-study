@@ -173,6 +173,11 @@ export function BulkFeeVoucherPrintDialog({
                 </label>
               </div>
 
+              {/* Info: Partial Fee Override Note */}
+              <div className="border-2 border-blue-300 bg-blue-50 p-3 rounded text-sm text-blue-900">
+                💡 <span className="font-semibold">Partial Fee Note:</span> For students with partial fees, a checkbox will appear in each voucher to use full fee instead.
+              </div>
+
               <Button onClick={handleGeneratePreview} disabled={loading || (printType === "class" && !selectedClass)}>
                 {loading ? (
                   <>
@@ -224,8 +229,18 @@ export function BulkFeeVoucherPrintDialog({
                 >
                   {vouchersData.map((voucher, index) => (
                     <div key={index} className="page-break w-full flex flex-row gap-1 justify-between items-start print:flex-row print:gap-5 print:w-full print:max-w-full">
-                      <FeeVoucher {...voucher} copyType="head" />
-                      <FeeVoucher {...voucher} copyType="student" />
+                      <FeeVoucher 
+                        {...voucher} 
+                        copyType="head"
+                        fullFee={voucher.fullFee}
+                        isPartialFee={voucher.isPartial}
+                      />
+                      <FeeVoucher 
+                        {...voucher} 
+                        copyType="student"
+                        fullFee={voucher.fullFee}
+                        isPartialFee={voucher.isPartial}
+                      />
                       {index < vouchersData.length - 1 && (
                         <div className="border-b-2 border-dashed border-gray-300 my-4" />
                       )}

@@ -47,15 +47,15 @@ export function StudentModal({
     email: student?.email || "",
     phone: student?.phone || "",
     guardian_name: student?.guardian_name || "",
-    current_fees: "",
+    full_fee: "",
     joining_date: "",
     ac_number: student?.ac_number || "",
   });
 
   // <-- Add this useEffect here
   useEffect(() => {
-    const feesAmount = student?.currentFee?.amount
-      ? student.currentFee.amount.toString()
+    const fullFeeAmount = student?.full_fee
+      ? student.full_fee.toString()
       : "";
     setFormData({
       name: student?.name || "",
@@ -64,7 +64,7 @@ export function StudentModal({
       email: student?.email || "",
       phone: student?.phone || "",
       guardian_name: student?.guardian_name || "",
-      current_fees: feesAmount,
+      full_fee: fullFeeAmount,
       joining_date: (student as any)?.joining_date || "",
       ac_number: student?.ac_number || "",
     });
@@ -84,7 +84,7 @@ export function StudentModal({
           email: formData.email,
           phone: formData.phone,
           guardian_name: formData.guardian_name,
-          fees: formData.current_fees,
+          full_fee: formData.full_fee,
           joining_date: formData.joining_date,
           ac_number: formData.ac_number,
         });
@@ -97,7 +97,7 @@ export function StudentModal({
       } else {
         const result = await createStudent({
           ...formData,
-          fees: formData.current_fees,
+          full_fee: formData.full_fee,
           joining_date: formData.joining_date,
           ac_number: formData.ac_number,
         });
@@ -241,23 +241,27 @@ export function StudentModal({
 
           <div>
             <label className="text-sm font-medium text-foreground mb-1 block">
-              Current Monthly Fees
+              Full Monthly Fee (Base Fee) *
             </label>
             <Input
               type="number"
-              placeholder="Enter monthly fees amount"
-              value={formData.current_fees}
+              placeholder="Enter monthly fees amount (e.g., 5000)"
+              value={formData.full_fee}
               onChange={(e) =>
-                setFormData({ ...formData, current_fees: e.target.value })
+                setFormData({ ...formData, full_fee: e.target.value })
               }
               min="0"
               step="0.01"
+              required
             />
-            {formData.current_fees && (
+            {formData.full_fee && (
               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                PKR {Number(formData.current_fees).toLocaleString()}
+                PKR {Number(formData.full_fee).toLocaleString()}
               </p>
             )}
+            <p className="text-xs text-muted-foreground mt-1">
+              This is the base monthly fee. System will auto-calculate partial fee for joining month.
+            </p>
           </div>
 
           <div>
@@ -271,6 +275,9 @@ export function StudentModal({
                 setFormData({ ...formData, joining_date: e.target.value })
               }
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              If joining mid-month, partial fee will be calculated automatically.
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">
