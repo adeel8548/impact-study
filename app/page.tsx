@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import Logo from "@/app/Assests/imgs/logo_2.png";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -83,7 +84,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="p-8 shadow-lg ">
           <div className="text-center mb-8">
@@ -103,7 +104,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4 ">
             {(error || envError) && (
               <div className="flex gap-3 p-3  bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                 <p className="text-sm text-red-600 dark:text-red-400">
                   {error || envError}
                 </p>
@@ -156,10 +157,16 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading || !!envError}
-                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all "
+                className="w-full bg-linear-to-r from-blue-500 to-indigo-600 text-white font-semibold py-2 rounded-lg hover:shadow-lg transition-all "
               >
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
+            </div>
+
+            <div className="text-center text-sm">
+              <Link href="/forgot-password" className="text-blue-600 hover:underline">
+                Forgot password?
+              </Link>
             </div>
           </form>
         </Card>

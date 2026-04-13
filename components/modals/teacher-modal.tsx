@@ -35,6 +35,7 @@ interface FormState {
   email: string;
   phone: string;
   password: string;
+  newPassword: string;
   salary: string;
   joining_date: string;
   expected_time: string;
@@ -95,6 +96,7 @@ export function TeacherModal({
     email: teacher?.email || "",
     phone: teacher?.phone || "",
     password: "",
+    newPassword: "",
     salary:
       typeof (teacher as any)?.salary?.amount === "number"
         ? String((teacher as any).salary.amount)
@@ -154,6 +156,7 @@ export function TeacherModal({
       email: teacher?.email || "",
       phone: teacher?.phone || "",
       password: "",
+      newPassword: "",
       salary: salaryValue,
       joining_date: (teacher as any)?.joining_date || "",
       expected_time: (teacher as any)?.expected_time || "",
@@ -259,6 +262,11 @@ export function TeacherModal({
       return;
     }
 
+    if (isEditing && formData.newPassword && formData.newPassword.length < 8) {
+      setError("New password must be at least 8 characters");
+      return;
+    }
+
     const salaryValue = formData.salary ? Number(formData.salary) : undefined;
     if (formData.salary && (Number.isNaN(salaryValue) || salaryValue <= 0)) {
       setError("Salary must be greater than 0");
@@ -271,6 +279,12 @@ export function TeacherModal({
 
     try {
       if (isEditing && teacher) {
+        if (!teacher.id) {
+          setError("Teacher id is missing");
+          toast.error("Teacher id is missing");
+          return;
+        }
+
         const { error: updateError } = await updateTeacher(teacher.id, {
           name: formData.name,
           email: formData.email,
@@ -289,6 +303,34 @@ export function TeacherModal({
         }
 
         toast.success("Teacher updated successfully");
+
+        if (formData.newPassword) {
+          if (!teacher.id) {
+            setError("Teacher id is missing");
+            toast.error("Teacher id is missing");
+            return;
+          }
+
+          const passwordResponse = await fetch(
+            `/api/teachers/${teacher.id}/change-password`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ password: formData.newPassword }),
+            },
+          );
+
+          const passwordJson = await passwordResponse.json();
+          if (!passwordResponse.ok || passwordJson.success === false) {
+            const passwordError =
+              passwordJson.error || "Failed to update teacher password";
+            setError(passwordError);
+            toast.error(passwordError);
+            return;
+          }
+
+          toast.success("Teacher password updated successfully");
+        }
       } else {
         const { error: createError } = await createTeacher({
           name: formData.name,
@@ -407,6 +449,43 @@ export function TeacherModal({
               disabled={loading}
             />
           </div>
+
+          {isEditing && (
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Leave blank to keep current password"
+                  value={formData.newPassword}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  disabled={loading}
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Only admins can update a teacher password.
+              </p>
+            </div>
+          )}
 
           {!isEditing && (
             <div className="space-y-2">
