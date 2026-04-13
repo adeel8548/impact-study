@@ -407,6 +407,9 @@ export function StudentsClientComponent({
                 <th className="text-right p-4 font-semibold text-foreground whitespace-nowrap">
                   Fees Amount
                 </th>
+                <th className="text-right p-4 font-semibold text-foreground whitespace-nowrap">
+                  Pending Fee
+                </th>
                 <th className="text-center p-4 font-semibold text-foreground whitespace-nowrap">
                   Pay Now
                 </th>
@@ -470,8 +473,17 @@ export function StudentsClientComponent({
                     </td>
                     <td className="p-4 text-foreground text-right font-semibold">
                       {student?.currentFee?.amount
-                        ? `PKR ${student.currentFee.amount.toLocaleString()}`
+                        ? `PKR ${Number(student.currentFee.amount).toLocaleString()}`
                         : "—"}
+                    </td>
+                    <td className="p-4 text-right font-semibold">
+                      {Number((student as any)?.totalPayable || 0) > 0 ? (
+                        <span className="text-red-600">
+                          PKR {Number((student as any).totalPayable).toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">PKR 0</span>
+                      )}
                     </td>
                     <td className="p-4">
                       {student.currentFee ? (
@@ -487,27 +499,8 @@ export function StudentsClientComponent({
                             initialStatus={student.currentFee.status}
                             initialPaidDate={student.currentFee.paid_date}
                             onStatusChange={() => {
-                              const nowIso = new Date().toISOString();
-                              // Refresh the specific student's data with latest status + paid date when marked paid
-                              setStudents(
-                                students.map((s) => {
-                                  if (s.id !== student.id || !s.currentFee)
-                                    return s;
-                                  const nextStatus =
-                                    student.currentFee.status === "paid"
-                                      ? "unpaid"
-                                      : "paid";
-                                  return {
-                                    ...s,
-                                    currentFee: {
-                                      ...s.currentFee,
-                                      status: nextStatus,
-                                      paid_date:
-                                        nextStatus === "paid" ? nowIso : null,
-                                    },
-                                  };
-                                }),
-                              );
+                              // Pull fresh fee + pending totals after payment changes.
+                              router.refresh();
                             }}
                           />
                         </div>

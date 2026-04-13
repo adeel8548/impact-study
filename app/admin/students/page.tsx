@@ -57,13 +57,27 @@ export default async function StudentManagement() {
     .eq("month", currentMonth)
     .eq("year", currentYear);
 
+  const { data: unpaidFeeRows = [] } = await supabase
+    .from("student_fees")
+    .select("student_id, amount")
+    .eq("status", "unpaid");
+
   // Create a map of student fees
   const feesMap = new Map((fees || []).map((fee) => [fee.student_id, fee]));
+  const unpaidMap = new Map<string, number>();
+
+  for (const fee of unpaidFeeRows || []) {
+    const key = String(fee.student_id);
+    const existing = unpaidMap.get(key) || 0;
+    unpaidMap.set(key, existing + Number(fee.amount || 0));
+  }
 
   // Enrich students with fees data
   const studentsWithFees = (students || []).map((student) => ({
     ...student,
     currentFee: feesMap.get(student.id),
+    pendingDue: unpaidMap.get(student.id) || 0,
+    totalPayable: unpaidMap.get(student.id) || 0,
   }));
 
   // Get fee summary
