@@ -111,6 +111,9 @@ export function StudentsClientComponent({
   const [unpaidFeesModalOpen, setUnpaidFeesModalOpen] = useState(false);
   const [selectedStudentForUnpaidFees, setSelectedStudentForUnpaidFees] =
     useState<Student | null>(null);
+  const [unpaidFeesViewMode, setUnpaidFeesViewMode] = useState<
+    "all" | "pending"
+  >("all");
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [selectedStudentForAttendance, setSelectedStudentForAttendance] =
     useState<Student | null>(null);
@@ -472,15 +475,32 @@ export function StudentsClientComponent({
                       {student?.phone || "—"}
                     </td>
                     <td className="p-4 text-foreground text-right font-semibold">
-                      {student?.currentFee?.amount
-                        ? `PKR ${Number(student.currentFee.amount).toLocaleString()}`
-                        : "—"}
+                      {(() => {
+                        const baseFee = Number(
+                          (student as any)?.currentFee?.full_fee ||
+                            (student as any)?.full_fee ||
+                            (student as any)?.currentFee?.amount ||
+                            0,
+                        );
+                        return baseFee > 0
+                          ? `PKR ${baseFee.toLocaleString()}`
+                          : "—";
+                      })()}
                     </td>
                     <td className="p-4 text-right font-semibold">
                       {Number((student as any)?.totalPayable || 0) > 0 ? (
-                        <span className="text-red-600">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUnpaidFeesViewMode("pending");
+                            setSelectedStudentForUnpaidFees(student);
+                            setUnpaidFeesModalOpen(true);
+                          }}
+                          className="text-red-600 hover:underline"
+                          title="View pending fee months"
+                        >
                           PKR {Number((student as any).totalPayable).toLocaleString()}
-                        </span>
+                        </button>
                       ) : (
                         <span className="text-muted-foreground">PKR 0</span>
                       )}
@@ -523,6 +543,7 @@ export function StudentsClientComponent({
                         size="sm"
                         variant="outline"
                         onClick={() => {
+                          setUnpaidFeesViewMode("all");
                           setSelectedStudentForUnpaidFees(student);
                           setUnpaidFeesModalOpen(true);
                         }}
@@ -637,6 +658,7 @@ export function StudentsClientComponent({
           onOpenChange={setUnpaidFeesModalOpen}
           studentId={selectedStudentForUnpaidFees.id}
           studentName={selectedStudentForUnpaidFees.name}
+          viewMode={unpaidFeesViewMode}
         />
       )}
 

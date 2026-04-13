@@ -16,6 +16,7 @@ interface StudentUnpaidFeesModalProps {
   onOpenChange: (open: boolean) => void;
   studentId: string;
   studentName: string;
+  viewMode?: "all" | "pending";
 }
 
 interface Fee {
@@ -49,6 +50,7 @@ export function StudentUnpaidFeesModal({
   onOpenChange,
   studentId,
   studentName,
+  viewMode = "all",
 }: StudentUnpaidFeesModalProps) {
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -100,17 +102,28 @@ export function StudentUnpaidFeesModal({
 
   const feeMap = allFeesByYear.get(selectedYear) || new Map();
 
-  // Generate all 12 months for display year
-  const monthsData = Array.from({ length: 12 }, (_, i) => {
-    const month = i + 1;
-    const fee = feeMap.get(month);
-    return {
-      month,
-      year: selectedYear,
-      fee,
-      isPaid: fee?.status === "paid",
-    };
-  });
+  // Generate month cards for display year
+  const monthsData =
+    viewMode === "pending"
+      ? Array.from(feeMap.values())
+          .filter((fee) => fee?.status === "unpaid")
+          .sort((a, b) => Number(a.month) - Number(b.month))
+          .map((fee) => ({
+            month: Number(fee.month),
+            year: selectedYear,
+            fee,
+            isPaid: false,
+          }))
+      : Array.from({ length: 12 }, (_, i) => {
+          const month = i + 1;
+          const fee = feeMap.get(month);
+          return {
+            month,
+            year: selectedYear,
+            fee,
+            isPaid: fee?.status === "paid",
+          };
+        });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,7 +132,7 @@ export function StudentUnpaidFeesModal({
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600" />
             <span>
-              Fees Overview {selectedYear} - {studentName}
+              {viewMode === "pending" ? "Pending Fees" : "Fees Overview"} {selectedYear} - {studentName}
             </span>
           </DialogTitle>
         </DialogHeader>
@@ -147,7 +160,13 @@ export function StudentUnpaidFeesModal({
               </select>
             </div>
 
-            {/* Grid of all 12 months */}
+            {viewMode === "pending" && monthsData.length === 0 ? (
+              <Card className="p-4 text-sm text-muted-foreground">
+                No pending fees for this year.
+              </Card>
+            ) : null}
+
+            {/* Month cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {monthsData.map((monthData) => {
                 const fee = monthData.fee;

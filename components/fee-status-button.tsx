@@ -62,6 +62,8 @@ export function FeeStatusButton({
   const [loadingFees, setLoadingFees] = useState(false);
   const [paying, setPaying] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [isMonthManuallySelected, setIsMonthManuallySelected] =
+    useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear(),
   );
@@ -132,6 +134,7 @@ export function FeeStatusButton({
   useEffect(() => {
     if (fees.length === 0) {
       setSelectedMonth(null);
+      setIsMonthManuallySelected(false);
       return;
     }
 
@@ -143,6 +146,7 @@ export function FeeStatusButton({
 
     if (unpaidForYear.length === 0) {
       setSelectedMonth(null);
+      setIsMonthManuallySelected(false);
       return;
     }
 
@@ -151,6 +155,7 @@ export function FeeStatusButton({
     );
     if (hasCurrentMonth) {
       setSelectedMonth(Number(hasCurrentMonth.month));
+      setIsMonthManuallySelected(false);
       return;
     }
 
@@ -159,6 +164,7 @@ export function FeeStatusButton({
       .slice()
       .sort((a, b) => Number(a.month) - Number(b.month))[0];
     setSelectedMonth(Number(earliest.month));
+    setIsMonthManuallySelected(false);
   }, [fees, selectedYear]);
 
   const unpaidOptions = useMemo(() => {
@@ -178,45 +184,27 @@ export function FeeStatusButton({
     [unpaidOptions, selectedMonth],
   );
 
-  const payableFees = useMemo(() => {
-    if (!selectedMonth) return [] as FeeRow[];
-
+  const allPendingFees = useMemo(() => {
     return fees
-      .filter((fee) => {
-        if (fee.status !== "unpaid") return false;
-        const year = Number(fee.year);
-        const month = Number(fee.month);
-        return (
-          year < Number(selectedYear) ||
-          (year === Number(selectedYear) && month <= Number(selectedMonth))
-        );
-      })
+      .filter((fee) => fee.status === "unpaid")
       .sort((a, b) => {
         const yearDiff = Number(a.year) - Number(b.year);
         if (yearDiff !== 0) return yearDiff;
         return Number(a.month) - Number(b.month);
       });
-  }, [fees, selectedYear, selectedMonth]);
-
-  const previousPendingAmount = useMemo(() => {
-    if (!selectedMonth) return 0;
-    return payableFees
-      .filter(
-        (fee) =>
-          !(
-            Number(fee.year) === Number(selectedYear) &&
-            Number(fee.month) === Number(selectedMonth)
-          ),
-      )
-      .reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
-  }, [payableFees, selectedYear, selectedMonth]);
+  }, [fees]);
 
   const selectedMonthAmount = Number(selectedFee?.amount || 0);
-  const totalDueAmount = useMemo(() => {
-    return payableFees.reduce((sum, fee) => sum + Number(fee.amount || 0), 0);
-  }, [payableFees]);
-
   const hasManualAmount = paymentAmount.trim().length > 0;
+  const currentMonth = new Date().getMonth() + 1;
+  const isDefaultCurrentMonthSelection =
+    !isMonthManuallySelected && Number(selectedMonth) === currentMonth;
+  const shouldPayAllPendingMonths =
+    isDefaultCurrentMonthSelection && !hasManualAmount;
+  const totalDueAmount = shouldPayAllPendingMonths
+    ? allPendingFees.reduce((sum, fee) => sum + Number(fee.amount || 0), 0)
+    : selectedMonthAmount;
+
   const parsedPaymentAmount = Number(paymentAmount || 0);
   const effectivePaymentAmount = hasManualAmount
     ? parsedPaymentAmount
@@ -293,8 +281,13 @@ export function FeeStatusButton({
   };
 
   const handlePaySelectedMonth = async () => {
-    if (!selectedFee) {
+    if (!selectedFee && !shouldPayAllPendingMonths) {
       toast.error("Please choose a pending month");
+      return;
+    }
+
+    if (shouldPayAllPendingMonths && allPendingFees.length === 0) {
+      toast.error("No pending months found");
       return;
     }
 
@@ -312,20 +305,65 @@ export function FeeStatusButton({
     try {
       const paidDate = new Date().toISOString();
 
-      let remainingPayment = effectivePaymentAmount;
+      if (shouldPayAllPendingMonths) {
+        let remainingPayment = effectivePaymentAmount;
 
-      for (const fee of payableFees) {
-        if (remainingPayment <= 0) break;
+        for (const fee of allPendingFees) {
+          if (remainingPayment <= 0) break;
 
-        const feeAmount = Number(fee.amount || 0);
-        if (feeAmount <= 0) continue;
+          const feeAmount = Number(fee.amount || 0);
+          if (feeAmount <= 0) continue;
 
-        if (remainingPayment >= feeAmount) {
+          if (remainingPayment >= feeAmount) {
+            const response = await fetch("/api/fees", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: fee.id,
+                status: "paid",
+                paid_date: paidDate,
+              }),
+            });
+
+            if (!response.ok) {
+              const data = await response.json();
+              toast.error(data.error || "Failed to update fee status");
+              return;
+            }
+
+            remainingPayment -= feeAmount;
+          } else {
+            const newRemainingAmount = parseFloat(
+              (feeAmount - remainingPayment).toFixed(2),
+            );
+
+            const response = await fetch("/api/fees", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: fee.id,
+                status: "unpaid",
+                amount: newRemainingAmount,
+                paid_date: null,
+              }),
+            });
+
+            if (!response.ok) {
+              const data = await response.json();
+              toast.error(data.error || "Failed to update fee amount");
+              return;
+            }
+
+            remainingPayment = 0;
+          }
+        }
+      } else {
+        if (effectivePaymentAmount >= selectedMonthAmount) {
           const response = await fetch("/api/fees", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              id: fee.id,
+              id: selectedFee!.id,
               status: "paid",
               paid_date: paidDate,
             }),
@@ -336,18 +374,16 @@ export function FeeStatusButton({
             toast.error(data.error || "Failed to update fee status");
             return;
           }
-
-          remainingPayment -= feeAmount;
         } else {
           const newRemainingAmount = parseFloat(
-            (feeAmount - remainingPayment).toFixed(2),
+            (selectedMonthAmount - effectivePaymentAmount).toFixed(2),
           );
 
           const response = await fetch("/api/fees", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              id: fee.id,
+              id: selectedFee!.id,
               status: "unpaid",
               amount: newRemainingAmount,
               paid_date: null,
@@ -359,8 +395,6 @@ export function FeeStatusButton({
             toast.error(data.error || "Failed to update fee amount");
             return;
           }
-
-          remainingPayment = 0;
         }
       }
 
@@ -428,8 +462,8 @@ export function FeeStatusButton({
             </DialogDescription>
             <DialogDescription>
               <span>
-                Select the pending month to mark as paid. Date will be saved as
-                today.
+                Select any pending month. If partial amount is entered, the
+                remaining amount stays pending for that same month.
               </span>
             </DialogDescription>
           </DialogHeader>
@@ -470,7 +504,10 @@ export function FeeStatusButton({
                   <Label>Pending Month</Label>
                   <Select
                     value={selectedMonth ? String(selectedMonth) : ""}
-                    onValueChange={(val) => setSelectedMonth(Number(val))}
+                    onValueChange={(val) => {
+                      setSelectedMonth(Number(val));
+                      setIsMonthManuallySelected(true);
+                    }}
                     disabled={unpaidOptions.length === 0}
                   >
                     <SelectTrigger>
@@ -508,19 +545,17 @@ export function FeeStatusButton({
                 {selectedFee && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Selected month fee</span>
+                      <span className="text-muted-foreground">Pending for selected month</span>
                       <span className="font-medium">
                         PKR {selectedMonthAmount.toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Previous pending</span>
-                      <span className="font-medium">
-                        PKR {previousPendingAmount.toLocaleString()}
-                      </span>
-                    </div>
                     <div className="border-t pt-2 flex justify-between text-base">
-                      <span className="font-semibold">Total payable</span>
+                      <span className="font-semibold">
+                        {shouldPayAllPendingMonths
+                          ? "Payable for all pending months"
+                          : "Payable for selected month"}
+                      </span>
                       <span className="font-semibold text-primary">
                         PKR {totalDueAmount.toLocaleString()}
                       </span>
@@ -538,11 +573,15 @@ export function FeeStatusButton({
                   step="0.01"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder={`Leave empty to pay full: PKR ${totalDueAmount.toLocaleString()}`}
+                  placeholder={
+                    shouldPayAllPendingMonths
+                      ? `Leave empty to pay all pending: PKR ${totalDueAmount.toLocaleString()}`
+                      : `Leave empty to pay full selected month: PKR ${totalDueAmount.toLocaleString()}`
+                  }
                 />
                 {selectedFee ? (
                   <p className="text-sm text-muted-foreground">
-                    Remaining pending after payment: PKR {remainingAfterPayment.toLocaleString()}
+                    Remaining pending for this month after payment: PKR {remainingAfterPayment.toLocaleString()}
                   </p>
                 ) : null}
               </div>
