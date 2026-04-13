@@ -7,10 +7,25 @@ export async function POST(request: Request) {
     const email = String(body?.email || "")
       .trim()
       .toLowerCase();
+    const password = String(body?.password || "");
 
     if (!email) {
       return NextResponse.json(
         { success: false, error: "Email is required" },
+        { status: 400 },
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        { success: false, error: "Password is required" },
+        { status: 400 },
+      );
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        { success: false, error: "Password must be at least 8 characters" },
         { status: 400 },
       );
     }
@@ -30,21 +45,36 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!profile || profile.role !== "teacher") {
+    if (!profile) {
       return NextResponse.json(
         { success: false, error: "Teacher email not found" },
         { status: 404 },
       );
     }
 
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(
+      profile.id,
+      { password },
+    );
+
+    if (updateError) {
+      return NextResponse.json(
+        { success: false, error: updateError.message },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Teacher email verified",
+      message: "Password updated successfully",
     });
   } catch (error: any) {
-    console.error("/api/auth/forgot-password", error);
+    console.error("/api/auth/reset-password-direct", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Failed to verify email" },
+      {
+        success: false,
+        error: error?.message || "Failed to update password",
+      },
       { status: 500 },
     );
   }

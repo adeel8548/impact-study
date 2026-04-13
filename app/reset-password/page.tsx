@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ import { AlertCircle, ArrowLeft, Lock } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const directEmail = searchParams.get("email")?.trim().toLowerCase() || "";
+  const isDirectReset = Boolean(directEmail);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -56,18 +59,35 @@ export default function ResetPasswordPage() {
 
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({
-        password,
-      });
+      if (isDirectReset) {
+        const response = await fetch("/api/auth/reset-password-direct", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: directEmail, password }),
+        });
 
-      if (updateError) {
-        setError(updateError.message);
-        return;
+        const json = await response.json();
+        if (!response.ok || json.success === false) {
+          setError(json.error || "Failed to update password");
+          return;
+        }
+      } else {
+        const supabase = createClient();
+        const { error: updateError } = await supabase.auth.updateUser({
+          password,
+        });
+
+        if (updateError) {
+          setError(updateError.message);
+          return;
+        }
       }
 
       setMessage("Password updated successfully. Redirecting to login...");
-      await supabase.auth.signOut();
+      if (!isDirectReset) {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+      }
       setTimeout(() => router.push("/login"), 1200);
     } catch (err) {
       setError(
@@ -82,18 +102,18 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-lg border-slate-200/70">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl">Reset password</CardTitle>
+          <CardTitle className="text-2xl">Add New Password</CardTitle>
           <CardDescription>
-            Choose a new password for your teacher account.
+            Create a new password for your teacher account.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!hasSession ? (
+          {!hasSession && !isDirectReset ? (
             <div className="space-y-4">
               <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">
                 <AlertCircle className="mt-0.5 h-5 w-5" />
                 <p className="text-sm">
-                  This page must be opened from the password reset email.
+                  This page can only be opened from a valid reset flow.
                 </p>
               </div>
               <Button asChild variant="outline" className="w-full">
@@ -138,7 +158,7 @@ export default function ResetPasswordPage() {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Updating..." : "Update password"}
+                {isLoading ? "Saving..." : "Save new password"}
               </Button>
             </form>
           )}
@@ -151,7 +171,7 @@ export default function ResetPasswordPage() {
               <ArrowLeft className="h-4 w-4" />
               Back to login
             </Link>
-            <span className="text-muted-foreground">Secure reset</span>
+            <span className="text-muted-foreground">Teacher reset</span>
           </div>
         </CardContent>
       </Card>

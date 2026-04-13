@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { AlertCircle, ArrowLeft, Mail } from "lucide-react";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -40,14 +42,17 @@ export default function ForgotPasswordPage() {
       const json = await response.json();
 
       if (!response.ok || json.success === false) {
-        setError(json.error || "Failed to send reset email");
+        setError(json.error || "Failed to verify teacher email");
         return;
       }
 
-      setMessage(json.message || "Password reset email sent");
+      setMessage(json.message || "Teacher email verified");
+      router.push(
+        `/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`,
+      );
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to send reset email",
+        err instanceof Error ? err.message : "Failed to verify teacher email",
       );
     } finally {
       setIsLoading(false);
@@ -60,7 +65,8 @@ export default function ForgotPasswordPage() {
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">Forgot password</CardTitle>
           <CardDescription>
-            Enter a teacher email address to receive a reset link.
+            Enter your teacher email. If it exists, you will go to the Add New
+            Password screen.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,7 +97,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending..." : "Send reset link"}
+              {isLoading ? "Checking..." : "Continue"}
             </Button>
           </form>
 
