@@ -308,9 +308,9 @@ For issues or questions:
 - [ ] Documentation updated
 - [ ] Team notified of changes
 
-**Deployment Date:** ******\_\_\_******  
-**Deployed By:** ******\_\_\_******  
-**Verified By:** ******\_\_\_******
+**Deployment Date:** **\*\***\_\_\_**\*\***  
+**Deployed By:** **\*\***\_\_\_**\*\***  
+**Verified By:** **\*\***\_\_\_**\*\***
 
 ---
 
