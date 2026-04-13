@@ -19,7 +19,13 @@ import { TeacherOwnAttendanceViewModal } from "@/components/modals/teacher-own-a
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 import { LateReasonModal } from "@/components/modals/late-reason-modal";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Loader2, Calendar, Eye } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Calendar,
+  Eye,
+} from "lucide-react";
 import { isAttendanceLate } from "@/lib/utils";
 
 interface AttendanceRecord {
@@ -77,8 +83,12 @@ export default function TeacherMyAttendancePage() {
   const [selectedLeaveRecord, setSelectedLeaveRecord] =
     useState<AttendanceRecord | null>(null);
   const [lateModalOpen, setLateModalOpen] = useState(false);
-  const [pendingLateAttendanceId, setPendingLateAttendanceId] = useState<string | null>(null);
-  const [teacherExpectedTime, setTeacherExpectedTime] = useState<string | null>(null);
+  const [pendingLateAttendanceId, setPendingLateAttendanceId] = useState<
+    string | null
+  >(null);
+  const [teacherExpectedTime, setTeacherExpectedTime] = useState<string | null>(
+    null,
+  );
   const [schoolStartTime, setSchoolStartTime] = useState<string>("15:00");
   const [todayLocked, setTodayLocked] = useState(false);
   const [applyLeaveModalOpen, setApplyLeaveModalOpen] = useState(false);
@@ -186,13 +196,14 @@ export default function TeacherMyAttendancePage() {
 
     // Auto-detect late if marking as present
     let finalStatus = status;
-    if (
-      status === "present" &&
-      teacherExpectedTime &&
-      !opts?.skipAutoLate
-    ) {
+    if (status === "present" && teacherExpectedTime && !opts?.skipAutoLate) {
       // Teacher self-mark: allow 20 minutes grace (was 15) to avoid false late for slight delays
-      const isLate = isAttendanceLate(new Date(), teacherExpectedTime, date, 20);
+      const isLate = isAttendanceLate(
+        new Date(),
+        teacherExpectedTime,
+        date,
+        20,
+      );
       if (isLate) {
         finalStatus = "late";
       }
@@ -251,7 +262,10 @@ export default function TeacherMyAttendancePage() {
   };
 
   // Handle grid box click with status cycling
-  const handleGridBoxClick = async (day: number, record: AttendanceRecord | undefined) => {
+  const handleGridBoxClick = async (
+    day: number,
+    record: AttendanceRecord | undefined,
+  ) => {
     if (!teacher || isFetching) return;
 
     const today = new Date();
@@ -266,7 +280,12 @@ export default function TeacherMyAttendancePage() {
       return;
     }
 
-    const isSunday = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay() === 0;
+    const isSunday =
+      new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        day,
+      ).getDay() === 0;
     if (isSunday) {
       return;
     }
@@ -315,7 +334,7 @@ export default function TeacherMyAttendancePage() {
       0,
       0,
     );
-    
+
     // If current time is past 4 PM today, schedule for 4 PM tomorrow
     let next4PM = today4PM;
     if (now >= today4PM) {
@@ -329,7 +348,7 @@ export default function TeacherMyAttendancePage() {
         0,
       );
     }
-    
+
     const ms = next4PM.getTime() - now.getTime();
     fourPMTimerRef.current = setTimeout(() => {
       setOutDisabled(false);
@@ -344,7 +363,7 @@ export default function TeacherMyAttendancePage() {
       const todayRecord = attendance.find((a) => a.date === todayStr);
       const now = new Date();
       const currentHour = now.getHours();
-      
+
       if (todayRecord) {
         // Store the UUID of today's attendance row for PUT update
         setTodayAttendanceId((todayRecord as any).id || null);
@@ -469,15 +488,16 @@ export default function TeacherMyAttendancePage() {
     // For same-day leave: allow only if at least 1 hour before school start time
     if (selected.getTime() === today.getTime()) {
       const now = new Date();
-      const [startHour, startMin] = schoolStartTime.split(':').map(Number);
+      const [startHour, startMin] = schoolStartTime.split(":").map(Number);
       const schoolStart = new Date();
       schoolStart.setHours(startHour, startMin, 0, 0);
-      
+
       // One hour before school start
       const oneHourBefore = new Date(schoolStart.getTime() - 60 * 60 * 1000);
-      
+
       if (now >= oneHourBefore) {
-        const errMsg = "You can only apply for leave at least 1 hour before academy start time";
+        const errMsg =
+          "You can only apply for leave at least 1 hour before academy start time";
         toast.error(errMsg);
         setApplyLeaveError(errMsg);
         return;
@@ -497,7 +517,7 @@ export default function TeacherMyAttendancePage() {
     const weekEnd = new Date(getCurrentWeekEnd());
     weekStart.setHours(0, 0, 0, 0);
     weekEnd.setHours(23, 59, 59, 999);
-    
+
     if (selected < weekStart || selected > weekEnd) {
       const errMsg = "You can only apply for leave within the current week";
       toast.error(errMsg);
@@ -557,7 +577,9 @@ export default function TeacherMyAttendancePage() {
         }
 
         setAttendance((prev) => {
-          const filtered = (prev || []).filter((a) => a.date !== newRecord.date);
+          const filtered = (prev || []).filter(
+            (a) => a.date !== newRecord.date,
+          );
           return [...filtered, newRecord];
         });
       }
@@ -622,7 +644,7 @@ export default function TeacherMyAttendancePage() {
     setTeacher({ id: user.id, name: user.name || "Teacher" });
     setIsLoading(false);
     fetchAttendance(user.id, new Date());
-    
+
     // Fetch teacher's expected time
     const fetchExpectedTime = async () => {
       try {
@@ -640,7 +662,7 @@ export default function TeacherMyAttendancePage() {
     // Fetch school settings for start time
     const fetchSchoolSettings = async () => {
       try {
-        const res = await fetch('/api/school-settings');
+        const res = await fetch("/api/school-settings");
         if (res.ok) {
           const data = await res.json();
           if (data.school_start_time) {
@@ -657,24 +679,27 @@ export default function TeacherMyAttendancePage() {
   useEffect(() => {
     if (applyLeaveModalOpen) {
       const now = new Date();
-      const [startHour, startMin] = schoolStartTime.split(':').map(Number);
+      const [startHour, startMin] = schoolStartTime.split(":").map(Number);
       const schoolStart = new Date();
       schoolStart.setHours(startHour, startMin, 0, 0);
       const oneHourBefore = new Date(schoolStart.getTime() - 60 * 60 * 1000);
-      
+
       // If current time is before 1 hour before school start, allow today
       const canApplyToday = now < oneHourBefore;
-      
+
       const today = new Date();
       const todayStr = toIsoDate(today);
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const tomorrowStr = toIsoDate(tomorrow);
       const weekEnd = getCurrentWeekEnd();
-      
+
       // Default to today if allowed, otherwise tomorrow
-      const defaultDate = canApplyToday && todayStr <= weekEnd ? todayStr : tomorrowStr;
-      setApplyLeaveDate(defaultDate <= weekEnd ? defaultDate : getCurrentWeekStart());
+      const defaultDate =
+        canApplyToday && todayStr <= weekEnd ? todayStr : tomorrowStr;
+      setApplyLeaveDate(
+        defaultDate <= weekEnd ? defaultDate : getCurrentWeekStart(),
+      );
       setApplyLeaveReason("");
       setApplyLeaveError(null);
     }
@@ -923,8 +948,11 @@ export default function TeacherMyAttendancePage() {
 
           <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>Click on today's date in the calendar below</strong> to mark your arrival. The system will auto-detect if you are late
-              (after your expected time) and swap the day to ⏰ Late, otherwise it stays ✓ Present. Absent/leave statuses are controlled by the admin and shown here for reference only.
+              <strong>Click on today's date in the calendar below</strong> to
+              mark your arrival. The system will auto-detect if you are late
+              (after your expected time) and swap the day to ⏰ Late, otherwise
+              it stays ✓ Present. Absent/leave statuses are controlled by the
+              admin and shown here for reference only.
             </p>
           </div>
         </Card>
@@ -1038,7 +1066,12 @@ export default function TeacherMyAttendancePage() {
                           ? "opacity-50 cursor-not-allowed"
                           : "cursor-pointer hover:shadow-md"
                       }`}
-                      onClick={() => !sunday && today_ && !lockedToday && handleGridBoxClick(day, record)}
+                      onClick={() =>
+                        !sunday &&
+                        today_ &&
+                        !lockedToday &&
+                        handleGridBoxClick(day, record)
+                      }
                     >
                       <div
                         className="text-center w-full pointer-events-none"
@@ -1047,7 +1080,11 @@ export default function TeacherMyAttendancePage() {
                           if (record?.status === "leave" && !sunday && today_) {
                             setSelectedLeaveRecord(record);
                             setLeaveModalOpen(true);
-                          } else if (record?.status === "late" && !sunday && today_) {
+                          } else if (
+                            record?.status === "late" &&
+                            !sunday &&
+                            today_
+                          ) {
                             setPendingLateAttendanceId(record.id || null);
                             setLateModalOpen(true);
                           }
@@ -1099,7 +1136,7 @@ export default function TeacherMyAttendancePage() {
                           <Eye className="w-3 h-3" />
                         </button>
                       )}
-                      
+
                       {record && record.status === "late" && (
                         <button
                           onClick={(e) => {
@@ -1107,10 +1144,7 @@ export default function TeacherMyAttendancePage() {
                             setPendingLateAttendanceId(record.id || null);
                             setLateModalOpen(true);
                           }}
-                          title={
-                            record.late_reason ||
-                            "View late reason"
-                          }
+                          title={record.late_reason || "View late reason"}
                           className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs"
                         >
                           <Eye className="w-3 h-3" />
@@ -1204,8 +1238,8 @@ export default function TeacherMyAttendancePage() {
             <DialogHeader>
               <DialogTitle>Apply for Leave</DialogTitle>
               <DialogDescription>
-                Request leave for any day in the current week only. You can edit the reason until the admin approves or
-                rejects the request.
+                Request leave for any day in the current week only. You can edit
+                the reason until the admin approves or rejects the request.
               </DialogDescription>
             </DialogHeader>
 
@@ -1217,7 +1251,9 @@ export default function TeacherMyAttendancePage() {
 
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="leave-date">Leave Date (Current Week Only)</Label>
+                <Label htmlFor="leave-date">
+                  Leave Date (Current Week Only)
+                </Label>
                 <Input
                   id="leave-date"
                   type="date"
@@ -1238,7 +1274,8 @@ export default function TeacherMyAttendancePage() {
                   className="resize-none"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Keep it clear and concise; you can revise the note until it is approved or rejected.
+                  Keep it clear and concise; you can revise the note until it is
+                  approved or rejected.
                 </p>
               </div>
             </div>
@@ -1273,7 +1310,10 @@ export default function TeacherMyAttendancePage() {
           <h3 className="font-semibold text-foreground mb-2">How to use</h3>
           <ul className="text-sm text-foreground space-y-1">
             <li>
-              ✓ <strong>Today's box only:</strong> Tap to mark Present; the view auto-detects Late arrivals and toggles between the two. Absent/leave records are read-only—you'll need admin support to change them.
+              ✓ <strong>Today's box only:</strong> Tap to mark Present; the view
+              auto-detects Late arrivals and toggles between the two.
+              Absent/leave records are read-only—you'll need admin support to
+              change them.
             </li>
             <li>
               ✓ <strong>Past days:</strong> Display your recorded attendance
@@ -1308,63 +1348,67 @@ export default function TeacherMyAttendancePage() {
         )}
 
         {/* Late Reason Modal */}
-        {teacher && (() => {
-          const existingRecord = attendance.find(
-            (r) => r.id === pendingLateAttendanceId,
-          );
-          const hasExistingReason = !!existingRecord?.late_reason;
+        {teacher &&
+          (() => {
+            const existingRecord = attendance.find(
+              (r) => r.id === pendingLateAttendanceId,
+            );
+            const hasExistingReason = !!existingRecord?.late_reason;
 
-          return (
-            <LateReasonModal
-              open={lateModalOpen}
-              onOpenChange={(open) => {
-                setLateModalOpen(open);
-                if (!open) {
-                  setPendingLateAttendanceId(null);
+            return (
+              <LateReasonModal
+                open={lateModalOpen}
+                onOpenChange={(open) => {
+                  setLateModalOpen(open);
+                  if (!open) {
+                    setPendingLateAttendanceId(null);
+                  }
+                }}
+                teacherName={teacher.name}
+                attendanceDate={
+                  existingRecord?.date || new Date().toLocaleDateString()
                 }
-              }}
-              teacherName={teacher.name}
-              attendanceDate={existingRecord?.date || new Date().toLocaleDateString()}
-              isAdmin={false}
-              currentReason={existingRecord?.late_reason || ""}
-              readOnly={hasExistingReason}
-              requireReason={true}
-              forceClose={true}
-              minCharacters={15}
-              onConfirm={async (reason) => {
-                if (!pendingLateAttendanceId) return;
+                isAdmin={false}
+                currentReason={existingRecord?.late_reason || ""}
+                readOnly={hasExistingReason}
+                requireReason={true}
+                forceClose={true}
+                minCharacters={15}
+                onConfirm={async (reason) => {
+                  if (!pendingLateAttendanceId) return;
 
-                try {
-                  const response = await fetch("/api/late-reason", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      recordId: pendingLateAttendanceId,
-                      table: "teacher_attendance",
-                      reason,
-                    }),
-                  });
+                  try {
+                    const response = await fetch("/api/late-reason", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        recordId: pendingLateAttendanceId,
+                        table: "teacher_attendance",
+                        reason,
+                      }),
+                    });
 
-                  if (!response.ok) throw new Error("Failed to save late reason");
+                    if (!response.ok)
+                      throw new Error("Failed to save late reason");
 
-                  // Update local state
-                  setAttendance((prev) =>
-                    prev.map((r) =>
-                      r.id === pendingLateAttendanceId
-                        ? { ...r, late_reason: reason }
-                        : r
-                    )
-                  );
+                    // Update local state
+                    setAttendance((prev) =>
+                      prev.map((r) =>
+                        r.id === pendingLateAttendanceId
+                          ? { ...r, late_reason: reason }
+                          : r,
+                      ),
+                    );
 
-                  toast.success("Late attendance recorded with reason");
-                } catch (error) {
-                  console.error("Error saving late reason:", error);
-                  throw error;
-                }
-              }}
-            />
-          );
-        })()}
+                    toast.success("Late attendance recorded with reason");
+                  } catch (error) {
+                    console.error("Error saving late reason:", error);
+                    throw error;
+                  }
+                }}
+              />
+            );
+          })()}
       </div>
     </div>
   );

@@ -7,9 +7,11 @@
 **File:** `components/modals/student-modal.tsx`
 
 #### Purane Fields (Removed):
+
 - ❌ `current_fees` - Ye remove kar diya
 
 #### Naye Fields (Added):
+
 - ✅ **Full Monthly Fee** - Ye base monthly fee hai jo admin set karega
 - ✅ **Joining Date** - Student kis date ko join hua
 
@@ -18,6 +20,7 @@
 ## 📝 Form Fields Detail
 
 ### Full Monthly Fee Field:
+
 ```
 Label: "Full Monthly Fee (Base Fee) *"
 Type: Number
@@ -25,15 +28,17 @@ Required: Haan
 Example: 5000
 
 Description:
-"This is the base monthly fee. System will auto-calculate 
+"This is the base monthly fee. System will auto-calculate
 partial fee for joining month."
 ```
 
 **Kaam:**
+
 - Admin sirf ek dafa full fee enter karega (jaise Rs. 5,000)
 - System automatically partial fee calculate karega agar student mid-month join kare
 
 ### Joining Date Field:
+
 ```
 Label: "Joining Date"
 Type: Date
@@ -45,6 +50,7 @@ Description:
 ```
 
 **Kaam:**
+
 - Agar student 1st ke baad join kare → Partial fee calculate hogi
 - Agar student 1st ko join kare → Full fee lagegi
 - Agar date khali hai → Full fee lagegi (default)
@@ -56,6 +62,7 @@ Description:
 ### Example 1: Mid-Month Joining
 
 **Admin Enter Karega:**
+
 ```
 Name: Ahmed Ali
 Full Fee: 5000
@@ -63,6 +70,7 @@ Joining Date: 15-Jan-2026
 ```
 
 **System Automatically:**
+
 ```
 January (Joining Month):
 - Total days: 31
@@ -80,12 +88,14 @@ March onwards:
 ### Example 2: 1st Ko Joining
 
 **Admin Enter Karega:**
+
 ```
 Full Fee: 5000
 Joining Date: 1-Jan-2026
 ```
 
 **System:**
+
 ```
 January: Rs. 5,000 (Full fee - 1st ko join kiya)
 February: Rs. 5,000 (Full fee)
@@ -99,20 +109,23 @@ March: Rs. 5,000 (Full fee)
 ### File: `lib/actions/students.ts`
 
 #### Create Student Function:
+
 ```typescript
 // Ab full_fee save hoga database mein
-full_fee: studentData.full_fee ? Number(studentData.full_fee) : 0
-joining_date: studentData.joining_date || null
+full_fee: studentData.full_fee ? Number(studentData.full_fee) : 0;
+joining_date: studentData.joining_date || null;
 ```
 
 #### Update Student Function:
+
 ```typescript
 // Update karte waqt bhi full_fee save hoga
-full_fee: full_fee ? Number(full_fee) : undefined
-joining_date: studentUpdates.joining_date || null
+full_fee: full_fee ? Number(full_fee) : undefined;
+joining_date: studentUpdates.joining_date || null;
 ```
 
 **Important:**
+
 - Purani `fees` field ab use nahi hoti
 - Ab sirf `full_fee` aur `joining_date` use hote hain
 - Monthly fee cron job automatically calculate karti hai
@@ -122,6 +135,7 @@ joining_date: studentUpdates.joining_date || null
 ## 🗄️ Database Fields
 
 ### Students Table Mein:
+
 ```sql
 full_fee       DECIMAL(10, 2)  -- Base monthly fee
 joining_date   DATE            -- Admission date
@@ -197,7 +211,7 @@ Agar aapke paas pehle se students hain:
 UPDATE students SET full_fee = 5000;  -- Apni fee amount
 
 -- Agar joining date maloom hai to set karein
-UPDATE students 
+UPDATE students
 SET joining_date = '2025-04-01'  -- School start date
 WHERE joining_date IS NULL;
 ```
@@ -213,11 +227,13 @@ WHERE joining_date IS NULL;
    - Joining Date: Aaj se 15 din pehle
 
 2. **Cron Job Trigger Karein:**
+
    ```bash
    curl -X POST "http://localhost:3000/api/cron/monthly-billing?secret=your-secret"
    ```
 
 3. **Check Karein Database Mein:**
+
    ```sql
    SELECT * FROM student_fees WHERE is_partial = true;
    ```
@@ -230,12 +246,14 @@ WHERE joining_date IS NULL;
 ## 🎉 Summary
 
 **Kya Badla:**
+
 - ❌ Purani `current_fees` field hata di
 - ✅ Nayi `full_fee` field add ki (required)
 - ✅ `joining_date` field ko better banaya
 - ✅ Helper text add kiya (Urdu/English mein samajh aaye)
 
 **Result:**
+
 - Admin sirf full_fee aur joining_date enter karega
 - System automatically:
   - Partial fee calculate karega (agar mid-month joining ho)
@@ -243,6 +261,7 @@ WHERE joining_date IS NULL;
   - Sab kuch transparent rahega
 
 **Files Updated:**
+
 1. `components/modals/student-modal.tsx` - Form UI
 2. `lib/actions/students.ts` - Backend logic
 
@@ -255,6 +274,7 @@ WHERE joining_date IS NULL;
 
 **Partial fee nahi calculate ho rahi:**
 → Check karein:
+
 - `joining_date` set hai?
 - Current month mein join kiya?
 - 1st ke baad join kiya?
@@ -267,16 +287,18 @@ WHERE joining_date IS NULL;
 ## 🚀 Tayyar!
 
 Ab aap:
+
 1. ✅ Students add kar sakte hain full fee ke saath
 2. ✅ Joining date set kar sakte hain
 3. ✅ System automatically partial/full fee decide karega
 4. ✅ Fee vouchers mein breakdown show hoga
 
 **Mazeed Details:**
+
 - English Guide: `PARTIAL_FEE_SYSTEM_GUIDE.md`
 - Quick Start: `PARTIAL_FEE_QUICK_START.md`
 - Complete Index: `PARTIAL_FEE_INDEX.md`
 
 ---
 
-*Last Updated: 31 January 2026*
+_Last Updated: 31 January 2026_

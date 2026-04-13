@@ -6,13 +6,13 @@ type ClassLike = {
 
 export const CLASS_SEQUENCE_LABELS = [
   "P.G",
-   "Nursery",
-   "Prep",
+  "Nursery",
+  "Prep",
   "1",
   "2",
   "3",
   "4",
-  "5", 
+  "5",
   "6",
   "7",
   "8",
@@ -47,7 +47,9 @@ const getClassOrder = (name: string) => {
     if (grade === 10) return 14;
   }
 
-  const ordinalMatch = normalized.match(/^(?:class\s*)?(\d{1,2})(st|nd|rd|th)$/);
+  const ordinalMatch = normalized.match(
+    /^(?:class\s*)?(\d{1,2})(st|nd|rd|th)$/,
+  );
   if (ordinalMatch) {
     const grade = Number(ordinalMatch[1]);
     if (grade >= 1 && grade <= 5) return 1 + grade;

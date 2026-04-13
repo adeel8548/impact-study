@@ -67,12 +67,14 @@ A complete **automatic partial fee calculation system** for students joining sch
 ## 🗄️ Database Schema Changes
 
 ### Students Table
+
 ```sql
 + full_fee DECIMAL(10, 2)        -- Base monthly fee set by admin
 + joining_date DATE               -- Date student joined school
 ```
 
 ### Student Fees Table
+
 ```sql
 + is_partial BOOLEAN              -- True if partial fee applied
 + total_days_in_month INTEGER     -- Total days in month
@@ -82,6 +84,7 @@ A complete **automatic partial fee calculation system** for students joining sch
 ```
 
 ### Fee Vouchers Table
+
 ```sql
 + is_partial BOOLEAN              -- True if partial fee
 + total_days_in_month INTEGER     -- For display
@@ -94,13 +97,15 @@ A complete **automatic partial fee calculation system** for students joining sch
 ## 🔧 How It Works
 
 ### 1. Admin Sets Base Fee Once
+
 ```sql
-UPDATE students 
+UPDATE students
 SET full_fee = 5000, joining_date = '2026-01-15'
 WHERE id = 'student-id';
 ```
 
 ### 2. System Calculates Automatically (Monthly Cron)
+
 ```
 Runs: 1st of every month at 00:00
 Endpoint: /api/cron/monthly-billing
@@ -113,6 +118,7 @@ For each student:
 ```
 
 ### 3. Example Calculation
+
 ```
 Student joins: Jan 15, 2026
 Full fee: Rs. 5,000
@@ -131,23 +137,27 @@ Next month (Feb): Rs. 5,000 (full fee)
 ## 📊 Key Features
 
 ### ✅ Automatic Calculation
+
 - No manual fee adjustment needed
 - System determines partial vs full fee
 - Runs monthly via cron job
 
 ### ✅ Edge Case Handling
+
 - Joining on 1st → Full fee
 - February (28/29 days) → Auto-calculated
 - Leap years → Handled correctly
 - Null joining_date → Defaults to full fee
 
 ### ✅ Transparent Breakdown
+
 - Shows calculation on vouchers
 - Displays payable days
 - Shows per-day rate
 - Note about next month's full fee
 
 ### ✅ Database Integrity
+
 - All calculations stored in DB
 - Audit trail maintained
 - Can regenerate vouchers anytime
@@ -157,6 +167,7 @@ Next month (Feb): Rs. 5,000 (full fee)
 ## 🚀 Setup Instructions (Quick)
 
 ### 1. Run Migration
+
 ```bash
 # Via Supabase Dashboard
 # SQL Editor → New Query → Paste migration → Run
@@ -166,12 +177,14 @@ psql -f scripts/025_partial_fee_support.sql
 ```
 
 ### 2. Set Full Fee for Students
+
 ```sql
 UPDATE students SET full_fee = 5000;
 UPDATE students SET joining_date = '2026-01-15' WHERE id = 'student-id';
 ```
 
 ### 3. Deploy Code
+
 ```bash
 git pull origin main  # If using git
 npm install
@@ -179,13 +192,14 @@ vercel --prod
 ```
 
 ### 4. Test
+
 ```bash
 # Trigger cron manually
 curl -X POST "https://yourapp.vercel.app/api/cron/monthly-billing?secret=your-secret"
 
 # Check results
-SELECT * FROM student_fees 
-WHERE is_partial = true 
+SELECT * FROM student_fees
+WHERE is_partial = true
 ORDER BY created_at DESC LIMIT 5;
 ```
 
@@ -194,23 +208,25 @@ ORDER BY created_at DESC LIMIT 5;
 ## 📖 Usage Examples
 
 ### Calculate Fee Programmatically
+
 ```typescript
-import { calculateFeeForMonth } from '@/lib/utils/partial-fee-calculator';
+import { calculateFeeForMonth } from "@/lib/utils/partial-fee-calculator";
 
 // Student joins Jan 15
-const janFee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
-console.log(janFee.calculatedFee);  // 2741.93
-console.log(janFee.isPartial);      // true
+const janFee = calculateFeeForMonth(5000, "2026-01-15", 1, 2026);
+console.log(janFee.calculatedFee); // 2741.93
+console.log(janFee.isPartial); // true
 
 // Next month
-const febFee = calculateFeeForMonth(5000, '2026-01-15', 2, 2026);
-console.log(febFee.calculatedFee);  // 5000.00
-console.log(febFee.isPartial);      // false
+const febFee = calculateFeeForMonth(5000, "2026-01-15", 2, 2026);
+console.log(febFee.calculatedFee); // 5000.00
+console.log(febFee.isPartial); // false
 ```
 
 ### Display on Voucher
+
 ```tsx
-import { PartialFeeDisplay } from '@/components/fees/PartialFeeDisplay';
+import { PartialFeeDisplay } from "@/components/fees/PartialFeeDisplay";
 
 <PartialFeeDisplay
   isPartial={voucher.isPartial}
@@ -220,7 +236,7 @@ import { PartialFeeDisplay } from '@/components/fees/PartialFeeDisplay';
   payableDays={voucher.payableDays}
   perDayFee={voucher.perDayFee}
   joiningDay={15}
-/>
+/>;
 ```
 
 ---
@@ -249,6 +265,7 @@ All test cases covered in `__tests__/partial-fee-calculator.test.ts`:
 **Joins:** January 15, 2026
 
 ### Month 1 (January - Joining Month)
+
 ```
 Fee Voucher:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -266,6 +283,7 @@ Monthly Fee:          Rs. 2,741.93
 ```
 
 ### Month 2+ (February onward - Full Fee)
+
 ```
 Fee Voucher:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -284,23 +302,23 @@ TOTAL:                Rs. 5,000.00
 
 ```typescript
 // Get days in month
-getDaysInMonth(2026, 1)  // → 31
+getDaysInMonth(2026, 1); // → 31
 
 // Calculate payable days
-calculatePayableDays('2026-01-15', 1, 2026)  // → 17
+calculatePayableDays("2026-01-15", 1, 2026); // → 17
 
 // Check if partial fee should apply
-shouldApplyPartialFee('2026-01-15', 1, 2026)  // → true
+shouldApplyPartialFee("2026-01-15", 1, 2026); // → true
 
 // Calculate fee for month (main function)
-calculateFeeForMonth(5000, '2026-01-15', 1, 2026)
+calculateFeeForMonth(5000, "2026-01-15", 1, 2026);
 // → { isPartial: true, calculatedFee: 2741.93, ... }
 
 // Validate joining date
-validateJoiningDate('2026-01-15')  // → { valid: true }
+validateJoiningDate("2026-01-15"); // → { valid: true }
 
 // Format breakdown text
-formatPartialFeeBreakdown(feeCalc)  // → formatted string
+formatPartialFeeBreakdown(feeCalc); // → formatted string
 ```
 
 ### Cron Job Endpoint
@@ -338,13 +356,13 @@ For existing installations:
 
 ## 🆘 Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Fee is 0 | Set `full_fee` in students table |
+| Issue                       | Solution                                          |
+| --------------------------- | ------------------------------------------------- |
+| Fee is 0                    | Set `full_fee` in students table                  |
 | Partial fee not calculating | Verify `joining_date` is set and in current month |
-| Full fee in joining month | Student joined on 1st (expected) |
-| Cron not running | Check Vercel cron schedule & logs |
-| Wrong calculation | Verify total_days_in_month matches actual month |
+| Full fee in joining month   | Student joined on 1st (expected)                  |
+| Cron not running            | Check Vercel cron schedule & logs                 |
+| Wrong calculation           | Verify total_days_in_month matches actual month   |
 
 ---
 
@@ -372,18 +390,21 @@ For existing installations:
 ## 🎯 Benefits
 
 ### For School Administration
+
 - **Time Savings:** No manual fee calculation needed
 - **Accuracy:** Eliminates human error in calculations
 - **Transparency:** Parents see clear breakdown
 - **Fair Billing:** Students only pay for days attended
 
 ### For Developers
+
 - **Well-Tested:** Comprehensive test suite
 - **Well-Documented:** Extensive documentation
 - **Maintainable:** Clean, modular code
 - **Extensible:** Easy to modify for custom logic
 
 ### For Students/Parents
+
 - **Fair Charges:** Only pay for attended days in joining month
 - **Clear Breakdown:** Understand how fee was calculated
 - **Automatic:** No need to request partial fee
@@ -417,6 +438,7 @@ Possible additions (not implemented):
 ## 🙏 Support & Feedback
 
 This is a complete, production-ready implementation. All files are documented with:
+
 - Inline comments explaining logic
 - Example usage in comments
 - TypeScript types for safety
@@ -450,6 +472,7 @@ Your school fees management system now has:
 ✅ Migration guide
 
 **Next Steps:**
+
 1. Review [PARTIAL_FEE_SYSTEM_GUIDE.md](PARTIAL_FEE_SYSTEM_GUIDE.md)
 2. Run migration (5 minutes)
 3. Set full_fee for students

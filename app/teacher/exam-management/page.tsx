@@ -34,7 +34,6 @@ type Assignment = {
  * - Responsive design with Tailwind CSS
  */
 export default function ExamManagementPage() {
-
   // ============================================
   // State Management
   // ============================================

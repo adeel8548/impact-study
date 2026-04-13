@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <div className="min-h-screen bg-background">
       <TeacherHeader />
-      
+
       <div className="mt-16">
         <div className="p-4 md:p-8 space-y-6">
           <div className="flex justify-between items-start mb-8">
@@ -14,9 +14,7 @@ export default function Loading() {
               <h1 className="text-4xl font-bold text-foreground mb-2">
                 Dashboard
               </h1>
-              <p className="text-muted-foreground">
-                Loading...
-              </p>
+              <p className="text-muted-foreground">Loading...</p>
             </div>
           </div>
 

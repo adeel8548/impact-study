@@ -26,7 +26,10 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
       {messages.map((m) => {
         const mine = m.sender_id === currentUserId;
         return (
-          <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}> 
+          <div
+            key={m.id}
+            className={cn("flex", mine ? "justify-end" : "justify-start")}
+          >
             <div
               className={cn(
                 "rounded-lg px-3 py-2 max-w-[70%] shadow-sm break-all",
@@ -34,11 +37,16 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
               )}
             >
               <div className="text-xs opacity-80 mb-1">
-                {m.sender_name || (mine ? "You" : "" )}
+                {m.sender_name || (mine ? "You" : "")}
               </div>
-              <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{m.message}</div>
+              <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                {m.message}
+              </div>
               <div className="text-[10px] opacity-70 mt-1 text-right">
-                {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {new Date(m.created_at).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
             </div>
           </div>

@@ -27,6 +27,9 @@ export async function GET() {
     });
     return NextResponse.json({ token });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: e?.message || "Failed" },
+      { status: 500 },
+    );
   }
 }

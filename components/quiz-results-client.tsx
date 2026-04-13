@@ -220,7 +220,10 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
         const loadedMarks: MarkInput = { ...marks };
         allResults.forEach((result: QuizResult) => {
           // Only add marks if the student exists in the current class
-          if (result.student_id && students.some(s => s.id === result.student_id)) {
+          if (
+            result.student_id &&
+            students.some((s) => s.id === result.student_id)
+          ) {
             loadedMarks[result.student_id] = result.obtained_marks;
           }
         });
@@ -514,7 +517,9 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
                               min="0"
                               max={totalMaxMarks}
                               value={
-                                marks[student.id] === "" ? "" : marks[student.id]
+                                marks[student.id] === ""
+                                  ? ""
+                                  : marks[student.id]
                               }
                               onChange={(e) =>
                                 handleMarkChange(student.id, e.target.value)
@@ -523,11 +528,12 @@ export function QuizResultsClient(props: QuizResultsClientProps = {}) {
                             />
                             <div className="text-[11px] text-muted-foreground flex items-center justify-between px-1">
                               <span>of {totalMaxMarks}</span>
-                              {originalMarks[student.id] !== undefined && originalMarks[student.id] !== "" && (
-                                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
-                                  Saved: {originalMarks[student.id]}
-                                </span>
-                              )}
+                              {originalMarks[student.id] !== undefined &&
+                                originalMarks[student.id] !== "" && (
+                                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                    Saved: {originalMarks[student.id]}
+                                  </span>
+                                )}
                             </div>
                           </div>
                         </td>

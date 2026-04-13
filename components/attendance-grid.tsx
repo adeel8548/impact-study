@@ -60,11 +60,7 @@ interface AttendanceGridProps {
   // Expected time for teacher attendance (HH:mm format)
   expectedTime?: string;
   // Callback when late status is detected (to open late reason modal)
-  onLateDetected?: (
-    date: string,
-    recordId: string,
-    personName: string,
-  ) => void;
+  onLateDetected?: (date: string, recordId: string, personName: string) => void;
 }
 
 interface HolidayDate {
@@ -441,9 +437,15 @@ export function AttendanceGrid({
                         } else {
                           // Teachers/admin: auto-detect late after 20 minutes on first mark
                           if (!status) {
-                            const shouldAutoDetectLate = expectedTime && type === "teacher";
+                            const shouldAutoDetectLate =
+                              expectedTime && type === "teacher";
                             if (shouldAutoDetectLate) {
-                              const isLate = isAttendanceLate(new Date(), expectedTime!, dateStr, 20);
+                              const isLate = isAttendanceLate(
+                                new Date(),
+                                expectedTime!,
+                                dateStr,
+                                20,
+                              );
                               newStatus = isLate ? "late" : "present";
                             } else {
                               newStatus = "present";

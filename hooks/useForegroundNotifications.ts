@@ -7,7 +7,9 @@ import { app } from "@/lib/firebase";
 // Notification sound
 const playNotificationSound = () => {
   try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -20,7 +22,7 @@ const playNotificationSound = () => {
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(
       0.01,
-      audioContext.currentTime + 0.5
+      audioContext.currentTime + 0.5,
     );
 
     oscillator.start(audioContext.currentTime);
@@ -33,7 +35,11 @@ const playNotificationSound = () => {
 };
 
 // Show browser notification
-const showBrowserNotification = (title: string, body: string, icon?: string) => {
+const showBrowserNotification = (
+  title: string,
+  body: string,
+  icon?: string,
+) => {
   if ("Notification" in window && Notification.permission === "granted") {
     const notification = new Notification(title, {
       body,

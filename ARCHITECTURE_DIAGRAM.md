@@ -217,7 +217,7 @@ User clicks [Print Fee Vouchers]
       ▼             ▼
   [PDF]        [Physical]
   [Printer]    [Printer]
-  
+
 Output: Multiple vouchers 📄📄📄
 ```
 
@@ -537,6 +537,7 @@ Try Block
 **System Architecture Complete!** 🏗️
 
 This fee voucher system is built for:
+
 - ✅ Reliability
 - ✅ Security
 - ✅ Scalability

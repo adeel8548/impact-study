@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * Combined Cron Job: Auto-mark teacher OUT + ABSENT at 7 PM PKT
  * Runs daily at 7 PM Pakistan time (UTC+5)
- * 
+ *
  * DOES TWO THINGS:
  * 1. Sets explicit out_time to 7 PM for teachers marked present/late (only if out_time is null)
  * 2. Finds all teachers with NO attendance record for today and marks them ABSENT
- * 
+ *
  * This is a combined job (free Vercel plan limitation - max 2 crons)
  * Schedule (Vercel, UTC): "0 14 * * *" → 19:00 PKT
  */
@@ -20,29 +20,32 @@ export async function GET(request: NextRequest) {
       headers[key] = value;
     });
     console.log("[Auto Teacher Out] Request headers:", headers);
-    console.log("[Auto Teacher Out] User-Agent:", request.headers.get("user-agent"));
+    console.log(
+      "[Auto Teacher Out] User-Agent:",
+      request.headers.get("user-agent"),
+    );
 
     // For now, allow Vercel Cron to call without auth (Vercel doesn't send expected headers on all plans)
     // TODO: Tighten security once we identify the correct header pattern
     const url = new URL(request.url);
     const secret = url.searchParams.get("secret");
     const cronSecret = process.env.CRON_SECRET;
-    
+
     // Only block if secret is provided but wrong
     if (secret && secret !== cronSecret) {
       console.log("[Auto Teacher Out] Invalid secret provided");
       return NextResponse.json(
         { error: "Unauthorized", success: false },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const adminClient = await createAdminClient();
-    
+
     // Get today's date in YYYY-MM-DD format
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    
+
     console.log(`[Auto Teacher Out] Running for date: ${today}`);
 
     // Compute 7:00 PM PKT (14:00 UTC) for today
@@ -56,7 +59,9 @@ export async function GET(request: NextRequest) {
         0,
       ),
     ).toISOString();
-    console.log(`[Auto Teacher Out] Target out timestamp (updated_at): ${outTime}`);
+    console.log(
+      `[Auto Teacher Out] Target out timestamp (updated_at): ${outTime}`,
+    );
 
     // PART 1: Auto-mark OUT by setting out_time to 7 PM for present/late records missing out_time
     const { data: presentLate, error: plErr } = await adminClient
@@ -67,7 +72,10 @@ export async function GET(request: NextRequest) {
       .is("out_time", null);
 
     if (plErr) {
-      console.error("[Auto Teacher Out] Error fetching present/late records:", plErr);
+      console.error(
+        "[Auto Teacher Out] Error fetching present/late records:",
+        plErr,
+      );
       throw plErr;
     }
 
@@ -84,7 +92,9 @@ export async function GET(request: NextRequest) {
         throw updErr;
       }
       outTimeUpdated = ids.length;
-      console.log(`[Auto Teacher Out] Auto-out set for ${outTimeUpdated} records`);
+      console.log(
+        `[Auto Teacher Out] Auto-out set for ${outTimeUpdated} records`,
+      );
     } else {
       console.log("[Auto Teacher Out] No present/late records found for today");
     }
@@ -101,7 +111,10 @@ export async function GET(request: NextRequest) {
       .eq("role", "teacher");
 
     if (teachersError) {
-      console.error("[Auto Teacher Out] Error fetching teachers:", teachersError);
+      console.error(
+        "[Auto Teacher Out] Error fetching teachers:",
+        teachersError,
+      );
       throw teachersError;
     }
 
@@ -117,23 +130,27 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all teachers who already have attendance marked for today
-    const { data: existingAttendance, error: attendanceError } = await adminClient
-      .from("teacher_attendance")
-      .select("teacher_id")
-      .eq("date", today);
+    const { data: existingAttendance, error: attendanceError } =
+      await adminClient
+        .from("teacher_attendance")
+        .select("teacher_id")
+        .eq("date", today);
 
     if (attendanceError) {
-      console.error("[Auto Teacher Out] Error fetching existing attendance:", attendanceError);
+      console.error(
+        "[Auto Teacher Out] Error fetching existing attendance:",
+        attendanceError,
+      );
       throw attendanceError;
     }
 
     const markedTeacherIds = new Set(
-      (existingAttendance || []).map((a) => a.teacher_id)
+      (existingAttendance || []).map((a) => a.teacher_id),
     );
 
     // Find teachers with no attendance marked for today
     const teachersWithoutAttendance = teachers.filter(
-      (t) => !markedTeacherIds.has(t.id)
+      (t) => !markedTeacherIds.has(t.id),
     );
 
     if (teachersWithoutAttendance.length === 0) {
@@ -148,7 +165,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(
-      `[Auto Teacher Out] Found ${teachersWithoutAttendance.length} teachers without any attendance marked`
+      `[Auto Teacher Out] Found ${teachersWithoutAttendance.length} teachers without any attendance marked`,
     );
 
     // Mark these teachers as absent
@@ -171,7 +188,7 @@ export async function GET(request: NextRequest) {
 
     const absenceCount = insertedRecords?.length || 0;
     console.log(
-      `[Auto Teacher Out] Successfully marked ${absenceCount} teachers as absent`
+      `[Auto Teacher Out] Successfully marked ${absenceCount} teachers as absent`,
     );
 
     return NextResponse.json({
@@ -179,18 +196,23 @@ export async function GET(request: NextRequest) {
       message: `Auto-out updated ${outTimeUpdated}, auto-absent ${absenceCount}`,
       outTimeUpdated,
       absenceMarked: absenceCount,
-      absentTeachers: teachersWithoutAttendance.map((t) => ({ id: t.id, name: t.name })),
+      absentTeachers: teachersWithoutAttendance.map((t) => ({
+        id: t.id,
+        name: t.name,
+      })),
       date: today,
     });
-
   } catch (error) {
     console.error("[Auto Teacher Out] Error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to process auto-attendance",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process auto-attendance",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

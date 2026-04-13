@@ -3,16 +3,19 @@
 ## Quick Setup & Usage
 
 ### Step 1: Run Migrations
+
 Execute these SQL scripts in order:
+
 ```sql
 -- Migration 1
 scripts/014_teacher_expected_time_late_reason.sql
 
--- Migration 2  
+-- Migration 2
 scripts/015_add_expected_time_to_profiles.sql
 ```
 
 ### Step 2: Set Teacher Expected Time
+
 1. Go to Admin > Teachers
 2. Click Edit on a teacher
 3. Fill "Expected Arrival Time" field (e.g., 08:30)
@@ -20,6 +23,7 @@ scripts/015_add_expected_time_to_profiles.sql
 5. Expected time now shows on teacher card
 
 ### Step 3: Mark Attendance
+
 1. Go to Admin > Attendance
 2. Click "Mark Attendance" for a teacher
 3. Select date and "Present" status
@@ -32,22 +36,24 @@ scripts/015_add_expected_time_to_profiles.sql
 
 ## Key Features
 
-| Feature | Details |
-|---------|---------|
-| **Late Threshold** | 15 minutes after expected time |
-| **Color Indicator** | Orange for late attendance |
-| **Status** | Still counts as "Present" but flagged as late |
-| **Reason** | Required when attendance marked late |
-| **Display** | Shows "⏱ Late" in attendance grid |
+| Feature             | Details                                       |
+| ------------------- | --------------------------------------------- |
+| **Late Threshold**  | 15 minutes after expected time                |
+| **Color Indicator** | Orange for late attendance                    |
+| **Status**          | Still counts as "Present" but flagged as late |
+| **Reason**          | Required when attendance marked late          |
+| **Display**         | Shows "⏱ Late" in attendance grid             |
 
 ## Database Schema
 
 ### profiles table
+
 ```sql
 expected_time TIME  -- HH:mm format, e.g., '08:30'
 ```
 
 ### teacher_attendance table
+
 ```sql
 expected_time TIME        -- Expected arrival time
 is_late BOOLEAN           -- TRUE if marked late
@@ -56,12 +62,12 @@ late_reason TEXT          -- Reason for late attendance
 
 ## Components Reference
 
-| Component | Purpose |
-|-----------|---------|
-| `LateReasonModal` | Collect late attendance reason |
-| `AdminAttendanceMarkingModal` | Detect & handle late marking |
-| `TeacherSalaryCard` | Display expected_time |
-| `AttendanceGrid` | Show late status in orange |
+| Component                     | Purpose                        |
+| ----------------------------- | ------------------------------ |
+| `LateReasonModal`             | Collect late attendance reason |
+| `AdminAttendanceMarkingModal` | Detect & handle late marking   |
+| `TeacherSalaryCard`           | Display expected_time          |
+| `AttendanceGrid`              | Show late status in orange     |
 
 ## Utility Functions
 
@@ -87,7 +93,7 @@ If (NOW - 08:30 > 15 minutes) → LATE
    Color: Orange
    Reason: Required
 Else
-   Status: Present  
+   Status: Present
    Color: Green
    Reason: Optional
 ```
@@ -95,21 +101,25 @@ Else
 ## Testing Scenarios
 
 ### Test 1: Late Within Threshold
+
 - Expected: 08:30
 - Marked: 08:44 (14 min)
 - Result: Green "Present" ✓
 
 ### Test 2: Late After Threshold
+
 - Expected: 08:30
 - Marked: 08:46 (16 min)
 - Result: Orange "⏱ Late" + Modal ✓
 
 ### Test 3: Very Late
+
 - Expected: 08:30
 - Marked: 09:15 (45 min)
 - Result: Orange "⏱ Late" + Modal ✓
 
 ### Test 4: No Expected Time
+
 - Expected: Not set
 - Marked: Any time
 - Result: Green "Present" (no late detection) ✓
@@ -126,12 +136,12 @@ Else
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
+| Issue                     | Solution                            |
+| ------------------------- | ----------------------------------- |
 | Expected time not showing | Ensure migrations ran; refresh page |
-| Late modal not appearing | Check if time > expected + 15 min |
-| Reason not saving | Ensure reason text is not empty |
-| Wrong colors | Clear browser cache; check CSS |
+| Late modal not appearing  | Check if time > expected + 15 min   |
+| Reason not saving         | Ensure reason text is not empty     |
+| Wrong colors              | Clear browser cache; check CSS      |
 
 ## API Endpoints
 
@@ -145,12 +155,12 @@ PATCH  /api/attendance/{recordId}   → Update late_reason (via server action)
 
 ```typescript
 // Update late reason
-updateLateReason(recordId, lateReason)
+updateLateReason(recordId, lateReason);
 // Returns: { error: null | string }
 
 // Create/Update teacher with expected_time
-createTeacher(teacherData)
-updateTeacher(teacherId, { expected_time })
+createTeacher(teacherData);
+updateTeacher(teacherId, { expected_time });
 ```
 
 ## Notes

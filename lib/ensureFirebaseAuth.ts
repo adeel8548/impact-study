@@ -21,7 +21,8 @@ export async function ensureFirebaseAuth(currentUser: {
 
   // Ensure Firestore users doc exists / updated
   const userDoc = doc(db, "users", currentUser.id);
-  const fcmToken = typeof window !== "undefined" ? localStorage.getItem("fcmToken") : null;
+  const fcmToken =
+    typeof window !== "undefined" ? localStorage.getItem("fcmToken") : null;
   await setDoc(
     userDoc,
     {

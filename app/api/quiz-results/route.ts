@@ -185,7 +185,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: results || [],
       fallbackData: fallbackData || [],
-      message: results.length === 0 ? "No quiz results found" : `Found ${results.length} quiz results`,
+      message:
+        results.length === 0
+          ? "No quiz results found"
+          : `Found ${results.length} quiz results`,
     });
   } catch (error) {
     console.error("Error fetching quiz results:", error);

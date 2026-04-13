@@ -14,6 +14,7 @@
 ### Step 2: Extract Credentials from JSON
 
 The downloaded JSON file looks like this:
+
 ```json
 {
   "type": "service_account",
@@ -36,7 +37,8 @@ FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xyz@school-web-system.iam.gserviceaccoun
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"
 ```
 
-**Important:** 
+**Important:**
+
 - Keep the quotes around `FIREBASE_PRIVATE_KEY`
 - Keep the `\n` characters as-is (don't replace with actual newlines)
 - Don't commit this file to Git (already in .gitignore)
@@ -64,11 +66,13 @@ Check if it's working:
 ## Troubleshooting
 
 ### Error: "Invalid service account"
+
 - Check that `FIREBASE_PRIVATE_KEY` has quotes around it
 - Verify `\n` characters are preserved
 - Make sure email matches your project
 
 ### Error: "Permission denied"
+
 - Go to Firebase Console → Firestore Database → Rules
 - Temporarily set rules to allow server writes:
   ```javascript
@@ -83,6 +87,7 @@ Check if it's working:
   ```
 
 ### Teachers not syncing
+
 - Check server logs for errors
 - Verify `.env.local` file is in project root
 - Restart dev server after changing `.env.local`

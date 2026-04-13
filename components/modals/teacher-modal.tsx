@@ -577,7 +577,8 @@ export function TeacherModal({
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Time when teacher is expected. Attendance after 15 min will be marked as late.
+              Time when teacher is expected. Attendance after 15 min will be
+              marked as late.
             </p>
           </div>
 
@@ -635,9 +636,10 @@ export function TeacherModal({
                             } else {
                               setFormData((prev) => ({
                                 ...prev,
-                                incharge_class_ids: prev.incharge_class_ids.filter(
-                                  (id) => id !== cls.id,
-                                ),
+                                incharge_class_ids:
+                                  prev.incharge_class_ids.filter(
+                                    (id) => id !== cls.id,
+                                  ),
                               }));
                             }
                           }}
@@ -666,9 +668,10 @@ export function TeacherModal({
                           onClick={() => {
                             setFormData((prev) => ({
                               ...prev,
-                              incharge_class_ids: prev.incharge_class_ids.filter(
-                                (id) => id !== classId,
-                              ),
+                              incharge_class_ids:
+                                prev.incharge_class_ids.filter(
+                                  (id) => id !== classId,
+                                ),
                             }));
                           }}
                           className="hover:text-blue-900 dark:hover:text-blue-200 ml-1"
@@ -689,7 +692,8 @@ export function TeacherModal({
             <div className="grid gap-3 sm:grid-cols-2">
               {assignRows.map((row, idx) => {
                 const subjects = subjectsCache[row.class_id] || [];
-                const subjectsLoading = row.class_id && !subjectsCache[row.class_id];
+                const subjectsLoading =
+                  row.class_id && !subjectsCache[row.class_id];
 
                 return (
                   <div
@@ -743,7 +747,9 @@ export function TeacherModal({
                                 <input
                                   type="checkbox"
                                   checked={row.subject_ids.includes(subject.id)}
-                                  onChange={() => toggleSubject(idx, subject.id)}
+                                  onChange={() =>
+                                    toggleSubject(idx, subject.id)
+                                  }
                                   className="rounded"
                                   disabled={loading}
                                 />
@@ -756,7 +762,9 @@ export function TeacherModal({
                         {row.subject_ids.length > 0 && (
                           <div className="flex flex-wrap gap-2 pt-1">
                             {row.subject_ids.map((sid) => {
-                              const subject = subjects.find((s) => s.id === sid);
+                              const subject = subjects.find(
+                                (s) => s.id === sid,
+                              );
                               return (
                                 <span
                                   key={sid}

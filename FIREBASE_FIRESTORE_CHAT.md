@@ -23,17 +23,20 @@ messages/
 ## 📋 Features
 
 ✅ **Messages stored in Firebase Firestore**
+
 - Real-time synchronization
 - Automatic timestamps
 - Read status tracking
 - Full message history
 
 ✅ **Real-time Updates**
+
 - Instant message delivery
 - Live message streaming
 - Automatic notification triggers
 
 ✅ **Message Operations**
+
 - Save messages to Firebase
 - Fetch message history
 - Subscribe to new messages
@@ -43,6 +46,7 @@ messages/
 ## 🚀 How It Works
 
 ### When Message is Sent:
+
 1. User types message
 2. Click "Send"
 3. Message saved to Firebase Firestore
@@ -51,12 +55,14 @@ messages/
 6. Sound notification plays
 
 ### When Page Loads:
+
 1. Fetch all messages for conversation from Firebase
 2. Subscribe to real-time updates
 3. New messages automatically appear
 4. Mark previous messages as read
 
 ### When Message Arrives:
+
 1. Firebase triggers real-time update
 2. New message added to message list
 3. Sound notification plays
@@ -65,9 +71,11 @@ messages/
 ## 📁 Files Modified
 
 ### New Files:
+
 - `lib/firebase-chat.ts` - Firestore operations
 
 ### Updated Files:
+
 - `lib/firebase.ts` - Added Firestore initialization
 - `components/chat/ChatWindow.tsx` - Firebase integration
 - `app/layout.tsx` - Firebase initialization
@@ -102,10 +110,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /messages/{document=**} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && 
+      allow create: if request.auth != null &&
                        request.resource.data.senderId == request.auth.uid;
-      allow update: if request.auth != null && 
-                       (resource.data.senderId == request.auth.uid || 
+      allow update: if request.auth != null &&
+                       (resource.data.senderId == request.auth.uid ||
                         request.auth.uid in resource.data.allowedReaders);
     }
   }

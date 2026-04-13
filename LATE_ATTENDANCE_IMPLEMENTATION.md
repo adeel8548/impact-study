@@ -1,6 +1,7 @@
 # Late Attendance Detection System - Implementation Summary
 
 ## Overview
+
 A complete late attendance tracking system has been implemented for teachers. The system allows marking attendance as late if it's marked more than 15 minutes after the expected arrival time, with reason documentation.
 
 ## Changes Made
@@ -8,21 +9,26 @@ A complete late attendance tracking system has been implemented for teachers. Th
 ### 1. Database Migrations
 
 #### Migration 1: `014_teacher_expected_time_late_reason.sql`
+
 Added three new columns to `teacher_attendance` table:
+
 - `expected_time` (TIME): The expected arrival time (HH:mm format)
 - `late_reason` (TEXT): Reason provided when attendance is marked late
 - `is_late` (BOOLEAN): Flag indicating if attendance was marked as late
 - Created index on `is_late` for better query performance
 
 #### Migration 2: `015_add_expected_time_to_profiles.sql`
+
 Added `expected_time` column to `profiles` table to store teacher's default expected arrival time.
 
 ### 2. Type Updates (`lib/types.ts`)
 
 **Teacher Interface:**
+
 - Added `expected_time?: string` field to store expected arrival time
 
 **TeacherAttendance Interface:**
+
 - Added `expected_time?: string` - Expected arrival time (HH:mm)
 - Added `is_late?: boolean` - Whether marked as late
 - Added `late_reason?: string` - Reason for late attendance
@@ -30,17 +36,20 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 ### 3. UI Components
 
 #### Teacher Modal (`components/modals/teacher-modal.tsx`)
+
 - Added `expected_time` field to FormState interface
 - Added time input field for setting expected arrival time
 - Added helper text: "Time when teacher is expected. Attendance after 15 min will be marked as late."
 - Integrated expected_time in both create and update flows
 
 #### Teacher Salary Card (`components/teacher-salary-card.tsx`)
+
 - Displays expected_time on teacher card: "Expected Time: HH:mm"
 - Shows "N/A" if not set
 - Positioned below joining date information
 
 #### Late Reason Modal (`components/modals/late-reason-modal.tsx`) - NEW
+
 - Custom modal for collecting late attendance reasons
 - Shows warning when attendance is marked > 15 minutes late
 - Textarea for detailed reason input
@@ -48,6 +57,7 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 - Displays: "Note: Late attendance will be recorded as 'Present - Late'"
 
 #### Admin Attendance Marking Modal (`components/modals/admin-attendance-marking-modal.tsx`)
+
 - Integrated late detection logic
 - Fetches teacher's expected_time automatically
 - Shows orange warning box when late attendance detected
@@ -56,6 +66,7 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 - Passes reason to `updateLateReason` function
 
 #### Attendance Grid (`components/attendance-grid.tsx`)
+
 - Updated legend to include "Late (> 15 min)" with orange color
 - Late attendance button displays as orange with "⏱ Late" text
 - Button styling updated: `bg-orange-500 hover:bg-orange-600`
@@ -66,32 +77,38 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 #### Utility Functions (`lib/utils.ts`)
 
 **`isAttendanceLate(createdAt, expectedTime, date)`**
+
 - Checks if attendance was marked more than 15 minutes after expected time
 - Returns boolean
 - Handles timezone and time format properly
 
 **`getAttendanceTimeOffset(createdAt, expectedTime, date)`**
+
 - Calculates offset in minutes between marking and expected time
 - Returns positive if late, negative if early
 - Useful for analytics and reporting
 
 **`shouldMarkAsLate(createdAt, expectedTime, date)`**
+
 - Alias for late detection
 - Used in attendance marking flow
 
 #### Action Functions (`lib/actions/attendance.ts`)
 
 **`shouldMarkAsLate(createdAt, expectedTime, date)`**
+
 - Server-side function for late detection
 - Validates expected_time format
 - Returns boolean flag
 
 **`updateLateReason(recordId, lateReason)`**
+
 - Updates the `late_reason` field for an attendance record
 - Server-side validation
 - Revalidates affected paths
 
 **`updateTeacher(teacherId, updates)`**
+
 - Now accepts `expected_time` in updates object
 - Stores expected_time on teacher profile
 
@@ -100,11 +117,13 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 #### `lib/actions/teacher.ts`
 
 **`createTeacher(teacherData)`**
+
 - Added `expected_time?: string | null` parameter
 - Stores expected_time when creating new teacher
 
 **`updateTeacher(teacherId, updates)`**
-- Added `expected_time?: string | null` parameter  
+
+- Added `expected_time?: string | null` parameter
 - Updates expected_time on teacher profile
 
 ## How It Works
@@ -140,7 +159,7 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 - Status: Still counts as "Present" but flagged as late
 - Color: Orange button
 
-- Expected time: 08:30 AM  
+- Expected time: 08:30 AM
 - Attendance marked at: 08:44 AM (14 minutes late)
 - Result: Marked as PRESENT (within 15 min threshold)
 - Status: Normal present
@@ -157,9 +176,11 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 ## Database Fields Reference
 
 ### profiles table
+
 - `expected_time` (TIME): Expected arrival time in HH:mm format
 
 ### teacher_attendance table
+
 - `expected_time` (TIME): Expected arrival time for that day (if different)
 - `is_late` (BOOLEAN): Whether marked as late
 - `late_reason` (TEXT): Reason for late attendance
@@ -181,11 +202,13 @@ Added `expected_time` column to `profiles` table to store teacher's default expe
 ## Files Modified/Created
 
 ### Created:
+
 - `components/modals/late-reason-modal.tsx` - NEW modal component
 - `scripts/014_teacher_expected_time_late_reason.sql` - Migration
 - `scripts/015_add_expected_time_to_profiles.sql` - Migration
 
 ### Modified:
+
 - `lib/types.ts` - Added types for expected_time and late tracking
 - `lib/utils.ts` - Added late detection utilities
 - `lib/actions/teacher.ts` - Added expected_time handling in create/update

@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
   const nextPath = url.searchParams.get("next") || "/login";
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=missing-code", url.origin));
+    return NextResponse.redirect(
+      new URL("/login?error=missing-code", url.origin),
+    );
   }
 
   try {
@@ -16,12 +18,18 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       const message = encodeURIComponent(error.message);
-      return NextResponse.redirect(new URL(`/login?error=${message}`, url.origin));
+      return NextResponse.redirect(
+        new URL(`/login?error=${message}`, url.origin),
+      );
     }
 
     return NextResponse.redirect(new URL(nextPath, url.origin));
   } catch (error: any) {
-    const message = encodeURIComponent(error?.message || "Authentication failed");
-    return NextResponse.redirect(new URL(`/login?error=${message}`, url.origin));
+    const message = encodeURIComponent(
+      error?.message || "Authentication failed",
+    );
+    return NextResponse.redirect(
+      new URL(`/login?error=${message}`, url.origin),
+    );
   }
 }

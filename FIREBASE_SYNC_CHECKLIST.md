@@ -27,12 +27,14 @@
 ### Phase 3: Backend Deployment (5 minutes)
 
 **Option A: Using API Route (Recommended for now)**
+
 - [ ] Verify `app/api/sync/firebase-teachers/route.ts` exists
 - [ ] Install firebase-admin: `npm install firebase-admin`
 - [ ] Start dev server: `npm run dev`
 - [ ] Test endpoint: `GET http://localhost:3000/api/sync/firebase-teachers`
 
 **Option B: Using Edge Function (Advanced)**
+
 - [ ] Install Supabase CLI: `brew install supabase/tap/supabase`
 - [ ] Deploy Edge Function: `supabase functions deploy sync-teachers-firebase`
 - [ ] Set secrets: `supabase secrets set FIREBASE_SERVICE_ACCOUNT_KEY="..."`
@@ -41,21 +43,25 @@
 ### Phase 4: Testing (20 minutes)
 
 **Manual Sync All**
+
 ```bash
 curl -X POST http://localhost:3000/api/sync/firebase-teachers \
   -H "x-sync-secret: your-secret" \
   -H "Content-Type: application/json" \
   -d '{"action": "sync_all"}'
 ```
+
 Expected: All existing teachers synced to Firebase
 
 **Add New Teacher**
+
 - [ ] Add teacher via Admin UI
 - [ ] Check `firebase_sync_log` table
 - [ ] Check Firebase console → chat_users collection
 - [ ] Verify teacher document exists with correct ID
 
 **Delete Teacher**
+
 - [ ] Delete teacher via Admin UI
 - [ ] Check `firebase_sync_log` table
 - [ ] Check Firebase console → chat_users collection
@@ -63,14 +69,17 @@ Expected: All existing teachers synced to Firebase
 - [ ] Verify conversations marked as archived
 
 **Check Sync Status**
+
 ```bash
 curl http://localhost:3000/api/sync/firebase-teachers
 ```
+
 Expected: Shows pending syncs list
 
 ### Phase 5: Monitoring Setup (10 minutes)
 
 **Supabase Monitoring**
+
 - [ ] Create query for failed syncs:
   ```sql
   SELECT * FROM firebase_sync_log WHERE status = 'FAILED' ORDER BY created_at DESC;
@@ -78,6 +87,7 @@ Expected: Shows pending syncs list
 - [ ] Set up alerts for failed syncs (if using Supabase dashboard)
 
 **Firebase Monitoring**
+
 - [ ] Check Firestore document count matches Supabase teachers count
 - [ ] Monitor write operations in Firebase Analytics
 
@@ -115,28 +125,31 @@ curl -X POST http://localhost:3000/api/sync/firebase-teachers \
 ## 📊 Expected Results
 
 ### After Full Sync
+
 - Firebase `chat_users` collection contains all Supabase teachers
 - Each teacher has ID = Supabase teacher.id
 - `firebase_sync_log` shows SUCCESS status
 
 ### After Adding Teacher
+
 - Teacher appears in `chat_users` within seconds
 - `firebase_sync_log` shows new INSERT entry with SUCCESS
 
 ### After Deleting Teacher
+
 - Teacher removed from `chat_users` collection
 - Conversations archived (not deleted)
 - `firebase_sync_log` shows DELETE entry with SUCCESS
 
 ## 🔧 Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| 404 on sync endpoint | Ensure `npm run dev` is running and route exists |
-| "Unauthorized" error | Check `x-sync-secret` header matches `FIREBASE_SYNC_SECRET` |
-| Firebase SDK error | Verify service account JSON is valid and PROJECT_ID matches |
-| No syncs in log | Check database triggers are active in Supabase |
-| Teachers not in Firebase | Run manual `sync_all` action via API |
+| Issue                    | Solution                                                    |
+| ------------------------ | ----------------------------------------------------------- |
+| 404 on sync endpoint     | Ensure `npm run dev` is running and route exists            |
+| "Unauthorized" error     | Check `x-sync-secret` header matches `FIREBASE_SYNC_SECRET` |
+| Firebase SDK error       | Verify service account JSON is valid and PROJECT_ID matches |
+| No syncs in log          | Check database triggers are active in Supabase              |
+| Teachers not in Firebase | Run manual `sync_all` action via API                        |
 
 ## 📝 Notes
 

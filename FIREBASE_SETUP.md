@@ -9,6 +9,7 @@ npm install firebase
 ## Configuration
 
 Firebase is already configured with your project credentials:
+
 - Project ID: `school-web-system`
 - API Key: Pre-configured
 - Messaging Sender ID: `761240561042`
@@ -16,16 +17,19 @@ Firebase is already configured with your project credentials:
 ## Features Implemented
 
 ### 1. Real-time Chat Notifications
+
 - Messages trigger notifications with sound
 - Two different tone beeps for notification
 - Notification only plays once
 
 ### 2. Service Worker
+
 - Background message handling
 - Notification persistence
 - Click handling to open chat window
 
 ### 3. Foreground Notifications
+
 - Toast notifications for messages
 - Sound alerts
 - Automatic notification permission request
@@ -33,6 +37,7 @@ Firebase is already configured with your project credentials:
 ## Usage
 
 The chat system automatically:
+
 1. Requests notification permission
 2. Registers the service worker
 3. Listens for incoming messages
@@ -42,12 +47,14 @@ The chat system automatically:
 ## How It Works
 
 ### When Message Arrives (App Open):
+
 - `useChatNotifications` hook detects message
 - Sound plays (two beeps: 800Hz then 1000Hz)
 - Toast notification shows
 - Message appears in chat
 
 ### When Message Arrives (App Closed):
+
 - Service worker handles message
 - Browser notification shows
 - Sound plays automatically
@@ -56,6 +63,7 @@ The chat system automatically:
 ## Sound Details
 
 **Notification Sound:**
+
 - Type: Sine wave
 - First Beep: 800 Hz, 200ms
 - Second Beep: 1000 Hz, 200ms (250ms delay)

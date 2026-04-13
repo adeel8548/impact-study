@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,9 +15,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const teacherId = searchParams.get("teacher_id");
 
-    let query = supabase
-      .from("teacher_timetable")
-      .select(`
+    let query = supabase.from("teacher_timetable").select(`
         *,
         teacher:profiles!teacher_timetable_teacher_id_fkey(name),
         class:classes(name)
@@ -49,7 +49,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -67,21 +69,32 @@ export async function POST(request: NextRequest) {
       room_number,
     } = body;
 
-    if (!teacher_id || !class_id || day_of_week === undefined || !start_time || !end_time) {
+    if (
+      !teacher_id ||
+      !class_id ||
+      day_of_week === undefined ||
+      !start_time ||
+      !end_time
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     // Determine incoming subjects as an array (merge subject_id if provided)
     const incomingSubjects: string[] = Array.isArray(subjects)
       ? subjects.filter(Boolean)
-      : (subject_id ? [subject_id] : []);
+      : subject_id
+        ? [subject_id]
+        : [];
 
     if (incomingSubjects.length === 0) {
       return NextResponse.json(
-        { error: "Please provide at least one subject (subjects[] or subject_id)" },
-        { status: 400 }
+        {
+          error:
+            "Please provide at least one subject (subjects[] or subject_id)",
+        },
+        { status: 400 },
       );
     }
 
@@ -98,7 +111,9 @@ export async function POST(request: NextRequest) {
 
     if (existing && existing.length > 0) {
       // Merge unique subjects and update
-      const current = Array.isArray(existing[0].subjects) ? existing[0].subjects : [];
+      const current = Array.isArray(existing[0].subjects)
+        ? existing[0].subjects
+        : [];
       const merged = Array.from(new Set([...current, ...incomingSubjects]));
 
       const { data: updated, error: upErr } = await supabase
@@ -142,7 +157,9 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -161,16 +178,25 @@ export async function PUT(request: NextRequest) {
       room_number,
     } = body;
 
-    if (!id || !teacher_id || !class_id || day_of_week === undefined || !start_time || !end_time) {
+    if (
+      !id ||
+      !teacher_id ||
+      !class_id ||
+      day_of_week === undefined ||
+      !start_time ||
+      !end_time
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     // Coalesce subjects: prefer array, else wrap single subject_id if given
     const updatedSubjects: string[] | null = Array.isArray(subjects)
       ? subjects.filter(Boolean)
-      : (subject_id ? [subject_id] : null);
+      : subject_id
+        ? [subject_id]
+        : null;
 
     const { data: entry, error } = await supabase
       .from("teacher_timetable")
@@ -201,7 +227,9 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

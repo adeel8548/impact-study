@@ -53,7 +53,7 @@ export function StudentUnpaidFeesModal({
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear()
+    new Date().getFullYear(),
   );
 
   // Fetch student fees when modal opens
@@ -72,11 +72,11 @@ export function StudentUnpaidFeesModal({
       } else {
         setFees(result.fees || []);
         const years = Array.from(
-          new Set((result.fees || []).map((f: Fee) => Number(f.year)))
+          new Set((result.fees || []).map((f: Fee) => Number(f.year))),
         ).sort((a, b) => b - a);
         if (years.length > 0) {
           setSelectedYear((current) =>
-            years.includes(current) ? current : Number(years[0])
+            years.includes(current) ? current : Number(years[0]),
           );
         }
       }
@@ -218,7 +218,7 @@ export function StudentUnpaidFeesModal({
                                   day: "numeric",
                                   month: "numeric",
                                   year: "numeric",
-                                }
+                                },
                               )}
                             </span>
                           </div>

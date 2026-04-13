@@ -82,7 +82,7 @@ app/admin/teachers/page.tsx
 │
 └─ TeacherSalaryCard
    └─ Display: expected_time
-   
+
 
 app/admin/attendance/page.tsx
 │
@@ -227,6 +227,7 @@ teacher_attendance
 ## API Endpoint Integrations
 
 ### Endpoint: GET /api/teachers/{teacherId}
+
 ```
 Response:
 {
@@ -239,6 +240,7 @@ Response:
 ```
 
 ### Endpoint: POST /api/teacher-attendance
+
 ```
 Request:
 {
@@ -256,6 +258,7 @@ Response:
 ```
 
 ### Server Action: updateLateReason
+
 ```
 Call: updateLateReason(
   recordId: "attendance_record_id",

@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const supabase = await createClient();
   const { id } = params;
@@ -19,7 +19,7 @@ export async function GET(
       if (error.code === "PGRST116") {
         return NextResponse.json(
           { error: "Admin not found", success: false },
-          { status: 404 }
+          { status: 404 },
         );
       }
       throw error;
@@ -33,7 +33,7 @@ export async function GET(
         error: error instanceof Error ? error.message : "Failed to fetch admin",
         success: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -62,11 +62,15 @@ const DAYS = [
   { label: "Saturday", value: 6 },
 ];
 const TIME_SLOTS = [
-  "15:00", "15:30",
-  "16:00", "16:30",
-  "17:00", "17:30",
-  "18:00", "18:30",
-  "19:00"
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
 ];
 
 const formatTo12Hour = (time: string) => {
@@ -86,7 +90,7 @@ export default function TimetablePage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [pageErrors, setPageErrors] = useState<string[]>([]);
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [saving, setSaving] = useState(false);
@@ -94,7 +98,7 @@ export default function TimetablePage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEntry, setDeleteEntry] = useState<TimetableEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
-  
+
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -119,13 +123,19 @@ export default function TimetablePage() {
   const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const resolveTeacherName = (entry: TimetableEntry) =>
-    entry.teacher_name || teachers.find((t) => t.id === entry.teacher_id)?.name || "Teacher";
+    entry.teacher_name ||
+    teachers.find((t) => t.id === entry.teacher_id)?.name ||
+    "Teacher";
 
   const resolveClassName = (entry: TimetableEntry) =>
-    entry.class_name || classes.find((c) => c.id === entry.class_id)?.name || "Class";
+    entry.class_name ||
+    classes.find((c) => c.id === entry.class_id)?.name ||
+    "Class";
 
   const resolveSubjectName = (entry: TimetableEntry) =>
-    entry.subject_name || subjects.find((s) => s.id === entry.subject_id)?.name || "Subject";
+    entry.subject_name ||
+    subjects.find((s) => s.id === entry.subject_id)?.name ||
+    "Subject";
 
   useEffect(() => {
     fetchData();
@@ -142,7 +152,7 @@ export default function TimetablePage() {
         { key: "timetable", promise: fetch(`/api/timetable`) },
       ];
 
-      const settled = await Promise.allSettled(requests.map(r => r.promise));
+      const settled = await Promise.allSettled(requests.map((r) => r.promise));
       const errs: string[] = [];
 
       const getBody = async (res: Response) => {
@@ -170,7 +180,8 @@ export default function TimetablePage() {
           const res = result.value as Response;
           if (!res.ok) {
             const body = await getBody(res);
-            const msg = body?.error || body?.message || `Failed to load ${reqKey}`;
+            const msg =
+              body?.error || body?.message || `Failed to load ${reqKey}`;
             toast.error(`${reqKey.toUpperCase()} error: ${msg}`);
             errs.push(`${reqKey.toUpperCase()} error: ${msg}`);
           } else {
@@ -210,8 +221,13 @@ export default function TimetablePage() {
   const getSubjectsForClass = () => {
     if (!selectedClass) return subjects;
     return subjects.filter((s: any) => {
-      if ((s as any).class_id && (s as any).class_id === selectedClass) return true;
-      if (Array.isArray((s as any).class_ids) && (s as any).class_ids.includes(selectedClass)) return true;
+      if ((s as any).class_id && (s as any).class_id === selectedClass)
+        return true;
+      if (
+        Array.isArray((s as any).class_ids) &&
+        (s as any).class_ids.includes(selectedClass)
+      )
+        return true;
       return false;
     });
   };
@@ -236,7 +252,13 @@ export default function TimetablePage() {
     setSelectedTeacher(entry.teacher_id);
     setSelectedClass(entry.class_id);
     setSelectedSubject("");
-    setSelectedSubjects(entry.subjects && entry.subjects.length > 0 ? entry.subjects : (entry.subject_id ? [entry.subject_id] : []));
+    setSelectedSubjects(
+      entry.subjects && entry.subjects.length > 0
+        ? entry.subjects
+        : entry.subject_id
+          ? [entry.subject_id]
+          : [],
+    );
     setSelectedDay(entry.day_of_week);
     setStartTime(entry.start_time);
     setEndTime(entry.end_time);
@@ -263,7 +285,12 @@ export default function TimetablePage() {
       setFormError(null);
       if (editingEntry) {
         // Update flow: allow multiple subjects on a single slot
-        const subjectsToUse = selectedSubjects.length > 0 ? selectedSubjects : (selectedSubject ? [selectedSubject] : []);
+        const subjectsToUse =
+          selectedSubjects.length > 0
+            ? selectedSubjects
+            : selectedSubject
+              ? [selectedSubject]
+              : [];
         if (subjectsToUse.length === 0) {
           toast.error("Please select at least one subject");
           setFormError("Please select at least one subject");
@@ -295,15 +322,26 @@ export default function TimetablePage() {
             serverMsg = txt || serverMsg;
           }
           if (serverMsg === "Failed to save lecture") {
-            serverMsg = "Could not save lecture. Possible conflict with another lecture.";
+            serverMsg =
+              "Could not save lecture. Possible conflict with another lecture.";
           }
           throw new Error(serverMsg);
         }
         toast.success("Lecture updated successfully");
       } else {
         // Create flow: one slot per selected day, with multiple subjects in array
-        const subjectsToUse = selectedSubjects.length > 0 ? selectedSubjects : (selectedSubject ? [selectedSubject] : []);
-        const daysToUse = selectedDays.length > 0 ? selectedDays : (selectedDay ? [selectedDay] : []);
+        const subjectsToUse =
+          selectedSubjects.length > 0
+            ? selectedSubjects
+            : selectedSubject
+              ? [selectedSubject]
+              : [];
+        const daysToUse =
+          selectedDays.length > 0
+            ? selectedDays
+            : selectedDay
+              ? [selectedDay]
+              : [];
         if (subjectsToUse.length === 0) {
           toast.error("Please select at least one subject");
           setFormError("Please select at least one subject");
@@ -348,8 +386,10 @@ export default function TimetablePage() {
             created++;
           }
         }
-        if (created > 0 && failed === 0) toast.success("Lectures added successfully");
-        else if (created > 0 && failed > 0) toast.success(`Added ${created} lecture(s), ${failed} failed`);
+        if (created > 0 && failed === 0)
+          toast.success("Lectures added successfully");
+        else if (created > 0 && failed > 0)
+          toast.success(`Added ${created} lecture(s), ${failed} failed`);
         else toast.error("Failed to add lectures");
       }
       setModalOpen(false);
@@ -406,7 +446,9 @@ export default function TimetablePage() {
     const teacherChange = bulkTeacherId && bulkTeacherId !== "keep";
 
     if (teacherChange && bulkTimeFilter === "all" && filterTime === "all") {
-      toast.error("Please select a time slot to change the teacher for this class.");
+      toast.error(
+        "Please select a time slot to change the teacher for this class.",
+      );
       return;
     }
 
@@ -426,14 +468,15 @@ export default function TimetablePage() {
       // Find entries matching selected class (required) and optional teacher
       let entriesToUpdate = timetable.filter((entry) => {
         if (entry.class_id !== filterClass) return false;
-        if (filterTeacher !== "all" && entry.teacher_id !== filterTeacher) return false;
+        if (filterTeacher !== "all" && entry.teacher_id !== filterTeacher)
+          return false;
         return true;
       });
 
       // If time filter is selected, only update that specific time slot
       if (bulkTimeFilter !== "all") {
         entriesToUpdate = entriesToUpdate.filter(
-          (entry) => entry.start_time === bulkTimeFilter
+          (entry) => entry.start_time === bulkTimeFilter,
         );
       }
 
@@ -452,7 +495,8 @@ export default function TimetablePage() {
           id: entry.id,
           teacher_id: teacherChange ? bulkTeacherId : entry.teacher_id,
           class_id: entry.class_id,
-          subjects: entry.subjects || (entry.subject_id ? [entry.subject_id] : []),
+          subjects:
+            entry.subjects || (entry.subject_id ? [entry.subject_id] : []),
           day_of_week: entry.day_of_week,
           start_time: bulkStartTime || entry.start_time,
           end_time: bulkEndTime || entry.end_time,
@@ -490,8 +534,9 @@ export default function TimetablePage() {
   };
 
   const getFilteredTimetable = () => {
-    return timetable.filter(entry => {
-      if (filterTeacher !== "all" && entry.teacher_id !== filterTeacher) return false;
+    return timetable.filter((entry) => {
+      if (filterTeacher !== "all" && entry.teacher_id !== filterTeacher)
+        return false;
       if (filterClass !== "all" && entry.class_id !== filterClass) return false;
       if (filterDay !== "all" && entry.day_of_week !== filterDay) return false;
       if (filterTime !== "all" && entry.start_time !== filterTime) return false;
@@ -504,10 +549,10 @@ export default function TimetablePage() {
     const grid: { [key: string]: TimetableEntry[] } = {};
 
     DAYS.forEach(({ value }) => {
-      TIME_SLOTS.forEach(time => {
+      TIME_SLOTS.forEach((time) => {
         const key = `${value}-${time}`;
         grid[key] = filtered.filter(
-          entry => entry.day_of_week === value && entry.start_time === time
+          (entry) => entry.day_of_week === value && entry.start_time === time,
         );
       });
     });
@@ -535,7 +580,9 @@ export default function TimetablePage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Teacher Timetable</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                Teacher Timetable
+              </h1>
               <p className="text-muted-foreground mt-2">
                 Manage lecture schedules for all teachers
               </p>
@@ -568,7 +615,7 @@ export default function TimetablePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Teachers</SelectItem>
-                    {teachers.map(teacher => (
+                    {teachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name}
                       </SelectItem>
@@ -585,7 +632,7 @@ export default function TimetablePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Classes</SelectItem>
-                    {classes.map(cls => (
+                    {classes.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
                       </SelectItem>
@@ -596,9 +643,11 @@ export default function TimetablePage() {
 
               <div className="space-y-2">
                 <Label>Filter by Day</Label>
-                <Select 
-                  value={filterDay.toString()} 
-                  onValueChange={(val) => setFilterDay(val === "all" ? "all" : parseInt(val))}
+                <Select
+                  value={filterDay.toString()}
+                  onValueChange={(val) =>
+                    setFilterDay(val === "all" ? "all" : parseInt(val))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -622,7 +671,7 @@ export default function TimetablePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Times</SelectItem>
-                    {TIME_SLOTS.map(time => (
+                    {TIME_SLOTS.map((time) => (
                       <SelectItem key={time} value={time}>
                         {formatTo12Hour(time)}
                       </SelectItem>
@@ -633,13 +682,17 @@ export default function TimetablePage() {
             </div>
             {filterClass !== "all" && (
               <div className="mt-4 flex justify-end">
-                <Button 
+                <Button
                   onClick={() => {
-                    setBulkTeacherId(filterTeacher !== "all" ? filterTeacher : "keep");
+                    setBulkTeacherId(
+                      filterTeacher !== "all" ? filterTeacher : "keep",
+                    );
                     setBulkRoomNumber("");
                     setBulkStartTime("");
                     setBulkEndTime("");
-                    setBulkTimeFilter(filterTime !== "all" ? filterTime : "all");
+                    setBulkTimeFilter(
+                      filterTime !== "all" ? filterTime : "all",
+                    );
                     setBulkEditOpen(true);
                   }}
                   variant="outline"
@@ -661,14 +714,17 @@ export default function TimetablePage() {
                       Time
                     </th>
                     {DAYS.map((day) => (
-                      <th key={day.value} className="border border-border bg-secondary p-2 text-sm font-semibold">
+                      <th
+                        key={day.value}
+                        className="border border-border bg-secondary p-2 text-sm font-semibold"
+                      >
                         {day.label}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {TIME_SLOTS.map(time => (
+                  {TIME_SLOTS.map((time) => (
                     <tr key={time}>
                       <td className="border border-border bg-secondary p-2 text-sm font-medium">
                         {formatTo12Hour(time)}
@@ -676,10 +732,13 @@ export default function TimetablePage() {
                       {DAYS.map((day) => {
                         const key = `${day.value}-${time}`;
                         const entries = timetableGrid[key] || [];
-                        
+
                         return (
-                          <td key={day.value} className="border-blue-800 border-3 p-1 align-top min-h-[60px]">
-                            {entries.map(entry => (
+                          <td
+                            key={day.value}
+                            className="border-blue-800 border-3 p-1 align-top min-h-[60px]"
+                          >
+                            {entries.map((entry) => (
                               <div
                                 key={entry.id}
                                 className="bg-blue-100 dark:bg-blue-900 border border-blue-300 dark:border-blue-700 rounded p-2 mb-1 text-xs"
@@ -693,12 +752,17 @@ export default function TimetablePage() {
                                 <div className="text-blue-600 dark:text-blue-400">
                                   {entry.subjects && entry.subjects.length > 0
                                     ? entry.subjects
-                                        .map((sid) => subjects.find((s) => s.id === sid)?.name || "Subject")
+                                        .map(
+                                          (sid) =>
+                                            subjects.find((s) => s.id === sid)
+                                              ?.name || "Subject",
+                                        )
                                         .join(", ")
                                     : resolveSubjectName(entry)}
                                 </div>
                                 <div className="text-blue-500 dark:text-blue-500 mt-1">
-                                  {formatTo12Hour(entry.start_time)} - {formatTo12Hour(entry.end_time)}
+                                  {formatTo12Hour(entry.start_time)} -{" "}
+                                  {formatTo12Hour(entry.end_time)}
                                 </div>
                                 {entry.room_number && (
                                   <div className="text-blue-500 dark:text-blue-500">
@@ -713,12 +777,14 @@ export default function TimetablePage() {
                                     // className="h-7 px-3 bg-blue-600 hover:bg-blue-700 text-white"
                                   >
                                     <Edit className="w-3 h-3 mr-1" />
-                                    
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    onClick={() => { setDeleteEntry(entry); setDeleteOpen(true); }}
+                                    onClick={() => {
+                                      setDeleteEntry(entry);
+                                      setDeleteOpen(true);
+                                    }}
                                     // className="h-7 px-3"
                                   >
                                     <Trash2 className="w-3 h-3 mr-1" />
@@ -756,12 +822,15 @@ export default function TimetablePage() {
             )}
             <div className="space-y-2">
               <Label>Teacher *</Label>
-              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+              <Select
+                value={selectedTeacher}
+                onValueChange={setSelectedTeacher}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select teacher" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachers.map(teacher => (
+                  {teachers.map((teacher) => (
                     <SelectItem key={teacher.id} value={teacher.id}>
                       {teacher.name}
                     </SelectItem>
@@ -777,7 +846,7 @@ export default function TimetablePage() {
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map(cls => (
+                  {classes.map((cls) => (
                     <SelectItem key={cls.id} value={cls.id}>
                       {cls.name}
                     </SelectItem>
@@ -796,17 +865,24 @@ export default function TimetablePage() {
                     </div>
                   ) : (
                     <div className="max-h-48 overflow-y-auto border rounded p-2">
-                      {getSubjectsForClass().map(subject => {
+                      {getSubjectsForClass().map((subject) => {
                         const checked = selectedSubjects.includes(subject.id);
                         return (
-                          <label key={subject.id} className="flex items-center gap-2 py-1 cursor-pointer">
+                          <label
+                            key={subject.id}
+                            className="flex items-center gap-2 py-1 cursor-pointer"
+                          >
                             <input
                               type="checkbox"
                               className="accent-primary"
                               checked={checked}
                               onChange={(e) => {
                                 setSelectedSubject("");
-                                setSelectedSubjects(prev => e.target.checked ? [...prev, subject.id] : prev.filter(id => id !== subject.id));
+                                setSelectedSubjects((prev) =>
+                                  e.target.checked
+                                    ? [...prev, subject.id]
+                                    : prev.filter((id) => id !== subject.id),
+                                );
                               }}
                             />
                             <span>{subject.name}</span>
@@ -818,13 +894,19 @@ export default function TimetablePage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Day *</Label>
-                  <Select value={selectedDay.toString()} onValueChange={(val) => setSelectedDay(parseInt(val))}>
+                  <Select
+                    value={selectedDay.toString()}
+                    onValueChange={(val) => setSelectedDay(parseInt(val))}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {DAYS.map((day) => (
-                        <SelectItem key={day.value} value={day.value.toString()}>
+                        <SelectItem
+                          key={day.value}
+                          value={day.value.toString()}
+                        >
                           {day.label}
                         </SelectItem>
                       ))}
@@ -842,17 +924,24 @@ export default function TimetablePage() {
                     </div>
                   ) : (
                     <div className="max-h-48 overflow-y-auto border rounded p-2">
-                      {getSubjectsForClass().map(subject => {
+                      {getSubjectsForClass().map((subject) => {
                         const checked = selectedSubjects.includes(subject.id);
                         return (
-                          <label key={subject.id} className="flex items-center gap-2 py-1 cursor-pointer">
+                          <label
+                            key={subject.id}
+                            className="flex items-center gap-2 py-1 cursor-pointer"
+                          >
                             <input
                               type="checkbox"
                               className="accent-primary"
                               checked={checked}
                               onChange={(e) => {
                                 setSelectedSubject("");
-                                setSelectedSubjects(prev => e.target.checked ? [...prev, subject.id] : prev.filter(id => id !== subject.id));
+                                setSelectedSubjects((prev) =>
+                                  e.target.checked
+                                    ? [...prev, subject.id]
+                                    : prev.filter((id) => id !== subject.id),
+                                );
                               }}
                             />
                             <span>{subject.name}</span>
@@ -866,17 +955,24 @@ export default function TimetablePage() {
                 <div className="space-y-2">
                   <Label>Days (select one or more) *</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    {DAYS.map(day => {
+                    {DAYS.map((day) => {
                       const checked = selectedDays.includes(day.value);
                       return (
-                        <label key={day.value} className="flex items-center gap-2 py-1 cursor-pointer">
+                        <label
+                          key={day.value}
+                          className="flex items-center gap-2 py-1 cursor-pointer"
+                        >
                           <input
                             type="checkbox"
                             className="accent-primary"
                             checked={checked}
                             onChange={(e) => {
                               setSelectedDay(1);
-                              setSelectedDays(prev => e.target.checked ? [...prev, day.value] : prev.filter(v => v !== day.value));
+                              setSelectedDays((prev) =>
+                                e.target.checked
+                                  ? [...prev, day.value]
+                                  : prev.filter((v) => v !== day.value),
+                              );
                             }}
                           />
                           <span>{day.label}</span>
@@ -935,160 +1031,202 @@ export default function TimetablePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-          {/* Delete Confirmation Modal */}
-          <Dialog open={deleteOpen} onOpenChange={(open) => { setDeleteOpen(open); if (!open) setDeleteEntry(null); }}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Delete Lecture</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3 text-sm">
-                <p>Are you sure you want to delete this lecture?</p>
-                {deleteEntry && (
-                  <div className="rounded-md border bg-secondary/50 p-3">
-                    <div><span className="font-semibold">Teacher:</span> {resolveTeacherName(deleteEntry)}</div>
-                    <div><span className="font-semibold">Class:</span> {resolveClassName(deleteEntry)}</div>
-                    <div><span className="font-semibold">Subject:</span> {deleteEntry.subjects && deleteEntry.subjects.length > 0 ? deleteEntry.subjects.map((sid) => subjects.find((s) => s.id === sid)?.name || "Subject").join(", ") : resolveSubjectName(deleteEntry)}</div>
-                    <div><span className="font-semibold">Time:</span> {formatTo12Hour(deleteEntry.start_time)} - {formatTo12Hour(deleteEntry.end_time)}</div>
-                    {deleteEntry.room_number && (
-                      <div><span className="font-semibold">Room:</span> {deleteEntry.room_number}</div>
-                    )}
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setDeleteEntry(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Lecture</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p>Are you sure you want to delete this lecture?</p>
+            {deleteEntry && (
+              <div className="rounded-md border bg-secondary/50 p-3">
+                <div>
+                  <span className="font-semibold">Teacher:</span>{" "}
+                  {resolveTeacherName(deleteEntry)}
+                </div>
+                <div>
+                  <span className="font-semibold">Class:</span>{" "}
+                  {resolveClassName(deleteEntry)}
+                </div>
+                <div>
+                  <span className="font-semibold">Subject:</span>{" "}
+                  {deleteEntry.subjects && deleteEntry.subjects.length > 0
+                    ? deleteEntry.subjects
+                        .map(
+                          (sid) =>
+                            subjects.find((s) => s.id === sid)?.name ||
+                            "Subject",
+                        )
+                        .join(", ")
+                    : resolveSubjectName(deleteEntry)}
+                </div>
+                <div>
+                  <span className="font-semibold">Time:</span>{" "}
+                  {formatTo12Hour(deleteEntry.start_time)} -{" "}
+                  {formatTo12Hour(deleteEntry.end_time)}
+                </div>
+                {deleteEntry.room_number && (
+                  <div>
+                    <span className="font-semibold">Room:</span>{" "}
+                    {deleteEntry.room_number}
                   </div>
                 )}
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
-                  Cancel
-                </Button>
-                <Button onClick={() => deleteEntry && handleDelete(deleteEntry.id)} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">
-                  {deleting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete"
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => deleteEntry && handleDelete(deleteEntry.id)}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-          {/* Bulk Edit Modal */}
-          <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Bulk update lectures</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Update teacher, room, and/or time for all lectures of class{" "}
+      {/* Bulk Edit Modal */}
+      <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bulk update lectures</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Update teacher, room, and/or time for all lectures of class{" "}
+              <span className="font-semibold">
+                {classes.find((c) => c.id === filterClass)?.name}
+              </span>
+              {filterTeacher !== "all" && (
+                <>
+                  {" "}
+                  currently taught by{" "}
                   <span className="font-semibold">
-                    {classes.find(c => c.id === filterClass)?.name}
+                    {teachers.find((t) => t.id === filterTeacher)?.name}
                   </span>
-                  {filterTeacher !== "all" && (
-                    <>
-                      {" "}currently taught by {" "}
-                      <span className="font-semibold">
-                        {teachers.find(t => t.id === filterTeacher)?.name}
-                      </span>
-                    </>
-                  )}
-                  {bulkTimeFilter !== "all" 
-                    ? ` at ${formatTo12Hour(bulkTimeFilter)}.`
-                    : " for the entire week."}
-                </p>
+                </>
+              )}
+              {bulkTimeFilter !== "all"
+                ? ` at ${formatTo12Hour(bulkTimeFilter)}.`
+                : " for the entire week."}
+            </p>
 
-                <div className="space-y-2">
-                  <Label>Change Teacher (Optional)</Label>
-                  <Select value={bulkTeacherId} onValueChange={setBulkTeacherId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Keep existing teacher" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="keep">Keep existing teacher</SelectItem>
-                      {teachers.map((teacher) => (
-                        <SelectItem key={teacher.id} value={teacher.id}>
-                          {teacher.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Select a teacher to replace for all matching lectures; leave empty to keep current teachers.
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <Label>Change Teacher (Optional)</Label>
+              <Select value={bulkTeacherId} onValueChange={setBulkTeacherId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Keep existing teacher" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="keep">Keep existing teacher</SelectItem>
+                  {teachers.map((teacher) => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Select a teacher to replace for all matching lectures; leave
+                empty to keep current teachers.
+              </p>
+            </div>
 
-                <div className="space-y-2">
-                  <Label>Filter by Time Slot (Optional)</Label>
-                  <Select value={bulkTimeFilter} onValueChange={setBulkTimeFilter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time Slots</SelectItem>
-                      {TIME_SLOTS.map(time => (
-                        <SelectItem key={time} value={time}>
-                          {formatTo12Hour(time)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Select a specific time to update only that slot, or keep "All Time Slots" to update entire week.
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <Label>Filter by Time Slot (Optional)</Label>
+              <Select value={bulkTimeFilter} onValueChange={setBulkTimeFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time Slots</SelectItem>
+                  {TIME_SLOTS.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {formatTo12Hour(time)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Select a specific time to update only that slot, or keep "All
+                Time Slots" to update entire week.
+              </p>
+            </div>
 
-                <div className="space-y-2">
-                  <Label>Room Number (Optional)</Label>
-                  <Input
-                    value={bulkRoomNumber}
-                    onChange={(e) => setBulkRoomNumber(e.target.value)}
-                    placeholder="e.g., Room 101"
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>Room Number (Optional)</Label>
+              <Input
+                value={bulkRoomNumber}
+                onChange={(e) => setBulkRoomNumber(e.target.value)}
+                placeholder="e.g., Room 101"
+              />
+            </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Start Time (Optional)</Label>
-                    <Input
-                      type="time"
-                      value={bulkStartTime}
-                      onChange={(e) => setBulkStartTime(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>End Time (Optional)</Label>
-                    <Input
-                      type="time"
-                      value={bulkEndTime}
-                      onChange={(e) => setBulkEndTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                  Leave fields empty to keep current values. Only non-empty fields will be updated.
-                </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Time (Optional)</Label>
+                <Input
+                  type="time"
+                  value={bulkStartTime}
+                  onChange={(e) => setBulkStartTime(e.target.value)}
+                />
               </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setBulkEditOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleBulkUpdate} disabled={bulkUpdating}>
-                  {bulkUpdating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Update All"
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              <div className="space-y-2">
+                <Label>End Time (Optional)</Label>
+                <Input
+                  type="time"
+                  value={bulkEndTime}
+                  onChange={(e) => setBulkEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Leave fields empty to keep current values. Only non-empty fields
+              will be updated.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkUpdate} disabled={bulkUpdating}>
+              {bulkUpdating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update All"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

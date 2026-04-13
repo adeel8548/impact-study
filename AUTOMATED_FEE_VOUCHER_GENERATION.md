@@ -30,6 +30,7 @@ language: Urdu/English
 ### Step-by-Step Process
 
 #### 1️⃣ **Student Fees بنتے ہیں**
+
 ```sql
 -- Database میں add ہوتا ہے:
 student_id: "uuid-123"
@@ -40,6 +41,7 @@ status: "unpaid"
 ```
 
 #### 2️⃣ **Fee Vouchers خودکار بنتے ہیں** 🎯 (NEW!)
+
 ```sql
 -- خودکار طور پر یہ insert ہوتا ہے:
 serial_number: 101        -- خود incrementing
@@ -54,6 +56,7 @@ month: "December"
 ```
 
 #### 3️⃣ **Arrears خودکار calculate ہوتے ہیں**
+
 ```
 مثال: اگر November 2025 unpaid ہے
 └─ automatic میں add ہوگا arrears میں
@@ -64,9 +67,11 @@ month: "December"
 ## Implementation Details
 
 ### File Modified
+
 📄 **app/api/cron/monthly-billing/route.ts**
 
 ### Added Code Logic
+
 ```typescript
 // Step 2: Auto-create fee vouchers for all students
 console.log("[Cron] Creating fee vouchers for all students...");
@@ -75,10 +80,10 @@ console.log("[Cron] Creating fee vouchers for all students...");
 for (const student of students) {
   // Get current month fees
   const monthlyFee = studentFees?.amount || 0;
-  
+
   // Get previous unpaid amounts
   const arrears = (arrearsFees || []).reduce((sum, fee) => sum + fee.amount, 0);
-  
+
   // Insert voucher record
   vouchersToInsert.push({
     serial_number: nextSerialNumber++,
@@ -86,7 +91,7 @@ for (const student of students) {
     monthly_fee: monthlyFee,
     arrears: arrears,
     total_amount: monthlyFee + arrears,
-    ...otherFields
+    ...otherFields,
   });
 }
 ```
@@ -98,19 +103,21 @@ for (const student of students) {
 ### Option A: Vercel Cron (Automatic)
 
 پہلے سے setup ہے:
+
 ```json
 // vercel.json میں:
 {
   "crons": [
     {
       "path": "/api/cron/monthly-billing",
-      "schedule": "0 0 1 * *"  // 1st of every month at 00:00
+      "schedule": "0 0 1 * *" // 1st of every month at 00:00
     }
   ]
 }
 ```
 
 **فائدے:**
+
 - خودکار
 - کوئی کام نہیں
 - ہر مہینے یقینی
@@ -122,11 +129,13 @@ for (const student of students) {
 اگر آپ فوری test کرنا چاہیں:
 
 #### 1️⃣ URL کال کریں:
+
 ```
 GET /api/cron/monthly-billing?secret=YOUR_CRON_SECRET
 ```
 
 #### 2️⃣ یا Postman میں:
+
 ```
 Method: GET
 URL: http://localhost:3000/api/cron/monthly-billing?secret=test-secret
@@ -139,6 +148,7 @@ Headers:
 ```
 
 #### 3️⃣ Response ملے گا:
+
 ```json
 {
   "success": true,
@@ -155,6 +165,7 @@ Headers:
 ## Vouchers خودکار کیسے Populate ہوتے ہیں
 
 ### پہلے (Before):
+
 ```
 ❌ Empty fee_vouchers table
 ❌ Manual SQL INSERT required
@@ -162,6 +173,7 @@ Headers:
 ```
 
 ### اب (After):
+
 ```
 ✅ Auto-populated on 1st of month
 ✅ All students covered
@@ -175,6 +187,7 @@ Headers:
 ## Database Changes
 
 ### fee_vouchers Table
+
 ```sql
 Column              Value
 ─────────────────────────────────────────
@@ -207,6 +220,7 @@ updated_at          timestamp
 ```
 
 **مثال:**
+
 ```
 If today = Dec 20
 └─ Days Late = 20 - 12 = 8 days
@@ -218,6 +232,7 @@ If today = Dec 20
 ## Monitoring / نگرانی
 
 ### Logs دیکھیں:
+
 ```bash
 # Vercel dashboard میں:
 Functions → monthly-billing → Logs
@@ -229,13 +244,14 @@ Functions → monthly-billing → Logs
 ```
 
 ### Database میں Check کریں:
+
 ```sql
 -- کتنے vouchers بنے؟
 SELECT COUNT(*) FROM fee_vouchers;
 
 -- Latest month کے vouchers:
-SELECT * FROM fee_vouchers 
-WHERE month = 'December' 
+SELECT * FROM fee_vouchers
+WHERE month = 'December'
 ORDER BY serial_number;
 
 -- خاص student کے vouchers:
@@ -251,16 +267,19 @@ WHERE s.roll_number = '101';
 ### مسئلہ: Vouchers نہیں بن رہے
 
 **حل 1: Check کریں student_fees table میں data ہے**
+
 ```sql
 SELECT COUNT(*) FROM student_fees WHERE month = 12 AND year = 2025;
 ```
 
 **حل 2: Check کریں cron job چل رہا ہے**
+
 ```
 Vercel Dashboard → Functions → Logs
 ```
 
 **حل 3: Manual trigger کریں**
+
 ```
 GET /api/cron/monthly-billing?secret=YOUR_SECRET
 ```
@@ -270,10 +289,11 @@ GET /api/cron/monthly-billing?secret=YOUR_SECRET
 ### مسئلہ: Duplicate serial numbers
 
 **حل: Database میں check کریں**
+
 ```sql
-SELECT serial_number, COUNT(*) 
-FROM fee_vouchers 
-GROUP BY serial_number 
+SELECT serial_number, COUNT(*)
+FROM fee_vouchers
+GROUP BY serial_number
 HAVING COUNT(*) > 1;
 ```
 
@@ -282,6 +302,7 @@ HAVING COUNT(*) > 1;
 ## Configuration
 
 ### Environment Variables
+
 ```bash
 # .env.local میں set کریں:
 CRON_SECRET=your-secure-secret-here
@@ -290,6 +311,7 @@ NEXT_PUBLIC_SUPABASE_KEY=your-key
 ```
 
 ### Vercel Setup
+
 ```json
 // vercel.json میں already configured
 {
@@ -306,14 +328,14 @@ NEXT_PUBLIC_SUPABASE_KEY=your-key
 
 ## خلاصہ Summary
 
-| Feature | پہلے | اب |
-|---------|------|-----|
-| Manual Entry | ✅ | ❌ |
-| Automation | ❌ | ✅ |
-| Monthly Run | Manual | Auto 1st of month |
-| Serial Numbers | Manual | Auto increment |
-| Arrears | Manual calc | Auto calculated |
-| Time Required | 30+ minutes | 0 seconds |
+| Feature        | پہلے        | اب                |
+| -------------- | ----------- | ----------------- |
+| Manual Entry   | ✅          | ❌                |
+| Automation     | ❌          | ✅                |
+| Monthly Run    | Manual      | Auto 1st of month |
+| Serial Numbers | Manual      | Auto increment    |
+| Arrears        | Manual calc | Auto calculated   |
+| Time Required  | 30+ minutes | 0 seconds         |
 
 ---
 
@@ -326,7 +348,8 @@ NEXT_PUBLIC_SUPABASE_KEY=your-key
 
 ---
 
-**سوالات/Questions?** 
+**سوالات/Questions?**
+
 - Check logs in Vercel
 - Review SQL in Supabase
 - Test with GET endpoint manually

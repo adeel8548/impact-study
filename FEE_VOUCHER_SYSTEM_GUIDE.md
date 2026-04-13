@@ -1,6 +1,7 @@
 # Fee Voucher System - Complete Guide
 
 ## Overview
+
 The Fee Voucher System allows admins to print professional fee vouchers for students with automatic serial numbers, arrears calculation, fine management, and flexible printing options.
 
 ## Features
@@ -63,6 +64,7 @@ Execute the following SQL in your Supabase SQL editor:
 ```
 
 This creates:
+
 - `fee_vouchers` table
 - Indexes for performance
 - Row Level Security policies
@@ -92,24 +94,24 @@ This creates:
 
 ## Voucher Fields Explained
 
-| Field | Description |
-|-------|-------------|
-| Serial No. | Auto-generated unique number |
-| Roll No. | Student's roll number |
-| Fee A/C | Fee account number (optional) |
-| Issue Date | Date when voucher is printed |
-| Due Date | Fixed to 12th of current month |
-| Student Name | Full name of student |
-| Father Name | Guardian/Father name |
-| Class/Section | Student's class |
-| Month | Current month name |
-| Monthly Fee | Current month's fee amount |
-| Arrears | Sum of all previous unpaid months |
-| Fines | Late fee (Rs. 20 × days after 12th) |
-| Annual Charges | Additional annual charges |
-| Exam Fee | Examination fees |
-| Other Charges | Miscellaneous charges |
-| Total Amount | Sum of all above |
+| Field          | Description                         |
+| -------------- | ----------------------------------- |
+| Serial No.     | Auto-generated unique number        |
+| Roll No.       | Student's roll number               |
+| Fee A/C        | Fee account number (optional)       |
+| Issue Date     | Date when voucher is printed        |
+| Due Date       | Fixed to 12th of current month      |
+| Student Name   | Full name of student                |
+| Father Name    | Guardian/Father name                |
+| Class/Section  | Student's class                     |
+| Month          | Current month name                  |
+| Monthly Fee    | Current month's fee amount          |
+| Arrears        | Sum of all previous unpaid months   |
+| Fines          | Late fee (Rs. 20 × days after 12th) |
+| Annual Charges | Additional annual charges           |
+| Exam Fee       | Examination fees                    |
+| Other Charges  | Miscellaneous charges               |
+| Total Amount   | Sum of all above                    |
 
 ## Fine Calculation Logic
 
@@ -127,12 +129,14 @@ Fine = 8 × 20 = Rs. 160
 ## Arrears Calculation
 
 The system automatically:
+
 1. Fetches all unpaid fees for the student
 2. Separates current month from previous months
 3. Current month → "Monthly Fee" field
 4. Previous months → "Arrears" field
 
 Example:
+
 ```
 Student has unpaid fees:
 - January: Rs. 500
@@ -147,48 +151,62 @@ Arrears: Rs. 1,000 (January + February)
 ## API Functions
 
 ### `generateSerialNumber()`
+
 Generates the next serial number for vouchers.
 
 ### `getFeeVoucherData(studentId, includeFine)`
+
 Fetches all data needed for a single student's voucher.
 
 Parameters:
+
 - `studentId`: Student UUID
 - `includeFine`: Boolean to include late fee
 
 Returns:
+
 - Voucher data with all calculated fields
 
 ### `getMultipleFeeVouchers(studentIds, includeFine)`
+
 Fetches voucher data for multiple students.
 
 Parameters:
+
 - `studentIds`: Array of student UUIDs
 - `includeFine`: Boolean to include late fee
 
 Returns:
+
 - Array of voucher data
 
 ### `saveFeeVoucher(voucherData)`
+
 Saves voucher record to database.
 
 ## Customization
 
 ### Change Fine Amount
+
 Edit in `lib/actions/fee-vouchers.ts`:
+
 ```typescript
 const FINE_PER_DAY = 20; // Change this value
 ```
 
 ### Change Due Date
+
 Edit in `lib/actions/fee-vouchers.ts`:
+
 ```typescript
 const dueDate = new Date(currentYear, currentMonth - 1, 12);
 // Change 12 to your preferred date
 ```
 
 ### Customize Voucher Design
+
 Edit `components/fee-voucher.tsx` to modify:
+
 - Layout
 - Colors
 - Logo
@@ -197,16 +215,21 @@ Edit `components/fee-voucher.tsx` to modify:
 ## Troubleshooting
 
 ### Issue: Serial numbers not incrementing
+
 **Solution**: Check if `fee_vouchers` table exists and has data
 
 ### Issue: Arrears not showing correctly
+
 **Solution**: Verify `student_fees` table has correct month/year values
 
 ### Issue: Fine calculation incorrect
+
 **Solution**: Ensure server and client dates are synchronized
 
 ### Issue: Print not working
-**Solution**: 
+
+**Solution**:
+
 1. Check browser print permissions
 2. Verify `react-to-print` is installed
 3. Check console for errors
@@ -214,9 +237,11 @@ Edit `components/fee-voucher.tsx` to modify:
 ## Fixed Bugs
 
 ### ✅ Date Error in Student Update
+
 **Problem**: "invalid input syntax for type date: ''" error when updating students
 
 **Solution**: Modified `lib/actions/students.ts` to convert empty string to null:
+
 ```typescript
 const sanitizedUpdates = {
   ...studentUpdates,
@@ -227,6 +252,7 @@ const sanitizedUpdates = {
 ## Future Enhancements
 
 Potential improvements:
+
 - Email vouchers to parents
 - SMS notifications
 - QR code for payment tracking
@@ -238,6 +264,7 @@ Potential improvements:
 ## Support
 
 For issues or questions:
+
 1. Check this documentation
 2. Review error logs in browser console
 3. Verify database tables and data

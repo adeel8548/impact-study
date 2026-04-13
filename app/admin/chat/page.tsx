@@ -10,10 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Loader2, MessageSquare, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
- 
-import { ensureConversation, sendMessage, subscribeUnreadCount } from "@/lib/firestore-chat";
+
+import {
+  ensureConversation,
+  sendMessage,
+  subscribeUnreadCount,
+} from "@/lib/firestore-chat";
 import { db, ensureFirebaseAuth } from "@/lib/firebase";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
 
 interface TeacherRow {
@@ -38,19 +48,23 @@ export default function AdminChatPage() {
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const teacherLookup = useMemo(
     () => Object.fromEntries(teachers.map((t) => [t.id, t])),
-    [teachers]
+    [teachers],
   );
   const [filter, setFilter] = useState("");
-  const [selectedTeacher, setSelectedTeacher] = useState<TeacherRow | null>(null);
+  const [selectedTeacher, setSelectedTeacher] = useState<TeacherRow | null>(
+    null,
+  );
   const selectedTeacherRef = React.useRef<TeacherRow | null>(null);
-  const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(new Set()); // Multi-select
-  
+  const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(
+    new Set(),
+  ); // Multi-select
+
   const [conversationId, setConversationId] = useState<string>("");
   const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
   const [isEnsuringConversation, startEnsure] = useTransition();
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkMessage, setBulkMessage] = useState("");
-  
+
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({}); // Track unread per conversation
 
@@ -68,7 +82,7 @@ export default function AdminChatPage() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data.user?.id) {
         setCurrentUserId(data.user.id);
-        
+
         // Fetch admin name
         const { data: profile } = await supabase
           .from("profiles")
@@ -104,9 +118,12 @@ export default function AdminChatPage() {
   // Load admin conversations directly from Firestore in realtime
   useEffect(() => {
     if (!currentUserId) return;
-    
+
     // Check if Firebase is configured
-    const isFirebaseConfigured = !!(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+    const isFirebaseConfigured = !!(
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
+      process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+    );
     if (!isFirebaseConfigured) {
       console.log("Firebase not configured, skipping Firestore query");
       return;
@@ -117,34 +134,39 @@ export default function AdminChatPage() {
       id: currentUserId,
       name: currentUserName,
       role: "admin",
-    }).catch(err => console.warn("Firebase auth skipped:", err));
-    
+    }).catch((err) => console.warn("Firebase auth skipped:", err));
+
     // Show loading placeholder with teacher names from lookup immediately
     if (teachers.length > 0 && conversations.length === 0) {
       console.log("Pre-populating with teacher lookup");
     }
-    
+
     console.log("Admin loading conversations for:", currentUserId);
-    
+
     // Query for ALL teacher conversations (any admin can see all teacher conversations)
     // Since all conversations are teacher-admin conversations, we query all and filter client-side
     // Note: This requires all conversations to have a teacherId field
     const q = query(
       collection(db, "conversations"),
-      orderBy("updatedAt", "desc")
+      orderBy("updatedAt", "desc"),
     );
-    
+
     const unsub = onSnapshot(
       q,
       async (snap) => {
         // Filter to only show conversations with teachers (teacherId exists)
-        const teacherConversations = snap.docs.filter(doc => {
+        const teacherConversations = snap.docs.filter((doc) => {
           const data = doc.data();
           return data.teacherId != null && data.teacherId !== "";
         });
-        
-        console.log("Firestore conversations loaded:", teacherConversations.length, "out of", snap.docs.length);
-        
+
+        console.log(
+          "Firestore conversations loaded:",
+          teacherConversations.length,
+          "out of",
+          snap.docs.length,
+        );
+
         // If Firestore has no results, fall back to Supabase
         if (snap.docs.length === 0) {
           console.log("No conversations in Firestore, using Supabase fallback");
@@ -153,42 +175,60 @@ export default function AdminChatPage() {
               .from("conversations")
               .select("id, teacher_id")
               .eq("admin_id", currentUserId);
-            
-            console.log("Supabase conversations loaded:", convs?.length, "error:", convErr);
-            
+
+            console.log(
+              "Supabase conversations loaded:",
+              convs?.length,
+              "error:",
+              convErr,
+            );
+
             if (convErr) {
               console.error("Error fetching conversations:", convErr);
               setConversations([]);
               return;
             }
-            
+
             if (!convs || convs.length === 0) {
               console.log("No conversations found in Supabase either");
               setConversations([]);
               return;
             }
-            
+
             // Fetch teacher profiles for conversation items
-            const teacherIds = [...new Set(convs.map((c: any) => c.teacher_id))];
+            const teacherIds = [
+              ...new Set(convs.map((c: any) => c.teacher_id)),
+            ];
             console.log("Fetching teacher profiles for IDs:", teacherIds);
-            
-            const { data: teacherProfiles, error: profileError } = await supabase
-              .from("profiles")
-              .select("id, name, email")
-              .in("id", teacherIds);
-            
-            console.log("Teacher profiles fetched:", teacherProfiles?.length, "error:", profileError);
-            
-            const teacherMap = Object.fromEntries((teacherProfiles || []).map((t: any) => [t.id, t]));
-            
+
+            const { data: teacherProfiles, error: profileError } =
+              await supabase
+                .from("profiles")
+                .select("id, name, email")
+                .in("id", teacherIds);
+
+            console.log(
+              "Teacher profiles fetched:",
+              teacherProfiles?.length,
+              "error:",
+              profileError,
+            );
+
+            const teacherMap = Object.fromEntries(
+              (teacherProfiles || []).map((t: any) => [t.id, t]),
+            );
+
             // Deduplicate by teacherId, keeping the most recent conversation
             const teacherConversationMap = new Map<string, ConversationItem>();
-            
+
             await Promise.all(
               (convs as any[]).map(async (c: any) => {
-                const ensured = await ensureConversation(currentUserId, c.teacher_id);
+                const ensured = await ensureConversation(
+                  currentUserId,
+                  c.teacher_id,
+                );
                 const teacherId = c.teacher_id;
-                
+
                 const item: ConversationItem = {
                   id: ensured.id,
                   teacherId,
@@ -203,17 +243,22 @@ export default function AdminChatPage() {
                     teacherLookup[teacherId]?.email ||
                     "",
                 };
-                
+
                 // Keep only the most recent conversation per teacher
                 const existing = teacherConversationMap.get(teacherId);
                 if (!existing || item.updatedAt > existing.updatedAt) {
                   teacherConversationMap.set(teacherId, item);
                 }
-              })
+              }),
             );
-            
-            const items = Array.from(teacherConversationMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
-            console.log("Final conversation items from Supabase (deduplicated):", items);
+
+            const items = Array.from(teacherConversationMap.values()).sort(
+              (a, b) => b.updatedAt - a.updatedAt,
+            );
+            console.log(
+              "Final conversation items from Supabase (deduplicated):",
+              items,
+            );
             setConversations(items);
           } catch (err) {
             console.error("Exception in Supabase fallback:", err);
@@ -221,10 +266,10 @@ export default function AdminChatPage() {
           }
           return;
         }
-        
+
         // Process Firestore documents if any exist (using filtered teacher conversations)
         const items: ConversationItem[] = [];
-        
+
         // Collect all teacher IDs that need profile lookup
         const teacherIdsToFetch: string[] = [];
         for (const d of teacherConversations) {
@@ -235,10 +280,14 @@ export default function AdminChatPage() {
             teacherIdsToFetch.push(data.teacherId);
           }
         }
-        
+
         console.log("Teacher IDs to fetch:", teacherIdsToFetch);
-        console.log("teacherLookup available:", Object.keys(teacherLookup).length, teacherLookup);
-        
+        console.log(
+          "teacherLookup available:",
+          Object.keys(teacherLookup).length,
+          teacherLookup,
+        );
+
         // Batch fetch profiles if needed
         let profileMap: Record<string, any> = {};
         if (teacherIdsToFetch.length > 0) {
@@ -247,31 +296,33 @@ export default function AdminChatPage() {
             .select("id, name, email")
             .in("id", teacherIdsToFetch);
           console.log("Batch fetched profiles:", profiles);
-          profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p]));
+          profileMap = Object.fromEntries(
+            (profiles || []).map((p: any) => [p.id, p]),
+          );
         }
-        
+
         // Build items with name priority: Firestore > teacherLookup > profileMap > fallback
         // Use a Map to deduplicate by teacherId, keeping the most recent conversation
         const teacherConversationMap = new Map<string, ConversationItem>();
-        
+
         for (const d of teacherConversations) {
           const data: any = d.data();
           const teacherId = data.teacherId;
           if (!teacherId) continue; // Skip if no teacherId
-          
-          const teacherName = 
-            data.teacherName || 
-            teacherLookup[teacherId]?.name || 
-            profileMap[teacherId]?.name || 
+
+          const teacherName =
+            data.teacherName ||
+            teacherLookup[teacherId]?.name ||
+            profileMap[teacherId]?.name ||
             "Teacher";
-          const teacherEmail = 
-            data.teacherEmail || 
-            teacherLookup[teacherId]?.email || 
-            profileMap[teacherId]?.email || 
+          const teacherEmail =
+            data.teacherEmail ||
+            teacherLookup[teacherId]?.email ||
+            profileMap[teacherId]?.email ||
             "";
-          
+
           const updatedAt = data.updatedAt?.toMillis?.() || Date.now();
-          
+
           // If we already have a conversation for this teacher, keep the one with the latest updatedAt
           const existing = teacherConversationMap.get(teacherId);
           if (!existing || updatedAt > existing.updatedAt) {
@@ -285,10 +336,15 @@ export default function AdminChatPage() {
             });
           }
         }
-        
+
         // Convert map to array and sort by updatedAt
-        const deduplicatedItems = Array.from(teacherConversationMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
-        console.log("Final conversations from Firestore (deduplicated):", deduplicatedItems);
+        const deduplicatedItems = Array.from(
+          teacherConversationMap.values(),
+        ).sort((a, b) => b.updatedAt - a.updatedAt);
+        console.log(
+          "Final conversations from Firestore (deduplicated):",
+          deduplicatedItems,
+        );
         setConversations(deduplicatedItems);
       },
       (error) => {
@@ -300,42 +356,60 @@ export default function AdminChatPage() {
               .from("conversations")
               .select("id, teacher_id")
               .eq("admin_id", currentUserId);
-            
-            console.log("Supabase conversations loaded (error fallback):", convs?.length, "error:", convErr);
-            
+
+            console.log(
+              "Supabase conversations loaded (error fallback):",
+              convs?.length,
+              "error:",
+              convErr,
+            );
+
             if (convErr) {
               console.error("Error fetching conversations:", convErr);
               setConversations([]);
               return;
             }
-            
+
             if (!convs || convs.length === 0) {
               console.log("No conversations found");
               setConversations([]);
               return;
             }
-            
+
             // Fetch teacher profiles for conversation items
-            const teacherIds = [...new Set(convs.map((c: any) => c.teacher_id))];
+            const teacherIds = [
+              ...new Set(convs.map((c: any) => c.teacher_id)),
+            ];
             console.log("Fetching teacher profiles for IDs:", teacherIds);
-            
-            const { data: teacherProfiles, error: profileError } = await supabase
-              .from("profiles")
-              .select("id, name, email")
-              .in("id", teacherIds);
-            
-            console.log("Teacher profiles fetched:", teacherProfiles?.length, "error:", profileError);
-            
-            const teacherMap = Object.fromEntries((teacherProfiles || []).map((t: any) => [t.id, t]));
-            
+
+            const { data: teacherProfiles, error: profileError } =
+              await supabase
+                .from("profiles")
+                .select("id, name, email")
+                .in("id", teacherIds);
+
+            console.log(
+              "Teacher profiles fetched:",
+              teacherProfiles?.length,
+              "error:",
+              profileError,
+            );
+
+            const teacherMap = Object.fromEntries(
+              (teacherProfiles || []).map((t: any) => [t.id, t]),
+            );
+
             // Deduplicate by teacherId, keeping the most recent conversation
             const teacherConversationMap = new Map<string, ConversationItem>();
-            
+
             await Promise.all(
               (convs as any[]).map(async (c: any) => {
-                const ensured = await ensureConversation(currentUserId, c.teacher_id);
+                const ensured = await ensureConversation(
+                  currentUserId,
+                  c.teacher_id,
+                );
                 const teacherId = c.teacher_id;
-                
+
                 const item: ConversationItem = {
                   id: ensured.id,
                   teacherId,
@@ -350,24 +424,29 @@ export default function AdminChatPage() {
                     teacherLookup[teacherId]?.email ||
                     "",
                 };
-                
+
                 // Keep only the most recent conversation per teacher
                 const existing = teacherConversationMap.get(teacherId);
                 if (!existing || item.updatedAt > existing.updatedAt) {
                   teacherConversationMap.set(teacherId, item);
                 }
-              })
+              }),
             );
-            
-            const items = Array.from(teacherConversationMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
-            console.log("Final conversation items from Supabase (error fallback, deduplicated):", items);
+
+            const items = Array.from(teacherConversationMap.values()).sort(
+              (a, b) => b.updatedAt - a.updatedAt,
+            );
+            console.log(
+              "Final conversation items from Supabase (error fallback, deduplicated):",
+              items,
+            );
             setConversations(items);
           } catch (err) {
             console.error("Exception in fallback:", err);
             setConversations([]);
           }
         })();
-      }
+      },
     );
     return () => unsub();
   }, [currentUserId, supabase, teacherLookup]);
@@ -375,24 +454,26 @@ export default function AdminChatPage() {
   const filteredConversations = useMemo(() => {
     const term = filter.toLowerCase();
     if (!term) return conversations;
-    return conversations.filter((c) =>
-      (c.teacherName || "").toLowerCase().includes(term) || (c.teacherEmail || "").toLowerCase().includes(term)
+    return conversations.filter(
+      (c) =>
+        (c.teacherName || "").toLowerCase().includes(term) ||
+        (c.teacherEmail || "").toLowerCase().includes(term),
     );
   }, [conversations, filter]);
 
   // Subscribe to unread counts for each conversation
   useEffect(() => {
     if (conversations.length === 0 || !currentUserId) return;
-    
+
     const unsubscribers: Array<() => void> = [];
-    
+
     conversations.forEach((conv) => {
       const unsub = subscribeUnreadCount(conv.id, currentUserId, (count) => {
         setUnreadCounts((prev) => ({ ...prev, [conv.id]: count }));
       });
       unsubscribers.push(unsub);
     });
-    
+
     return () => unsubscribers.forEach((u) => u());
   }, [conversations, currentUserId]);
 
@@ -411,9 +492,14 @@ export default function AdminChatPage() {
           currentUserId,
           teacherId,
           teacher?.name,
-          teacher?.email
+          teacher?.email,
         );
-        await sendMessage(convId, currentUserId, bulkMessage.trim(), currentUserName);
+        await sendMessage(
+          convId,
+          currentUserId,
+          bulkMessage.trim(),
+          currentUserName,
+        );
       }
       setBulkMessage("");
       setSelectedTeachers(new Set());
@@ -437,10 +523,10 @@ export default function AdminChatPage() {
     startEnsure(async () => {
       try {
         const { id } = await ensureConversation(
-          currentUserId, 
+          currentUserId,
           teacher.id,
           teacher.name,
-          teacher.email
+          teacher.email,
         );
         setConversationId(id);
       } catch (e) {
@@ -455,7 +541,9 @@ export default function AdminChatPage() {
     const term = filter.trim().toLowerCase();
     if (!term) return;
     const match = teachers.find(
-      (t) => (t.name || "").toLowerCase().includes(term) || (t.email || "").toLowerCase().includes(term)
+      (t) =>
+        (t.name || "").toLowerCase().includes(term) ||
+        (t.email || "").toLowerCase().includes(term),
     );
     if (match) {
       ensureConversationOpen(match);
@@ -475,15 +563,23 @@ export default function AdminChatPage() {
         <AdminSidebar />
         <main className="flex-1 ml-0 md:ml-64 p-4 md:p-6 space-y-4">
           <Card className="p-6 bg-red-50 border-red-200">
-            <h2 className="text-red-900 font-semibold mb-2">⚠️ Firebase Not Configured</h2>
+            <h2 className="text-red-900 font-semibold mb-2">
+              ⚠️ Firebase Not Configured
+            </h2>
             <p className="text-red-800 text-sm">
-              Chat features are not available because Firebase credentials are missing.
+              Chat features are not available because Firebase credentials are
+              missing.
             </p>
             <p className="text-red-800 text-sm mt-2">
-              Please add Firebase environment variables to <code className="bg-red-100 px-2 py-1 rounded">.env.local</code>
+              Please add Firebase environment variables to{" "}
+              <code className="bg-red-100 px-2 py-1 rounded">.env.local</code>
             </p>
             <p className="text-red-800 text-sm mt-2">
-              See <code className="bg-red-100 px-2 py-1 rounded">.env.local.example</code> for the required variables.
+              See{" "}
+              <code className="bg-red-100 px-2 py-1 rounded">
+                .env.local.example
+              </code>{" "}
+              for the required variables.
             </p>
           </Card>
         </main>
@@ -500,7 +596,9 @@ export default function AdminChatPage() {
             <MessageSquare className="w-5 h-5" />
             <div>
               <h1 className="text-xl font-semibold">Admin ↔ Teacher Chat</h1>
-              <p className="text-sm text-muted-foreground">Select a teacher to start chatting in real time.</p>
+              <p className="text-sm text-muted-foreground">
+                Select a teacher to start chatting in real time.
+              </p>
             </div>
           </div>
           {/* Bell icon with unread count */}
@@ -508,7 +606,9 @@ export default function AdminChatPage() {
             <Bell className="w-6 h-6 text-muted-foreground cursor-pointer hover:text-foreground" />
             {Object.values(unreadCounts).reduce((a, b) => a + b, 0) > 0 && (
               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
-                {Object.values(unreadCounts).reduce((a, b) => a + b, 0) > 99 ? "99+" : Object.values(unreadCounts).reduce((a, b) => a + b, 0)}
+                {Object.values(unreadCounts).reduce((a, b) => a + b, 0) > 99
+                  ? "99+"
+                  : Object.values(unreadCounts).reduce((a, b) => a + b, 0)}
               </span>
             )}
           </div>
@@ -527,7 +627,9 @@ export default function AdminChatPage() {
               />
               {/* Multi-select and bulk message section */}
               <div className="border-t pt-3 space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground">Bulk Message ({selectedTeachers.size} selected)</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Bulk Message ({selectedTeachers.size} selected)
+                </p>
                 <textarea
                   placeholder="Message to send to selected teachers..."
                   value={bulkMessage}
@@ -536,20 +638,29 @@ export default function AdminChatPage() {
                 />
                 <Button
                   onClick={sendBulkMessage}
-                  disabled={bulkSending || selectedTeachers.size === 0 || !bulkMessage.trim()}
+                  disabled={
+                    bulkSending ||
+                    selectedTeachers.size === 0 ||
+                    !bulkMessage.trim()
+                  }
                   className="w-full h-8 text-xs"
                 >
-                  {bulkSending ? "Sending..." : `Send to ${selectedTeachers.size}`}
+                  {bulkSending
+                    ? "Sending..."
+                    : `Send to ${selectedTeachers.size}`}
                 </Button>
               </div>
             </div>
             <div className="space-y-2 max-h-[60vh] overflow-y-auto">
               {isLoadingTeachers ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading teachers...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading
+                  teachers...
                 </div>
               ) : filteredConversations.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No conversations yet</p>
+                <p className="text-sm text-muted-foreground">
+                  No conversations yet
+                </p>
               ) : (
                 filteredConversations.map((c) => {
                   const active = conversationId === c.id;
@@ -560,8 +671,10 @@ export default function AdminChatPage() {
                       key={c.id}
                       className={cn(
                         "w-full p-3 rounded border transition-colors flex items-start gap-3 cursor-pointer hover:bg-muted",
-                        active && !selectedTeachers.size ? "bg-primary/10 border-primary" : "bg-background",
-                        isSelected ? "bg-blue-50 border-blue-300" : ""
+                        active && !selectedTeachers.size
+                          ? "bg-primary/10 border-primary"
+                          : "bg-background",
+                        isSelected ? "bg-blue-50 border-blue-300" : "",
                       )}
                     >
                       <input
@@ -587,16 +700,22 @@ export default function AdminChatPage() {
                         className="flex-1 text-left"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground text-sm">{c.teacherName || "Teacher"}</span>
+                          <span className="font-semibold text-foreground text-sm">
+                            {c.teacherName || "Teacher"}
+                          </span>
                           {unreadCount > 0 && (
                             <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
                               {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground">{c.teacherEmail}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {c.teacherEmail}
+                        </div>
                         {c.lastMessage ? (
-                          <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{c.lastMessage}</div>
+                          <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {c.lastMessage}
+                          </div>
                         ) : null}
                       </button>
                     </div>
@@ -609,8 +728,8 @@ export default function AdminChatPage() {
           <Card className="p-4 md:col-span-2 flex flex-col h-[500px] overflow-hidden">
             {conversationId ? (
               <div className="flex-1 flex flex-col overflow-hidden">
-                <ChatWindow 
-                  conversationId={conversationId} 
+                <ChatWindow
+                  conversationId={conversationId}
                   currentUserId={currentUserId}
                   currentUserName={currentUserName}
                 />

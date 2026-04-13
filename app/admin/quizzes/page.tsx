@@ -312,229 +312,236 @@ export default function QuizMarksPage() {
             <>
               {/* Tabs for different sections */}
               <Tabs defaultValue="entry" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="entry">Entry</TabsTrigger>
-              <TabsTrigger value="results">
-                Results ({quizResults.length})
-              </TabsTrigger>
-              <TabsTrigger value="statistics">Statistics</TabsTrigger>
-            </TabsList>
+                <TabsList>
+                  <TabsTrigger value="entry">Entry</TabsTrigger>
+                  <TabsTrigger value="results">
+                    Results ({quizResults.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="statistics">Statistics</TabsTrigger>
+                </TabsList>
 
-            {/* ============================================
+                {/* ============================================
               Entry Tab
               ============================================ */}
-            <TabsContent value="entry" className="space-y-4"></TabsContent>
+                <TabsContent value="entry" className="space-y-4"></TabsContent>
 
-            {/* ============================================
+                {/* ============================================
               Results Tab
               ============================================ */}
-            <TabsContent value="results" className="space-y-4">
-              {quizResults.length === 0 ? (
-                <Card className="p-8">
-                  <p className="text-center text-muted-foreground">
-                    No quiz results found
-                  </p>
-                </Card>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Card className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {quizResults.map((result) => (
-                        <Card
-                          key={result.id}
-                          className="p-4 border border-border hover:shadow-md transition-shadow"
-                        >
-                          <div className="space-y-3">
-                            {/* Student and Quiz Name */}
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                Student Name
-                              </p>
-                              <p className="font-semibold text-lg">
-                                {getStudentName(result.student_id)}
-                              </p>
-                            </div>
+                <TabsContent value="results" className="space-y-4">
+                  {quizResults.length === 0 ? (
+                    <Card className="p-8">
+                      <p className="text-center text-muted-foreground">
+                        No quiz results found
+                      </p>
+                    </Card>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Card className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {quizResults.map((result) => (
+                            <Card
+                              key={result.id}
+                              className="p-4 border border-border hover:shadow-md transition-shadow"
+                            >
+                              <div className="space-y-3">
+                                {/* Student and Quiz Name */}
+                                <div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Student Name
+                                  </p>
+                                  <p className="font-semibold text-lg">
+                                    {getStudentName(result.student_id)}
+                                  </p>
+                                </div>
 
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                Quiz Name
-                              </p>
-                              <p className="font-semibold">
-                                {result.quiz_name}
-                              </p>
-                            </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Quiz Name
+                                  </p>
+                                  <p className="font-semibold">
+                                    {result.quiz_name}
+                                  </p>
+                                </div>
 
-                            {/* Marks Information */}
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <p className="text-muted-foreground">
-                                  Obtained Marks
-                                </p>
-                                <p className="font-semibold text-base">
-                                  {result.obtained_marks}
-                                </p>
+                                {/* Marks Information */}
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Obtained Marks
+                                    </p>
+                                    <p className="font-semibold text-base">
+                                      {result.obtained_marks}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Total
+                                    </p>
+                                    <p className="font-semibold text-base">
+                                      {result.total_marks}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Percentage */}
+                                <div className="bg-muted rounded p-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    Percentage
+                                  </p>
+                                  <p className="font-semibold text-lg">
+                                    {(
+                                      (result.obtained_marks /
+                                        result.total_marks) *
+                                      100
+                                    ).toFixed(1)}
+                                    %
+                                  </p>
+                                </div>
+
+                                {/* Date and Duration */}
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Date
+                                    </p>
+                                    <p className="font-medium text-xs">
+                                      {new Date(
+                                        result.quiz_date,
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">
+                                      Duration
+                                    </p>
+                                    <p className="font-medium text-xs">
+                                      {result.quiz_duration > 0
+                                        ? `${result.quiz_duration} min`
+                                        : "—"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Teacher Name */}
+                                <div className="text-xs text-muted-foreground border-t pt-2">
+                                  Teacher: {getTeacherName(result.teacher_id)}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex gap-2 pt-2">
+                                  {currentUser?.role === "admin" ||
+                                  currentUser?.id === result.teacher_id ? (
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditResult(result)}
+                                        className="flex-1 gap-1"
+                                      >
+                                        <Edit2 className="w-3 h-3" />
+                                        Edit
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleDeleteResult(result.id)
+                                        }
+                                        className="gap-1"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </>
+                                  ) : null}
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-muted-foreground">Total</p>
-                                <p className="font-semibold text-base">
-                                  {result.total_marks}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Percentage */}
-                            <div className="bg-muted rounded p-2">
-                              <p className="text-xs text-muted-foreground">
-                                Percentage
-                              </p>
-                              <p className="font-semibold text-lg">
-                                {(
-                                  (result.obtained_marks / result.total_marks) *
-                                  100
-                                ).toFixed(1)}
-                                %
-                              </p>
-                            </div>
-
-                            {/* Date and Duration */}
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <p className="text-muted-foreground">Date</p>
-                                <p className="font-medium text-xs">
-                                  {new Date(
-                                    result.quiz_date,
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">
-                                  Duration
-                                </p>
-                                <p className="font-medium text-xs">
-                                  {result.quiz_duration > 0
-                                    ? `${result.quiz_duration} min`
-                                    : "—"}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Teacher Name */}
-                            <div className="text-xs text-muted-foreground border-t pt-2">
-                              Teacher: {getTeacherName(result.teacher_id)}
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-2 pt-2">
-                              {currentUser?.role === "admin" ||
-                              currentUser?.id === result.teacher_id ? (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditResult(result)}
-                                    className="flex-1 gap-1"
-                                  >
-                                    <Edit2 className="w-3 h-3" />
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteResult(result.id)}
-                                    className="gap-1"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                </>
-                              ) : null}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </Card>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* ============================================
-              Statistics Tab
-              ============================================ */}
-            <TabsContent value="statistics" className="space-y-4">
-              {Object.keys(studentResultStats).length === 0 ? (
-                <Card className="p-8">
-                  <p className="text-center text-muted-foreground">
-                    No statistics available yet
-                  </p>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(studentResultStats).map(
-                    ([studentId, stats]) => (
-                      <Card key={studentId} className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                Student
-                              </p>
-                              <p className="font-semibold text-lg">
-                                {getStudentName(studentId)}
-                              </p>
-                            </div>
-                            <TrendingUp className="w-5 h-5 text-primary" />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-muted rounded p-3">
-                              <p className="text-xs text-muted-foreground">
-                                Total Quizzes
-                              </p>
-                              <p className="text-2xl font-bold">
-                                {stats.count}
-                              </p>
-                            </div>
-
-                            <div className="bg-muted rounded p-3">
-                              <p className="text-xs text-muted-foreground">
-                                Average %
-                              </p>
-                              <p className="text-2xl font-bold">
-                                {(
-                                  (stats.totalObtained / stats.totalMarks) *
-                                  100
-                                ).toFixed(1)}
-                                %
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="border-t pt-3">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">
-                                Total Marks Obtained:
-                              </span>
-                              <span className="font-semibold">
-                                {stats.totalObtained.toFixed(1)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">
-                                Total Marks:
-                              </span>
-                              <span className="font-semibold">
-                                {stats.totalMarks.toFixed(1)}
-                              </span>
-                            </div>
-                          </div>
+                            </Card>
+                          ))}
                         </div>
                       </Card>
-                    ),
+                    </div>
                   )}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                </TabsContent>
+
+                {/* ============================================
+              Statistics Tab
+              ============================================ */}
+                <TabsContent value="statistics" className="space-y-4">
+                  {Object.keys(studentResultStats).length === 0 ? (
+                    <Card className="p-8">
+                      <p className="text-center text-muted-foreground">
+                        No statistics available yet
+                      </p>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(studentResultStats).map(
+                        ([studentId, stats]) => (
+                          <Card key={studentId} className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Student
+                                  </p>
+                                  <p className="font-semibold text-lg">
+                                    {getStudentName(studentId)}
+                                  </p>
+                                </div>
+                                <TrendingUp className="w-5 h-5 text-primary" />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-muted rounded p-3">
+                                  <p className="text-xs text-muted-foreground">
+                                    Total Quizzes
+                                  </p>
+                                  <p className="text-2xl font-bold">
+                                    {stats.count}
+                                  </p>
+                                </div>
+
+                                <div className="bg-muted rounded p-3">
+                                  <p className="text-xs text-muted-foreground">
+                                    Average %
+                                  </p>
+                                  <p className="text-2xl font-bold">
+                                    {(
+                                      (stats.totalObtained / stats.totalMarks) *
+                                      100
+                                    ).toFixed(1)}
+                                    %
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="border-t pt-3">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    Total Marks Obtained:
+                                  </span>
+                                  <span className="font-semibold">
+                                    {stats.totalObtained.toFixed(1)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    Total Marks:
+                                  </span>
+                                  <span className="font-semibold">
+                                    {stats.totalMarks.toFixed(1)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </div>

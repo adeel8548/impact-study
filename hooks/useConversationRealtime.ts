@@ -26,8 +26,10 @@ export function useConversationRealtime<T = any>(
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload: RealtimePostgresChangesPayload<T>) => {
-          if (payload.eventType === "INSERT") handlers.onInsert?.(payload.new as T);
-          if (payload.eventType === "UPDATE") handlers.onUpdate?.(payload.new as T);
+          if (payload.eventType === "INSERT")
+            handlers.onInsert?.(payload.new as T);
+          if (payload.eventType === "UPDATE")
+            handlers.onUpdate?.(payload.new as T);
         },
       )
       .subscribe();

@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, ArrowLeft, Lock } from "lucide-react";
 
@@ -51,7 +57,9 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
     try {
       const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password });
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+      });
 
       if (updateError) {
         setError(updateError.message);
@@ -62,7 +70,9 @@ export default function ResetPasswordPage() {
       await supabase.auth.signOut();
       setTimeout(() => router.push("/login"), 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update password");
+      setError(
+        err instanceof Error ? err.message : "Failed to update password",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +144,10 @@ export default function ResetPasswordPage() {
           )}
 
           <div className="mt-4 flex items-center justify-between text-sm">
-            <Link href="/login" className="inline-flex items-center gap-2 text-blue-600 hover:underline">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+            >
               <ArrowLeft className="h-4 w-4" />
               Back to login
             </Link>

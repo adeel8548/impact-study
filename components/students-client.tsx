@@ -117,7 +117,8 @@ export function StudentsClientComponent({
   const [showFeeValues, setShowFeeValues] = useState(false);
   const [feeVoucherPrintOpen, setFeeVoucherPrintOpen] = useState(false);
   const [bulkFeeVoucherPrintOpen, setBulkFeeVoucherPrintOpen] = useState(false);
-  const [selectedStudentForVoucher, setSelectedStudentForVoucher] = useState<Student | null>(null);
+  const [selectedStudentForVoucher, setSelectedStudentForVoucher] =
+    useState<Student | null>(null);
 
   // Keep local students in sync when server data (initialStudents) changes
   // This ensures router.refresh() and server revalidate update the table
@@ -365,7 +366,11 @@ export function StudentsClientComponent({
             onClick={() => setBulkFeeVoucherPrintOpen(true)}
             variant="outline"
             className="gap-2"
-            title={classFilter ? "Print vouchers for selected class" : "Print vouchers for all students"}
+            title={
+              classFilter
+                ? "Print vouchers for selected class"
+                : "Print vouchers for all students"
+            }
           >
             <Printer className="w-4 h-4" />
             Print Class

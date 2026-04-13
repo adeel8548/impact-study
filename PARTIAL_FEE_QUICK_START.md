@@ -41,7 +41,7 @@ Click **Run** ✅
 UPDATE students SET full_fee = 5000;
 
 -- Optional: Set joining date for specific student (for testing)
-UPDATE students 
+UPDATE students
 SET joining_date = CURRENT_DATE - INTERVAL '15 days'
 WHERE roll_number = 'TEST001';  -- Replace with actual roll number
 ```
@@ -64,7 +64,7 @@ http://localhost:3000/api/cron/monthly-billing?secret=your-secret
 
 ```sql
 -- View partial fees
-SELECT 
+SELECT
   s.name,
   s.joining_date,
   s.full_fee,
@@ -84,6 +84,7 @@ LIMIT 5;
 ## ✅ Done!
 
 That's it! Your system now:
+
 - ✅ Calculates partial fees for mid-month joiners
 - ✅ Applies full fees from next month
 - ✅ Handles all edge cases automatically
@@ -93,6 +94,7 @@ That's it! Your system now:
 ## 🎯 What Happens Now?
 
 ### For Students Joining Mid-Month:
+
 ```
 Student joins: Jan 15
 Full fee: Rs. 5,000
@@ -105,6 +107,7 @@ March fee: Rs. 5,000.00 (full month)
 ```
 
 ### For Students Joining on 1st:
+
 ```
 Student joins: Jan 1
 Full fee: Rs. 5,000
@@ -141,6 +144,7 @@ February fee: Rs. 5,000.00 (full month)
 ## 🎉 You're Ready!
 
 The system is now automatically calculating partial fees. Just:
+
 1. Set `full_fee` when registering new students
 2. Set `joining_date` when they join
 3. Let the cron job do the rest!

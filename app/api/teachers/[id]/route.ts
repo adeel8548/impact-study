@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const supabase = await createClient();
   const { id } = await context.params;
@@ -11,7 +11,9 @@ export async function GET(
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, name, email, phone, expected_time, joining_date, class_ids, incharge_class_id, incharge_class_ids")
+      .select(
+        "id, name, email, phone, expected_time, joining_date, class_ids, incharge_class_id, incharge_class_ids",
+      )
       .eq("id", id)
       .maybeSingle();
 
@@ -31,7 +33,7 @@ export async function GET(
           error instanceof Error ? error.message : "Failed to fetch teacher",
         success: false,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

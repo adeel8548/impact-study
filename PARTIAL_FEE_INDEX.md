@@ -7,21 +7,27 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ## 🚀 Quick Start (Choose Your Path)
 
 ### 👤 I'm an Administrator
+
 **→ Start Here:** [5-Minute Quick Start](PARTIAL_FEE_QUICK_START.md)
+
 - Run migration
 - Set student fees
 - Test the system
 - **Time:** 5 minutes
 
 ### 👨‍💻 I'm a Developer
+
 **→ Start Here:** [Implementation Summary](PARTIAL_FEE_IMPLEMENTATION_SUMMARY.md)
+
 - Understand the architecture
 - Review code changes
 - See API reference
 - **Time:** 10 minutes
 
 ### 🔧 I'm Migrating from Old System
+
 **→ Start Here:** [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md)
+
 - Step-by-step upgrade path
 - Data migration strategies
 - Rollback procedures
@@ -32,15 +38,18 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ## 📖 Documentation Files
 
 ### 1️⃣ Quick Reference
+
 **File:** [PARTIAL_FEE_QUICK_REFERENCE.md](PARTIAL_FEE_QUICK_REFERENCE.md)
 **Best For:** Daily use, quick lookups
 **Contains:**
+
 - One-page cheatsheet
 - Common commands
 - Edge case table
 - Troubleshooting quick tips
 
 **Read this when you need:**
+
 - Quick SQL queries
 - Function signatures
 - Edge case reminders
@@ -49,15 +58,18 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ---
 
 ### 2️⃣ Quick Start Guide
+
 **File:** [PARTIAL_FEE_QUICK_START.md](PARTIAL_FEE_QUICK_START.md)
 **Best For:** First-time setup
 **Contains:**
+
 - 3-step setup process
 - Copy-paste SQL
 - Test instructions
 - Immediate results
 
 **Read this when you want:**
+
 - Get started in 5 minutes
 - Test before deep dive
 - Quick setup without details
@@ -65,9 +77,11 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ---
 
 ### 3️⃣ Complete System Guide
+
 **File:** [PARTIAL_FEE_SYSTEM_GUIDE.md](PARTIAL_FEE_SYSTEM_GUIDE.md)
 **Best For:** Complete understanding
 **Contains:**
+
 - Full feature documentation (400+ lines)
 - Database schema details
 - Setup instructions
@@ -79,6 +93,7 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 - FAQ
 
 **Read this when you need:**
+
 - Complete understanding
 - Reference documentation
 - Advanced usage
@@ -87,9 +102,11 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ---
 
 ### 4️⃣ Implementation Summary
+
 **File:** [PARTIAL_FEE_IMPLEMENTATION_SUMMARY.md](PARTIAL_FEE_IMPLEMENTATION_SUMMARY.md)
 **Best For:** Developers, technical overview
 **Contains:**
+
 - What was built
 - Files created/modified
 - How it works
@@ -97,6 +114,7 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 - Quality metrics
 
 **Read this when you want:**
+
 - Technical overview
 - Understand code changes
 - Review implementation details
@@ -105,9 +123,11 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ---
 
 ### 5️⃣ Migration Guide
+
 **File:** [PARTIAL_FEE_MIGRATION_GUIDE.md](PARTIAL_FEE_MIGRATION_GUIDE.md)
 **Best For:** Existing installations
 **Contains:**
+
 - Pre-migration checklist
 - Database backup instructions
 - Step-by-step migration
@@ -117,6 +137,7 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 - Post-migration tasks
 
 **Read this when you're:**
+
 - Upgrading existing system
 - Have live data to preserve
 - Need rollback procedures
@@ -125,9 +146,11 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ---
 
 ### 6️⃣ Architecture & Flow
+
 **File:** [PARTIAL_FEE_ARCHITECTURE.md](PARTIAL_FEE_ARCHITECTURE.md)
 **Best For:** Visual learners, architects
 **Contains:**
+
 - System architecture diagrams
 - Data flow diagrams
 - Calculation flow
@@ -138,6 +161,7 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 - API flow sequences
 
 **Read this when you want:**
+
 - Visual understanding
 - See how data flows
 - Understand decisions
@@ -150,9 +174,11 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 ### Core Implementation
 
 #### 1. Utility Functions
+
 **File:** `lib/utils/partial-fee-calculator.ts`
 **Purpose:** Core calculation logic
 **Functions:**
+
 - `calculateFeeForMonth()` - Main calculation
 - `getDaysInMonth()` - Get days in specific month
 - `shouldApplyPartialFee()` - Determine partial vs full
@@ -161,29 +187,34 @@ Welcome to the Partial Fee Calculation System documentation! This index will hel
 - `formatPartialFeeBreakdown()` - Format for display
 
 **When to use:**
+
 - Calculate fees programmatically
 - Validate joining dates
 - Get month information
 - Format fee breakdowns
 
 **Example:**
+
 ```typescript
-import { calculateFeeForMonth } from '@/lib/utils/partial-fee-calculator';
-const fee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
+import { calculateFeeForMonth } from "@/lib/utils/partial-fee-calculator";
+const fee = calculateFeeForMonth(5000, "2026-01-15", 1, 2026);
 ```
 
 ---
 
 #### 2. Cron Job (Monthly Billing)
+
 **File:** `app/api/cron/monthly-billing/route.ts`
 **Purpose:** Automated monthly fee generation
 **What it does:**
+
 - Runs on 1st of every month
 - Calculates partial/full fees
 - Creates fee records
 - Generates vouchers
 
 **When to modify:**
+
 - Change billing schedule
 - Add custom fee logic
 - Modify voucher generation
@@ -192,15 +223,18 @@ const fee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
 ---
 
 #### 3. Fee Voucher Actions
+
 **File:** `lib/actions/fee-vouchers.ts`
 **Purpose:** Fee voucher CRUD operations
 **Functions:**
+
 - `getFeeVoucherData()` - Get voucher with partial fee info
 - `getMultipleFeeVouchers()` - Batch voucher generation
 - `saveFeeVoucher()` - Save voucher to database
 - `generateSerialNumber()` - Auto-increment voucher numbers
 
 **When to use:**
+
 - Generate fee vouchers
 - Display fee information
 - Print vouchers
@@ -209,18 +243,22 @@ const fee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
 ---
 
 #### 4. Display Component
+
 **File:** `components/fees/PartialFeeDisplay.tsx`
 **Purpose:** UI component for displaying partial fee breakdown
 **Components:**
+
 - `<PartialFeeDisplay />` - React component with styling
 - `PartialFeeTextDisplay()` - Text-based for printing
 
 **When to use:**
+
 - Show fee breakdown on vouchers
 - Display in admin panel
 - Print formatted receipts
 
 **Example:**
+
 ```tsx
 <PartialFeeDisplay
   isPartial={true}
@@ -237,15 +275,18 @@ const fee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
 ### Database Files
 
 #### 1. Migration Script
+
 **File:** `scripts/025_partial_fee_support.sql`
 **Purpose:** Add partial fee support to database
 **Changes:**
+
 - Adds columns to `students`, `student_fees`, `fee_vouchers`
 - Creates indexes
 - Adds constraints
 - Documents schema
 
 **When to run:**
+
 - First-time setup
 - New installation
 - Database upgrade
@@ -255,21 +296,25 @@ const fee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
 ### Testing
 
 #### 1. Test Suite
+
 **File:** `__tests__/partial-fee-calculator.test.ts`
 **Purpose:** Comprehensive test coverage
 **Coverage:**
+
 - Unit tests for all functions
 - Edge case scenarios
 - Integration tests
 - Real-world examples
 
 **When to run:**
+
 - Before deployment
 - After code changes
 - Verify calculations
 - Debug issues
 
 **How to run:**
+
 ```bash
 node --test __tests__/partial-fee-calculator.test.ts
 ```
@@ -280,57 +325,60 @@ node --test __tests__/partial-fee-calculator.test.ts
 
 ### Setting Up
 
-| Task | Guide | File |
-|------|-------|------|
-| First-time setup | [Quick Start](PARTIAL_FEE_QUICK_START.md) | - |
-| Understand system | [Complete Guide](PARTIAL_FEE_SYSTEM_GUIDE.md) | - |
-| Migrate existing | [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md) | - |
-| Run migration | [Quick Start → Step 1](PARTIAL_FEE_QUICK_START.md#step-1️⃣-run-migration-2-minutes) | `scripts/025_partial_fee_support.sql` |
+| Task              | Guide                                                                              | File                                  |
+| ----------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
+| First-time setup  | [Quick Start](PARTIAL_FEE_QUICK_START.md)                                          | -                                     |
+| Understand system | [Complete Guide](PARTIAL_FEE_SYSTEM_GUIDE.md)                                      | -                                     |
+| Migrate existing  | [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md)                                  | -                                     |
+| Run migration     | [Quick Start → Step 1](PARTIAL_FEE_QUICK_START.md#step-1️⃣-run-migration-2-minutes) | `scripts/025_partial_fee_support.sql` |
 
 ### Using the System
 
-| Task | Guide | File |
-|------|-------|------|
-| Calculate fee | [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md#key-functions) | `lib/utils/partial-fee-calculator.ts` |
-| Generate voucher | [System Guide → API](PARTIAL_FEE_SYSTEM_GUIDE.md#api-reference) | `lib/actions/fee-vouchers.ts` |
+| Task              | Guide                                                                          | File                                    |
+| ----------------- | ------------------------------------------------------------------------------ | --------------------------------------- |
+| Calculate fee     | [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md#key-functions)                | `lib/utils/partial-fee-calculator.ts`   |
+| Generate voucher  | [System Guide → API](PARTIAL_FEE_SYSTEM_GUIDE.md#api-reference)                | `lib/actions/fee-vouchers.ts`           |
 | Display breakdown | [Implementation Summary](PARTIAL_FEE_IMPLEMENTATION_SUMMARY.md#usage-examples) | `components/fees/PartialFeeDisplay.tsx` |
-| Trigger cron | [Quick Start → Step 3](PARTIAL_FEE_QUICK_START.md#step-3️⃣-test-it-2-minutes) | `app/api/cron/monthly-billing/route.ts` |
+| Trigger cron      | [Quick Start → Step 3](PARTIAL_FEE_QUICK_START.md#step-3️⃣-test-it-2-minutes)   | `app/api/cron/monthly-billing/route.ts` |
 
 ### Troubleshooting
 
-| Issue | Guide | Section |
-|-------|-------|---------|
-| Fee is 0 | [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md#troubleshooting) | Troubleshooting |
-| Partial not calculating | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#troubleshooting) | Troubleshooting |
-| Migration failed | [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md#troubleshooting) | Troubleshooting |
-| Cron not running | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#troubleshooting) | Troubleshooting |
+| Issue                   | Guide                                                             | Section         |
+| ----------------------- | ----------------------------------------------------------------- | --------------- |
+| Fee is 0                | [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md#troubleshooting) | Troubleshooting |
+| Partial not calculating | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#troubleshooting)       | Troubleshooting |
+| Migration failed        | [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md#troubleshooting) | Troubleshooting |
+| Cron not running        | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#troubleshooting)       | Troubleshooting |
 
 ### Learning
 
-| Topic | Best Resource |
-|-------|---------------|
-| How partial fee works | [Architecture](PARTIAL_FEE_ARCHITECTURE.md#calculation-flow) |
-| Edge cases | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#edge-cases-handled) |
-| Real examples | [Architecture](PARTIAL_FEE_ARCHITECTURE.md#timeline-example) |
-| API usage | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#api-reference) |
+| Topic                 | Best Resource                                                  |
+| --------------------- | -------------------------------------------------------------- |
+| How partial fee works | [Architecture](PARTIAL_FEE_ARCHITECTURE.md#calculation-flow)   |
+| Edge cases            | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#edge-cases-handled) |
+| Real examples         | [Architecture](PARTIAL_FEE_ARCHITECTURE.md#timeline-example)   |
+| API usage             | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#api-reference)      |
 
 ---
 
 ## 🔍 Find By Topic
 
 ### Database
+
 - Schema changes: [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#database-schema)
 - Migration: [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md)
 - SQL queries: [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md)
 - Indexes: [Migration Script](scripts/025_partial_fee_support.sql)
 
 ### Calculations
+
 - How it works: [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#how-the-system-calculates-fees)
 - Formula: [Architecture](PARTIAL_FEE_ARCHITECTURE.md#calculation-flow)
 - Edge cases: [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#edge-cases-handled)
 - Examples: [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md#example-calculation)
 
 ### Code
+
 - Utilities: `lib/utils/partial-fee-calculator.ts`
 - Cron job: `app/api/cron/monthly-billing/route.ts`
 - Actions: `lib/actions/fee-vouchers.ts`
@@ -338,6 +386,7 @@ node --test __tests__/partial-fee-calculator.test.ts
 - Tests: `__tests__/partial-fee-calculator.test.ts`
 
 ### Deployment
+
 - Setup: [Quick Start](PARTIAL_FEE_QUICK_START.md)
 - Migration: [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md)
 - Testing: [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md#testing-the-system)
@@ -359,16 +408,19 @@ node --test __tests__/partial-fee-calculator.test.ts
 ## 🎓 Learning Path
 
 ### Beginner
+
 1. [Quick Start](PARTIAL_FEE_QUICK_START.md) - Get started (5 min)
 2. [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md) - Learn basics (10 min)
 3. [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md) - Deep dive (30 min)
 
 ### Intermediate
+
 1. [Implementation Summary](PARTIAL_FEE_IMPLEMENTATION_SUMMARY.md) - Technical overview
 2. [Architecture](PARTIAL_FEE_ARCHITECTURE.md) - Understand flow
 3. Code files - Review implementation
 
 ### Advanced
+
 1. [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md) - Production deployment
 2. Test suite - Verify edge cases
 3. Customization - Extend for your needs
@@ -378,15 +430,19 @@ node --test __tests__/partial-fee-calculator.test.ts
 ## 🆘 Getting Help
 
 ### Quick Answers
+
 → [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md#troubleshooting)
 
 ### Common Issues
+
 → [System Guide → Troubleshooting](PARTIAL_FEE_SYSTEM_GUIDE.md#troubleshooting)
 
 ### Migration Problems
+
 → [Migration Guide → Troubleshooting](PARTIAL_FEE_MIGRATION_GUIDE.md#troubleshooting)
 
 ### Understanding Logic
+
 → [Architecture Diagrams](PARTIAL_FEE_ARCHITECTURE.md)
 
 ---
@@ -396,6 +452,7 @@ node --test __tests__/partial-fee-calculator.test.ts
 Use this to track your progress:
 
 ### Initial Setup
+
 - [ ] Read [Quick Start](PARTIAL_FEE_QUICK_START.md)
 - [ ] Run database migration
 - [ ] Set full_fee for students
@@ -403,6 +460,7 @@ Use this to track your progress:
 - [ ] Review [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md)
 
 ### Production Deployment
+
 - [ ] Read [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md)
 - [ ] Backup database
 - [ ] Test in staging
@@ -410,12 +468,14 @@ Use this to track your progress:
 - [ ] Monitor first month
 
 ### Understanding
+
 - [ ] Review [Architecture](PARTIAL_FEE_ARCHITECTURE.md)
 - [ ] Understand calculation flow
 - [ ] Learn edge cases
 - [ ] Explore code files
 
 ### Ongoing
+
 - [ ] Bookmark [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md)
 - [ ] Set up monitoring
 - [ ] Train admin staff
@@ -435,4 +495,4 @@ Use this to track your progress:
 
 **Happy fee calculating! 💰📊**
 
-*Last updated: January 31, 2026*
+_Last updated: January 31, 2026_

@@ -3,7 +3,7 @@
  * Shows fee breakdown on vouchers when partial fee applies
  */
 
-import React from 'react';
+import React from "react";
 
 interface PartialFeeDisplayProps {
   isPartial: boolean;
@@ -24,7 +24,7 @@ export function PartialFeeDisplay({
   payableDays,
   perDayFee,
   joiningDay,
-  currency = 'Rs.',
+  currency = "Rs.",
 }: PartialFeeDisplayProps) {
   if (!isPartial) {
     // Display normal fee
@@ -101,7 +101,9 @@ export function PartialFeeDisplay({
             <span className="text-gray-600">Calculation:</span>
             <span className="text-xs text-gray-500">
               {perDayFee && payableDays && (
-                <>{currency} {perDayFee.toFixed(2)} × {payableDays} days</>
+                <>
+                  {currency} {perDayFee.toFixed(2)} × {payableDays} days
+                </>
               )}
             </span>
           </div>
@@ -126,7 +128,7 @@ export function PartialFeeDisplay({
 
 /**
  * Example Usage in Fee Voucher Component:
- * 
+ *
  * <PartialFeeDisplay
  *   isPartial={voucher.isPartial}
  *   monthlyFee={voucher.monthlyFee}
@@ -148,16 +150,16 @@ export function PartialFeeTextDisplay({
   payableDays,
   perDayFee,
   joiningDay,
-  currency = 'Rs.',
+  currency = "Rs.",
 }: PartialFeeDisplayProps) {
   if (!isPartial) {
     return `Monthly Fee: ${currency} ${monthlyFee.toFixed(2)}`;
   }
 
   const lines = [
-    '─────────────────────────────────────────',
-    ' PARTIAL FEE CALCULATION (Joining Month)',
-    '─────────────────────────────────────────',
+    "─────────────────────────────────────────",
+    " PARTIAL FEE CALCULATION (Joining Month)",
+    "─────────────────────────────────────────",
   ];
 
   if (fullFee) {
@@ -173,32 +175,35 @@ export function PartialFeeTextDisplay({
   }
 
   if (payableDays) {
-    const range = joiningDay && totalDaysInMonth 
-      ? ` (${joiningDay}th-${totalDaysInMonth}th)`
-      : '';
+    const range =
+      joiningDay && totalDaysInMonth
+        ? ` (${joiningDay}th-${totalDaysInMonth}th)`
+        : "";
     lines.push(`Payable Days:            ${payableDays} days${range}`);
   }
 
   if (perDayFee) {
-    lines.push('');
+    lines.push("");
     lines.push(`Per Day Fee:             ${currency} ${perDayFee.toFixed(2)}`);
-    
+
     if (payableDays) {
-      lines.push(`Calculation:             ${perDayFee.toFixed(2)} × ${payableDays} days`);
+      lines.push(
+        `Calculation:             ${perDayFee.toFixed(2)} × ${payableDays} days`,
+      );
     }
   }
 
-  lines.push('');
+  lines.push("");
   lines.push(`Monthly Fee:             ${currency} ${monthlyFee.toFixed(2)}`);
-  lines.push('─────────────────────────────────────────');
-  lines.push('Note: Full fee applies from next month');
+  lines.push("─────────────────────────────────────────");
+  lines.push("Note: Full fee applies from next month");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
  * Example text output:
- * 
+ *
  * ─────────────────────────────────────────
  *  PARTIAL FEE CALCULATION (Joining Month)
  * ─────────────────────────────────────────
@@ -206,10 +211,10 @@ export function PartialFeeTextDisplay({
  * Total Days in Month:     31 days
  * Joining Day:             15th
  * Payable Days:            17 days (15th-31st)
- * 
+ *
  * Per Day Fee:             Rs. 161.29
  * Calculation:             161.29 × 17 days
- * 
+ *
  * Monthly Fee:             Rs. 2741.93
  * ─────────────────────────────────────────
  * Note: Full fee applies from next month

@@ -3,6 +3,7 @@
 ## Pre-Deployment Verification ✅
 
 ### Code Quality
+
 - [x] No TypeScript compilation errors
 - [x] All imports properly resolved
 - [x] Function signatures match usage
@@ -12,6 +13,7 @@
 - [x] Null/undefined checks in place
 
 ### Components
+
 - [x] LateReasonModal created and exported
 - [x] AdminAttendanceMarkingModal updated with late detection
 - [x] TeacherModal updated with expected_time field
@@ -21,6 +23,7 @@
 - [x] Props interfaces match usage
 
 ### Actions/Functions
+
 - [x] updateLateReason() function created
 - [x] shouldMarkAsLate() implemented
 - [x] isAttendanceLate() utility added
@@ -30,6 +33,7 @@
 - [x] All functions have proper error handling
 
 ### Types
+
 - [x] Teacher interface updated
 - [x] TeacherAttendance interface updated
 - [x] AttendanceRecord interface updated
@@ -37,6 +41,7 @@
 - [x] Type safety maintained
 
 ### Database Migrations
+
 - [x] Migration 014 SQL syntax valid
 - [x] Migration 015 SQL syntax valid
 - [x] Column names correct
@@ -46,6 +51,7 @@
 - [x] Backward compatible
 
 ### Documentation
+
 - [x] Implementation guide complete
 - [x] Quick reference created
 - [x] Integration guide provided
@@ -57,12 +63,14 @@
 ## Pre-Deployment Testing ✅
 
 ### Local Testing
+
 - [x] No compilation errors
 - [x] Component imports work
 - [x] Type checking passes
 - [x] Build doesn't produce errors
 
 ### Expected Behavior
+
 - [x] Teacher modal accepts time input
 - [x] Expected time displays on card
 - [x] Late detection logic correct
@@ -74,6 +82,7 @@
 ## Deployment Steps
 
 ### Step 1: Database Migrations ⚠️ IMPORTANT
+
 ```sql
 -- Execute in order (in Supabase SQL Editor or via terminal)
 1. Run: scripts/014_teacher_expected_time_late_reason.sql
@@ -81,6 +90,7 @@
 ```
 
 ### Step 2: Code Deployment
+
 ```bash
 # Push code to production
 git add .
@@ -93,6 +103,7 @@ npm start
 ```
 
 ### Step 3: Revalidate Cache
+
 ```bash
 # Clear Next.js cache
 rm -rf .next
@@ -102,6 +113,7 @@ npm run build
 ```
 
 ### Step 4: Verification
+
 - [ ] Open admin panel
 - [ ] Go to Teachers section
 - [ ] Create/Edit a teacher
@@ -117,6 +129,7 @@ npm run build
 ## Post-Deployment Checklist
 
 ### Functionality Testing
+
 - [ ] Create new teacher with expected_time
 - [ ] Edit existing teacher, set expected_time
 - [ ] Display expected_time on teacher card
@@ -129,6 +142,7 @@ npm run build
 - [ ] Clear expected_time, verify no late detection
 
 ### UI/UX Verification
+
 - [ ] Time input field appears in modal
 - [ ] Expected time displays on card correctly
 - [ ] Orange warning shows in admin modal
@@ -140,6 +154,7 @@ npm run build
 - [ ] Dark mode displays correctly
 
 ### Edge Cases
+
 - [ ] No expected_time set → Attendance marked present (green)
 - [ ] Invalid time format ignored gracefully
 - [ ] Future dated attendance works
@@ -150,6 +165,7 @@ npm run build
 - [ ] Timezone calculations correct
 
 ### Database Verification
+
 ```sql
 -- Run these queries to verify data
 SELECT * FROM profiles WHERE role = 'teacher' LIMIT 5;
@@ -163,6 +179,7 @@ SELECT COUNT(*) FROM teacher_attendance WHERE is_late = true;
 ```
 
 ### Performance Check
+
 - [ ] Page load time acceptable
 - [ ] No database query timeouts
 - [ ] Attendance marking completes quickly
@@ -171,6 +188,7 @@ SELECT COUNT(*) FROM teacher_attendance WHERE is_late = true;
 - [ ] No memory leaks detected
 
 ### Browser Compatibility
+
 - [ ] Chrome latest version ✓
 - [ ] Firefox latest version ✓
 - [ ] Safari latest version ✓
@@ -182,6 +200,7 @@ SELECT COUNT(*) FROM teacher_attendance WHERE is_late = true;
 If issues occur, follow these steps:
 
 ### Quick Rollback (Code only)
+
 ```bash
 git revert HEAD
 npm run build
@@ -189,9 +208,10 @@ npm start
 ```
 
 ### Database Rollback (if needed)
+
 ```sql
 -- Drop new columns (WARNING: data loss)
-ALTER TABLE teacher_attendance 
+ALTER TABLE teacher_attendance
 DROP COLUMN IF EXISTS expected_time,
 DROP COLUMN IF EXISTS is_late,
 DROP COLUMN IF EXISTS late_reason;
@@ -223,28 +243,36 @@ DROP COLUMN IF EXISTS expected_time;
 ## Support & Troubleshooting
 
 ### Issue: Expected time not showing on card
-**Solution:** 
+
+**Solution:**
+
 1. Verify migration 015 ran successfully
 2. Refresh page cache
 3. Check browser DevTools for errors
 4. Verify teacher has expected_time value
 
 ### Issue: Late modal not appearing
+
 **Solution:**
+
 1. Check teacher has expected_time set
 2. Verify current time is > expected + 15 min
 3. Check console for JavaScript errors
 4. Verify isAttendanceLate() function working
 
 ### Issue: Reason not saving
+
 **Solution:**
+
 1. Verify late reason text is not empty
 2. Check network request in DevTools
 3. Verify updateLateReason() response
 4. Check database permissions
 
 ### Issue: Orange color not showing
+
 **Solution:**
+
 1. Clear browser cache completely
 2. Check CSS is loading (DevTools Network tab)
 3. Verify is_late value in database
@@ -262,6 +290,7 @@ DROP COLUMN IF EXISTS expected_time;
 ## Contact & Support
 
 For issues or questions:
+
 1. Check LATE_ATTENDANCE_QUICK_REFERENCE.md
 2. Review LATE_ATTENDANCE_INTEGRATION.md
 3. Check LATE_ATTENDANCE_IMPLEMENTATION.md
@@ -279,9 +308,9 @@ For issues or questions:
 - [ ] Documentation updated
 - [ ] Team notified of changes
 
-**Deployment Date:** _______________  
-**Deployed By:** _______________  
-**Verified By:** _______________
+**Deployment Date:** ******\_\_\_******  
+**Deployed By:** ******\_\_\_******  
+**Verified By:** ******\_\_\_******
 
 ---
 

@@ -69,7 +69,6 @@ export function TeacherSalaryCard({
     );
   }, [assignedClasses, teacher.name]);
 
-
   return (
     <Card className="p-6 flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
@@ -83,7 +82,12 @@ export function TeacherSalaryCard({
           )}
           {teacher.joining_date ? (
             <p className="text-xs text-muted-foreground mt-1">
-              Joined: {new Date(teacher.joining_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+              Joined:{" "}
+              {new Date(teacher.joining_date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground mt-1">Joined: N/A</p>
@@ -93,7 +97,9 @@ export function TeacherSalaryCard({
               Arrival Time: {formatTo12Hour(teacher.expected_time)}
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground mt-1">Expected Time: N/A</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Expected Time: N/A
+            </p>
           )}
         </div>
         <div

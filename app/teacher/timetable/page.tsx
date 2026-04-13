@@ -36,11 +36,15 @@ const DAYS = [
   { label: "Saturday", value: 6 },
 ];
 const TIME_SLOTS = [
-  "15:00", "15:30",
-  "16:00", "16:30",
-  "17:00", "17:30",
-  "18:00", "18:30",
-  "19:00"
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
 ];
 
 const formatTo12Hour = (time: string) => {
@@ -97,7 +101,7 @@ export default function TeacherTimetablePage() {
       setTeacherName(user.name || "Teacher");
 
       const response = await fetch(`/api/timetable?teacher_id=${user.id}`);
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch timetable");
       }
@@ -132,7 +136,7 @@ export default function TeacherTimetablePage() {
   };
 
   const getTimetableGrid = () => {
-    const filtered = timetable.filter(entry => {
+    const filtered = timetable.filter((entry) => {
       if (filterClass !== "all" && entry.class_id !== filterClass) return false;
       if (filterDay !== "all" && entry.day_of_week !== filterDay) return false;
       if (filterTime !== "all" && entry.start_time !== filterTime) return false;
@@ -145,7 +149,7 @@ export default function TeacherTimetablePage() {
       TIME_SLOTS.forEach((time) => {
         const key = `${value}-${time}`;
         grid[key] = filtered.filter(
-          (e) => e.day_of_week === value && e.start_time === time
+          (e) => e.day_of_week === value && e.start_time === time,
         );
       });
     });
@@ -174,7 +178,9 @@ export default function TeacherTimetablePage() {
           <div className="flex items-center gap-3">
             <Calendar className="w-8 h-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">My Timetable</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                My Timetable
+              </h1>
               <p className="text-muted-foreground mt-1">
                 Your weekly lecture schedule
               </p>
@@ -192,7 +198,7 @@ export default function TeacherTimetablePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Classes</SelectItem>
-                    {classes.map(cls => (
+                    {classes.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
                       </SelectItem>
@@ -203,9 +209,11 @@ export default function TeacherTimetablePage() {
 
               <div className="space-y-2">
                 <Label>Filter by Day</Label>
-                <Select 
-                  value={filterDay.toString()} 
-                  onValueChange={(val) => setFilterDay(val === "all" ? "all" : parseInt(val))}
+                <Select
+                  value={filterDay.toString()}
+                  onValueChange={(val) =>
+                    setFilterDay(val === "all" ? "all" : parseInt(val))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -229,7 +237,7 @@ export default function TeacherTimetablePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Times</SelectItem>
-                    {TIME_SLOTS.map(time => (
+                    {TIME_SLOTS.map((time) => (
                       <SelectItem key={time} value={time}>
                         {formatTo12Hour(time)}
                       </SelectItem>
@@ -267,7 +275,7 @@ export default function TeacherTimetablePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {TIME_SLOTS.map(time => (
+                    {TIME_SLOTS.map((time) => (
                       <tr key={time}>
                         <td className="border border-border bg-secondary p-2 text-sm font-medium sticky left-0 z-10">
                           {formatTo12Hour(time)}
@@ -287,7 +295,7 @@ export default function TeacherTimetablePage() {
                                   className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-950 border-l-4 border-blue-500 rounded p-3 shadow-sm mb-2"
                                 >
                                   <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                                   Class: {entry.class_name}
+                                    Class: {entry.class_name}
                                   </div>
                                   {entry.teacher_name && (
                                     <div className="text-sm text-blue-800 dark:text-blue-200 mb-1">
@@ -299,7 +307,8 @@ export default function TeacherTimetablePage() {
                                   </div>
                                   <div className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
-                                    {formatTo12Hour(entry.start_time)} - {formatTo12Hour(entry.end_time)}
+                                    {formatTo12Hour(entry.start_time)} -{" "}
+                                    {formatTo12Hour(entry.end_time)}
                                   </div>
                                   {entry.room_number && (
                                     <div className="text-xs text-blue-500 dark:text-blue-500 mt-1">
@@ -326,7 +335,9 @@ export default function TeacherTimetablePage() {
             </h3>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
               <li>• Your complete weekly lecture schedule is shown above</li>
-              <li>• Each cell shows the class, subject, time, and room number</li>
+              <li>
+                • Each cell shows the class, subject, time, and room number
+              </li>
               <li>• Empty cells indicate free periods</li>
               <li>• Contact admin if you need changes to your timetable</li>
             </ul>

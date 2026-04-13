@@ -183,7 +183,8 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         setSubjects(subjectsArray);
 
         const preferredSubject =
-          defaultSubjectId && subjectsArray.some((s) => s.id === defaultSubjectId)
+          defaultSubjectId &&
+          subjectsArray.some((s) => s.id === defaultSubjectId)
             ? defaultSubjectId
             : subjectsArray[0]?.id || "";
 

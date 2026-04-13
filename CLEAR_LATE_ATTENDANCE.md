@@ -7,8 +7,8 @@
 ### Option 1: صرف "late" status والے کو remove کریں
 
 ```sql
-DELETE FROM student_attendance 
-WHERE 
+DELETE FROM student_attendance
+WHERE
   status = 'late'
   AND date = CURRENT_DATE
 LIMIT 1;
@@ -17,8 +17,8 @@ LIMIT 1;
 ### Option 2: اگر معلوم ہے student کا نام
 
 ```sql
-DELETE FROM student_attendance 
-WHERE 
+DELETE FROM student_attendance
+WHERE
   student_id = (SELECT id FROM students WHERE name ILIKE '%student_name%')
   AND status = 'late'
   AND date = '2026-01-31'
@@ -28,8 +28,8 @@ LIMIT 1;
 ### Option 3: اگر معلوم ہے student کا ID
 
 ```sql
-DELETE FROM student_attendance 
-WHERE 
+DELETE FROM student_attendance
+WHERE
   student_id = 'student_uuid_here'
   AND status = 'late'
   AND date = '2026-01-31'
@@ -51,7 +51,7 @@ LIMIT 1;
 ## Database میں سے data check کرنے کے لیے:
 
 ```sql
-SELECT 
+SELECT
   s.name as student_name,
   sa.date,
   sa.status,
@@ -77,9 +77,9 @@ ORDER BY sa.created_at DESC;
 ## اگر صرف "late" status کو "present" میں change کرنا ہے تو:
 
 ```sql
-UPDATE student_attendance 
+UPDATE student_attendance
 SET status = 'present'
-WHERE 
+WHERE
   student_id = 'student_uuid_here'
   AND status = 'late'
   AND date = '2026-01-31';

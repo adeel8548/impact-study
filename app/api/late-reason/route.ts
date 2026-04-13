@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
 
     if (!recordId || !table || !reason) {
       return NextResponse.json(
-        { error: "Missing required fields: recordId, table, reason", success: false },
+        {
+          error: "Missing required fields: recordId, table, reason",
+          success: false,
+        },
         { status: 400 },
       );
     }

@@ -14,7 +14,7 @@ interface ChatNotificationOptions {
 
 export function useChatNotifications(
   conversationId: string,
-  options: ChatNotificationOptions = {}
+  options: ChatNotificationOptions = {},
 ) {
   const { onNewMessage, soundEnabled = true, userId } = options;
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -24,9 +24,10 @@ export function useChatNotifications(
   // Initialize audio context on user interaction
   const initAudioContext = useCallback(() => {
     if (isInitializedRef.current) return;
-    
+
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContext =
+        window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
 
       if (!audioContextRef.current) {
@@ -117,10 +118,7 @@ export function useChatNotifications(
       navigator.serviceWorker
         .register("/firebase-messaging-sw.js")
         .then((registration) => {
-          console.log(
-            "Service Worker registered successfully:",
-            registration
-          );
+          console.log("Service Worker registered successfully:", registration);
         })
         .catch((error) => {
           console.log("Service Worker registration failed:", error);
@@ -147,7 +145,7 @@ export function useChatNotifications(
       // Show toast notification
       if (payload.notification) {
         toast.success(
-          `${payload.notification.title}: ${payload.notification.body}`
+          `${payload.notification.title}: ${payload.notification.body}`,
         );
       }
 
@@ -173,16 +171,18 @@ export function useChatNotifications(
       lastMessageIdRef.current = last.id;
 
       const uid = userId || localStorage.getItem("currentUserId");
-      
+
       // Play sound if message is from someone else, regardless of page focus
       if (soundEnabled && last.senderId !== uid) {
         playNotificationSound();
         const text = (last as any).text || "New message";
         const sender = (last as any).senderName || "Message";
-        
+
         // Show toast only if page is focused
         if (!document.hidden) {
-          toast.info(`${sender}: ${text.substring(0, 50)}${text.length > 50 ? "..." : ""}`);
+          toast.info(
+            `${sender}: ${text.substring(0, 50)}${text.length > 50 ? "..." : ""}`,
+          );
         }
       }
     });
@@ -209,7 +209,11 @@ export function useChatNotifications(
 
       // Resume if suspended
       if (audioContext.state === "suspended") {
-        audioContext.resume().catch(err => console.error("Failed to resume audio context:", err));
+        audioContext
+          .resume()
+          .catch((err) =>
+            console.error("Failed to resume audio context:", err),
+          );
       }
 
       const currentTime = audioContext.currentTime;

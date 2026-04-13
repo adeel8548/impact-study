@@ -10,7 +10,7 @@
    - Conversation operations (getOrCreateConversation, subscribeToAdminConversations, subscribeToTeacherConversations)
    - Message operations (sendMessage, subscribeToMessages, markConversationAsRead)
    - Broadcast functionality (broadcastMessage - send to multiple teachers)
-   ✓ Full TypeScript types included
+     ✓ Full TypeScript types included
 
 2. Updated Chat Component  
    📄 components/chat/ChatWindow.tsx
@@ -19,7 +19,7 @@
    - Message input with Enter-to-send
    - Auto-mark-as-read on conversation open
    - Proper loading and error states
-   ✓ Works with Firebase Firestore directly
+     ✓ Works with Firebase Firestore directly
 
 3. Firestore Security Rules
    📄 scripts/firestore-security-rules.txt
@@ -27,13 +27,13 @@
    - Role-based access control (admin/teacher)
    - Message privacy enforcement
    - Read-status update permissions
-   ✓ Ready to deploy to Firebase Console
+     ✓ Ready to deploy to Firebase Console
 
 4. Environment Template
    📄 .env.local.example
-   - All NEXT_PUBLIC_FIREBASE_* variables
-   - All FIREBASE_* admin SDK variables
-   ✓ Secure template format
+   - All NEXT*PUBLIC_FIREBASE*\* variables
+   - All FIREBASE\_\* admin SDK variables
+     ✓ Secure template format
 
 5. Implementation Files (Ready to Copy)
    📄 ADMIN_CHAT_IMPLEMENTATION.tsx
@@ -115,6 +115,7 @@
 
 STEP 1: Firebase Setup
 ─────────────────────
+
 1. Go to https://console.firebase.google.com
 2. Create new project (or use existing)
 3. Enable Firestore Database (production mode)
@@ -123,6 +124,7 @@ STEP 1: Firebase Setup
 
 STEP 2: Deploy Security Rules
 ──────────────────────────────
+
 1. Firebase Console > Firestore > Rules tab
 2. Copy entire content from scripts/firestore-security-rules.txt
 3. Paste into Rules editor
@@ -144,60 +146,61 @@ Then restart: npm run dev
 📂 FILE STRUCTURE AFTER SETUP
 
 app/
-├─ admin/chat/page.tsx              ← Copy ADMIN_CHAT_IMPLEMENTATION.tsx here
-├─ teacher/chat/page.tsx            ← Copy TEACHER_CHAT_IMPLEMENTATION.tsx here
+├─ admin/chat/page.tsx ← Copy ADMIN_CHAT_IMPLEMENTATION.tsx here
+├─ teacher/chat/page.tsx ← Copy TEACHER_CHAT_IMPLEMENTATION.tsx here
 └─ api/firebase/custom-token/
-   └─ route.ts                       (Optional - for custom tokens)
+└─ route.ts (Optional - for custom tokens)
 
 components/chat/
-├─ ChatWindow.tsx                    ✅ Already updated
+├─ ChatWindow.tsx ✅ Already updated
 └─ [other components]
 
 lib/
-├─ firestore-helpers.ts              ✅ Created - Core functionality
-├─ firebase.ts                       ✅ Should exist
-└─ firebaseAdmin.ts                  (Optional - for backend)
+├─ firestore-helpers.ts ✅ Created - Core functionality
+├─ firebase.ts ✅ Should exist
+└─ firebaseAdmin.ts (Optional - for backend)
 
 scripts/
-└─ firestore-security-rules.txt      ✅ Ready to deploy
+└─ firestore-security-rules.txt ✅ Ready to deploy
 
-.env.local                           ← Create from .env.local.example
-.env.local.example                   ✅ Template provided
+.env.local ← Create from .env.local.example
+.env.local.example ✅ Template provided
 
 ═══════════════════════════════════════════════════════════════
 
 🎯 KEY FEATURES
 
 ✅ Multi-Select Broadcast
-   Admin selects multiple teachers → One message → Many conversations
-   Each teacher sees in their conversation list
+Admin selects multiple teachers → One message → Many conversations
+Each teacher sees in their conversation list
 
 ✅ Real-Time Updates  
-   Messages appear instantly (zero delay)
-   Uses Firestore onSnapshot subscriptions
+ Messages appear instantly (zero delay)
+Uses Firestore onSnapshot subscriptions
 
 ✅ Message Read Status
-   Auto-marks as read when conversation opened
-   Tracks which messages are unread
+Auto-marks as read when conversation opened
+Tracks which messages are unread
 
 ✅ Message Persistence
-   All messages stored in Firestore
-   Survive page refreshes/reloads
+All messages stored in Firestore
+Survive page refreshes/reloads
 
 ✅ Security
-   Firestore rules prevent unauthorized access
-   Only participants can see messages
-   Users can only update their own read status
+Firestore rules prevent unauthorized access
+Only participants can see messages
+Users can only update their own read status
 
 ✅ Responsive Design
-   Mobile-friendly layout
-   Works on all screen sizes
+Mobile-friendly layout
+Works on all screen sizes
 
 ═══════════════════════════════════════════════════════════════
 
 🔧 TECHNICAL DETAILS
 
 Architecture:
+
 - Frontend: Next.js 16 + React 19 + TypeScript
 - Auth: Supabase Auth (email/password)
 - Database: Firebase Firestore
@@ -205,6 +208,7 @@ Architecture:
 - Styling: Tailwind CSS + shadcn/ui
 
 Data Flow:
+
 1. User logs in via Supabase
 2. Chat data stored in Firebase Firestore
 3. Real-time sync via onSnapshot listeners
@@ -212,15 +216,11 @@ Data Flow:
 
 Firestore Structure:
 users/
-  {uid}/
-    - uid, name, email, role, fcmToken, updatedAt
+{uid}/ - uid, name, email, role, fcmToken, updatedAt
 
 conversations/
-  {convId}/
-    - adminId, teacherId, lastMessage, updatedAt
-    - messages/ (subcollection)
-      {msgId}/
-        - senderId, text, createdAt, isRead
+{convId}/ - adminId, teacherId, lastMessage, updatedAt - messages/ (subcollection)
+{msgId}/ - senderId, text, createdAt, isRead
 
 Functions Available:
 setFirebaseUser(user)
@@ -242,6 +242,7 @@ broadcastMessage(adminId, teacherIds, text)
 ✨ BONUS FEATURES (Easy to Add)
 
 Optional Enhancements:
+
 - [ ] Push notifications (FCM + service worker)
 - [ ] Typing indicators
 - [ ] Online/offline status
@@ -291,11 +292,12 @@ Next: Just configure Firebase and copy the files!
 📚 DOCUMENTATION FILES
 
 For more details, read:
-- CHAT_SYSTEM_IMPLEMENTATION.md     → Architecture & complete guide
-- IMPLEMENTATION_READY.md            → Setup instructions
-- COMPLETION_CHECKLIST.md            → All 9 requirements verified
-- VISUAL_GUIDE.md                    → Diagrams & layouts
-- This file (README)                 → Quick overview
+
+- CHAT_SYSTEM_IMPLEMENTATION.md → Architecture & complete guide
+- IMPLEMENTATION_READY.md → Setup instructions
+- COMPLETION_CHECKLIST.md → All 9 requirements verified
+- VISUAL_GUIDE.md → Diagrams & layouts
+- This file (README) → Quick overview
 
 ═══════════════════════════════════════════════════════════════
 

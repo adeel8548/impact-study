@@ -39,10 +39,12 @@ export async function syncTeacherToFirebase(teacherId: string) {
         lastSyncedAt: new Date(),
         isActive: true,
       },
-      { merge: true }
+      { merge: true },
     );
 
-    console.log(`✅ Synced teacher ${teacher.id} (${teacher.name}) to Firebase`);
+    console.log(
+      `✅ Synced teacher ${teacher.id} (${teacher.name}) to Firebase`,
+    );
     return { success: true, teacher: teacher.name };
   } catch (error) {
     console.error("Failed to sync teacher:", error);
@@ -57,9 +59,10 @@ export async function syncAllTeachersToFirebase() {
   // Check if Firebase Admin is configured
   if (!isFirebaseAdminReady() || !db) {
     console.warn("⚠️ Firebase Admin not configured, skipping sync");
-    return { 
-      success: false, 
-      error: "Firebase Admin SDK not configured. Please follow FIREBASE_ADMIN_SETUP.md" 
+    return {
+      success: false,
+      error:
+        "Firebase Admin SDK not configured. Please follow FIREBASE_ADMIN_SETUP.md",
     };
   }
 
@@ -96,7 +99,7 @@ export async function syncAllTeachersToFirebase() {
             lastSyncedAt: new Date(),
             isActive: true,
           },
-          { merge: true }
+          { merge: true },
         );
         successCount++;
       } catch (err) {
@@ -125,7 +128,10 @@ export async function deleteTeacherFromFirebase(teacherId: string) {
   // Check if Firebase Admin is configured
   if (!isFirebaseAdminReady() || !db) {
     console.warn("⚠️ Firebase Admin not configured, skipping teacher deletion");
-    return { success: true, message: "Firebase delete skipped (not configured)" };
+    return {
+      success: true,
+      message: "Firebase delete skipped (not configured)",
+    };
   }
 
   try {

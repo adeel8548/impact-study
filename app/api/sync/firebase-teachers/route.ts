@@ -6,10 +6,10 @@ import { db as firestore, isFirebaseAdminReady } from "@/lib/firebase-admin";
  * Sync teacher to Firebase chat_users collection
  */
 async function syncTeacherToFirebase(teacherId: string, teacherData: any) {
-    if (!isFirebaseAdminReady()) {
-      console.warn("⚠️ Firebase Admin not configured, skipping teacher sync");
-      return { success: true, skipped: true };
-    }
+  if (!isFirebaseAdminReady()) {
+    console.warn("⚠️ Firebase Admin not configured, skipping teacher sync");
+    return { success: true, skipped: true };
+  }
 
   try {
     const chatUserRef = firestore.collection("chat_users").doc(teacherId);
@@ -26,7 +26,7 @@ async function syncTeacherToFirebase(teacherId: string, teacherData: any) {
     await chatUserRef.set(chatUserDoc, { merge: true });
 
     console.log(
-      `✅ Synced teacher ${teacherId} (${teacherData.name}) to Firebase`
+      `✅ Synced teacher ${teacherId} (${teacherData.name}) to Firebase`,
     );
     return { success: true, teacher: teacherId };
   } catch (error) {
@@ -39,10 +39,10 @@ async function syncTeacherToFirebase(teacherId: string, teacherData: any) {
  * Delete teacher from Firebase and archive conversations
  */
 async function deleteTeacherFromFirebase(teacherId: string) {
-    if (!isFirebaseAdminReady()) {
-      console.warn("⚠️ Firebase Admin not configured, skipping teacher deletion");
-      return { success: true, skipped: true };
-    }
+  if (!isFirebaseAdminReady()) {
+    console.warn("⚠️ Firebase Admin not configured, skipping teacher deletion");
+    return { success: true, skipped: true };
+  }
 
   try {
     const batch = firestore.batch();
@@ -68,9 +68,13 @@ async function deleteTeacherFromFirebase(teacherId: string) {
     await batch.commit();
 
     console.log(
-      `✅ Deleted teacher ${teacherId} from Firebase and archived conversations`
+      `✅ Deleted teacher ${teacherId} from Firebase and archived conversations`,
     );
-    return { success: true, teacher: teacherId, conversationsArchived: snapshot.size };
+    return {
+      success: true,
+      teacher: teacherId,
+      conversationsArchived: snapshot.size,
+    };
   } catch (error) {
     console.error(`❌ Failed to delete teacher ${teacherId}:`, error);
     throw error;
@@ -81,10 +85,10 @@ async function deleteTeacherFromFirebase(teacherId: string) {
  * Sync all teachers from Supabase to Firebase
  */
 async function syncAllTeachers() {
-    if (!isFirebaseAdminReady()) {
-      console.warn("⚠️ Firebase Admin not configured, skipping bulk sync");
-      return { success: true, skipped: true, count: 0 };
-    }
+  if (!isFirebaseAdminReady()) {
+    console.warn("⚠️ Firebase Admin not configured, skipping bulk sync");
+    return { success: true, skipped: true, count: 0 };
+  }
 
   try {
     const supabase = await createAdminClient();
@@ -124,7 +128,9 @@ async function syncAllTeachers() {
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`Sync complete: ${successCount} successful, ${failureCount} failed`);
+    console.log(
+      `Sync complete: ${successCount} successful, ${failureCount} failed`,
+    );
     return result;
   } catch (error) {
     console.error("Failed to sync all teachers:", error);
@@ -160,7 +166,7 @@ export async function POST(request: NextRequest) {
       if (error || !teacher) {
         return NextResponse.json(
           { error: "Teacher not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -172,7 +178,7 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json(
         { error: "Invalid action or missing teacherId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
   } catch (error) {
@@ -182,7 +188,7 @@ export async function POST(request: NextRequest) {
         error: error instanceof Error ? error.message : "Sync failed",
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -216,7 +222,7 @@ export async function GET(request: NextRequest) {
         status: "error",
         error: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -14,7 +14,11 @@ export async function POST(
     const { id } = await context.params;
     const teacherId = String(id || "").trim();
 
-    if (!teacherId || teacherId === "undefined" || !UUID_PATTERN.test(teacherId)) {
+    if (
+      !teacherId ||
+      teacherId === "undefined" ||
+      !UUID_PATTERN.test(teacherId)
+    ) {
       return NextResponse.json(
         { success: false, error: "Invalid teacher id" },
         { status: 400 },
@@ -27,7 +31,10 @@ export async function POST(
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     const { data: currentProfile, error: profileError } = await supabase

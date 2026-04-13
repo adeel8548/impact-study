@@ -1,18 +1,21 @@
 # Firebase - Supabase Sync Setup Guide
 
 ## Overview
+
 This setup syncs Supabase teachers with Firebase Firestore chat_users and conversations in real-time.
 
 ## Components
 
 ### 1. Database Triggers (Supabase SQL)
+
 - **File**: `supabase/migrations/sync_teachers_to_firebase.sql`
-- **What it does**: 
+- **What it does**:
   - Triggers on teacher INSERT → logs sync action and notifies
   - Triggers on teacher DELETE → logs sync action and notifies
   - Creates `firebase_sync_log` table to track sync status
 
 ### 2. Edge Function (TypeScript - Deno)
+
 - **File**: `supabase/functions/sync-teachers-firebase/index.ts`
 - **What it does**:
   - Receives sync events from database triggers
@@ -21,6 +24,7 @@ This setup syncs Supabase teachers with Firebase Firestore chat_users and conver
   - Archives conversations instead of deleting them
 
 ### 3. API Route (Next.js Backend)
+
 - **File**: `app/api/sync/firebase-teachers/route.ts`
 - **What it does**:
   - POST: Manually trigger sync or sync specific teacher
@@ -30,6 +34,7 @@ This setup syncs Supabase teachers with Firebase Firestore chat_users and conver
 ## Environment Setup
 
 ### 1. Firebase Service Account Key
+
 ```bash
 # Get from Firebase Console → Project Settings → Service Accounts
 # Copy the entire JSON and add to .env.local:
@@ -52,6 +57,7 @@ FIREBASE_SYNC_SECRET=your-secret-key-for-api-calls
 ```
 
 ### 2. Supabase Environment
+
 ```bash
 # Already in .env.local (from Next.js):
 NEXT_PUBLIC_SUPABASE_URL=your-url
@@ -59,7 +65,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key
 ```
 
 ### 3. Supabase Edge Function Secrets
+
 Deploy the Edge Function with environment variables:
+
 ```bash
 # Add these to Supabase Edge Function secrets
 supabase secrets set FIREBASE_SERVICE_ACCOUNT='{"type":"service_account",...}'
@@ -69,6 +77,7 @@ supabase secrets set FIREBASE_PROJECT_ID=your-project-id
 ## Deployment Steps
 
 ### Step 1: Run SQL Migrations
+
 ```bash
 # Apply the database schema
 supabase migration up
@@ -77,6 +86,7 @@ supabase migration up
 ```
 
 ### Step 2: Deploy Edge Function (Optional)
+
 ```bash
 # Push to Supabase
 supabase functions deploy sync-teachers-firebase
@@ -89,6 +99,7 @@ curl -X POST https://your-project.supabase.co/functions/v1/sync-teachers-firebas
 ```
 
 ### Step 3: Start Next.js Backend
+
 ```bash
 # The API route will be available at:
 # POST /api/sync/firebase-teachers
@@ -98,6 +109,7 @@ curl -X POST https://your-project.supabase.co/functions/v1/sync-teachers-firebas
 ## Usage
 
 ### Manual Full Sync (via API)
+
 ```bash
 curl -X POST http://localhost:3000/api/sync/firebase-teachers \
   -H "x-sync-secret: your-secret-key" \
@@ -115,6 +127,7 @@ curl -X POST http://localhost:3000/api/sync/firebase-teachers \
 ```
 
 ### Sync Specific Teacher
+
 ```bash
 curl -X POST http://localhost:3000/api/sync/firebase-teachers \
   -H "x-sync-secret: your-secret-key" \
@@ -123,6 +136,7 @@ curl -X POST http://localhost:3000/api/sync/firebase-teachers \
 ```
 
 ### Delete Teacher from Firebase
+
 ```bash
 curl -X POST http://localhost:3000/api/sync/firebase-teachers \
   -H "x-sync-secret: your-secret-key" \
@@ -131,6 +145,7 @@ curl -X POST http://localhost:3000/api/sync/firebase-teachers \
 ```
 
 ### Check Sync Status
+
 ```bash
 curl http://localhost:3000/api/sync/firebase-teachers
 
@@ -145,6 +160,7 @@ curl http://localhost:3000/api/sync/firebase-teachers
 ## How It Works
 
 ### Flow 1: Teacher Added in Supabase
+
 ```
 1. Admin adds teacher via UI → Supabase INSERT
 2. Database trigger fires → logs sync action
@@ -155,6 +171,7 @@ curl http://localhost:3000/api/sync/firebase-teachers
 ```
 
 ### Flow 2: Teacher Deleted from Supabase
+
 ```
 1. Admin deletes teacher → Supabase DELETE
 2. Database trigger fires → logs sync action
@@ -168,17 +185,19 @@ curl http://localhost:3000/api/sync/firebase-teachers
 ## Error Handling
 
 ### Retry Failed Syncs
+
 ```sql
 -- Find failed syncs
 SELECT * FROM firebase_sync_log WHERE status = 'FAILED';
 
 -- View error details
-SELECT teacher_id, error_message FROM firebase_sync_log 
-WHERE status = 'FAILED' 
+SELECT teacher_id, error_message FROM firebase_sync_log
+WHERE status = 'FAILED'
 ORDER BY created_at DESC;
 ```
 
 ### Manual Recovery
+
 ```bash
 # Retry specific teacher sync
 curl -X POST http://localhost:3000/api/sync/firebase-teachers \
@@ -190,12 +209,13 @@ curl -X POST http://localhost:3000/api/sync/firebase-teachers \
 ## Monitoring
 
 ### Check Sync Logs
+
 ```sql
 -- View all sync activity
 SELECT * FROM firebase_sync_log ORDER BY created_at DESC LIMIT 20;
 
 -- Check success rate
-SELECT 
+SELECT
   action,
   status,
   COUNT(*) as count
@@ -203,13 +223,14 @@ FROM firebase_sync_log
 GROUP BY action, status;
 
 -- Find recent failures
-SELECT * FROM firebase_sync_log 
-WHERE status = 'FAILED' 
+SELECT * FROM firebase_sync_log
+WHERE status = 'FAILED'
   AND created_at > NOW() - INTERVAL '24 hours'
 ORDER BY created_at DESC;
 ```
 
 ### Firebase Console
+
 - Navigate to Firestore → Collections
 - Check `chat_users` collection for synced teachers
 - Check `conversations` collection for archived chats
@@ -233,7 +254,7 @@ service cloud.firestore {
       allow read: if request.auth.uid != null;
       allow write: if false; // Server-only
     }
-    
+
     // Allow user to read/write own conversations
     match /conversations/{conversationId} {
       allow read: if request.auth.uid in resource.data.participants;
@@ -246,18 +267,21 @@ service cloud.firestore {
 ## Troubleshooting
 
 ### Sync not happening
+
 1. Check `firebase_sync_log` for errors
 2. Verify Firebase Service Account is valid
 3. Check `FIREBASE_PROJECT_ID` is correct
 4. Ensure Supabase Edge Function has Firebase secrets
 
 ### Teachers not appearing in chat
+
 1. Check Firebase console → chat_users collection
 2. Verify IDs match between Supabase and Firebase
 3. Check Firestore rules allow reads for authenticated users
 4. Run manual sync: `{"action": "sync_all"}`
 
 ### Conversations not archiving
+
 1. Check conversations have `participants` array field
 2. Verify Firestore batch operations succeed
 3. Check error_message in firebase_sync_log

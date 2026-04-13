@@ -25,7 +25,10 @@ export function TeacherAssignedSubjects({
   assignments,
 }: TeacherAssignedSubjectsProps) {
   const grouped = useMemo(() => {
-    const map = new Map<string, { class_id: string; class_name: string; subjects: Assignment[] }>();
+    const map = new Map<
+      string,
+      { class_id: string; class_name: string; subjects: Assignment[] }
+    >();
     assignments.forEach((a) => {
       if (!map.has(a.class_id)) {
         map.set(a.class_id, {
@@ -96,7 +99,10 @@ export function TeacherAssignedSubjects({
         ))}
       </div>
 
-      <Dialog open={Boolean(selected)} onOpenChange={() => setSelectedClassId(null)}>
+      <Dialog
+        open={Boolean(selected)}
+        onOpenChange={() => setSelectedClassId(null)}
+      >
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle>
@@ -105,7 +111,9 @@ export function TeacherAssignedSubjects({
           </DialogHeader>
 
           {selected && selected.subjects.length === 0 && (
-            <p className="text-sm text-muted-foreground">No subjects assigned.</p>
+            <p className="text-sm text-muted-foreground">
+              No subjects assigned.
+            </p>
           )}
 
           {selected && selected.subjects.length > 0 && (
@@ -116,8 +124,12 @@ export function TeacherAssignedSubjects({
                   href={`/teacher/student-results?classId=${s.class_id}&subjectId=${s.subject_id}`}
                   className="flex items-center justify-between rounded border border-border px-3 py-2 hover:bg-secondary/60 transition-colors"
                 >
-                  <span className="text-sm text-foreground">{s.subject_name}</span>
-                  <span className="text-xs text-muted-foreground">View results</span>
+                  <span className="text-sm text-foreground">
+                    {s.subject_name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    View results
+                  </span>
                 </Link>
               ))}
             </div>

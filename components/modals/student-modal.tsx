@@ -54,9 +54,7 @@ export function StudentModal({
 
   // <-- Add this useEffect here
   useEffect(() => {
-    const fullFeeAmount = student?.full_fee
-      ? student.full_fee.toString()
-      : "";
+    const fullFeeAmount = student?.full_fee ? student.full_fee.toString() : "";
     setFormData({
       name: student?.name || "",
       roll_number: student?.roll_number || "",
@@ -260,7 +258,8 @@ export function StudentModal({
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              This is the base monthly fee. System will auto-calculate partial fee for joining month.
+              This is the base monthly fee. System will auto-calculate partial
+              fee for joining month.
             </p>
           </div>
 
@@ -276,7 +275,8 @@ export function StudentModal({
               }
             />
             <p className="text-xs text-muted-foreground mt-1">
-              If joining mid-month, partial fee will be calculated automatically.
+              If joining mid-month, partial fee will be calculated
+              automatically.
             </p>
           </div>
 

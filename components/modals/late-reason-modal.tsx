@@ -61,7 +61,9 @@ export function LateReasonModal({
 
   const handleSubmit = async () => {
     if (!canSubmit && shouldRequireReason) {
-      toast.error(`Please provide at least ${MIN_CHARS} characters for the reason`);
+      toast.error(
+        `Please provide at least ${MIN_CHARS} characters for the reason`,
+      );
       return;
     }
 
@@ -82,7 +84,9 @@ export function LateReasonModal({
   const handleOpenChange = (newOpen: boolean) => {
     // Prevent closing if forceClose is true and not enough characters
     if (forceClose && newOpen === false && (reason?.length ?? 0) < MIN_CHARS) {
-      toast.error(`Please provide at least ${MIN_CHARS} characters for the reason before closing`);
+      toast.error(
+        `Please provide at least ${MIN_CHARS} characters for the reason before closing`,
+      );
       return;
     }
     onOpenChange(newOpen);
@@ -94,23 +98,27 @@ export function LateReasonModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-500" />
-            {currentReason ? "View/Edit Late Reason" : "Late Attendance Recorded"}
+            {currentReason
+              ? "View/Edit Late Reason"
+              : "Late Attendance Recorded"}
           </DialogTitle>
           <DialogDescription>
             {currentReason ? (
               <>
-                {isAdmin ? `${teacherName}'s` : "Your"} late attendance reason for {attendanceDate}.
-                You can view or update the reason below.
+                {isAdmin ? `${teacherName}'s` : "Your"} late attendance reason
+                for {attendanceDate}. You can view or update the reason below.
               </>
             ) : isAdmin ? (
               <>
-                {teacherName}'s attendance on {attendanceDate} was marked more than 15
-                minutes after the expected time. Please provide a reason for this late marking.
+                {teacherName}'s attendance on {attendanceDate} was marked more
+                than 15 minutes after the expected time. Please provide a reason
+                for this late marking.
               </>
             ) : (
               <>
-                Your attendance on {attendanceDate} was marked late (more than 15 minutes
-                after expected time). Please provide a reason for your late attendance.
+                Your attendance on {attendanceDate} was marked late (more than
+                15 minutes after expected time). Please provide a reason for
+                your late attendance.
               </>
             )}
           </DialogDescription>
@@ -121,7 +129,11 @@ export function LateReasonModal({
             <Label htmlFor="reason">Reason for Late Attendance *</Label>
             <Textarea
               id="reason"
-              placeholder={readOnly ? "No reason provided" : "Explain why the attendance was marked late..."}
+              placeholder={
+                readOnly
+                  ? "No reason provided"
+                  : "Explain why the attendance was marked late..."
+              }
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               disabled={isSaving || readOnly}
@@ -133,8 +145,12 @@ export function LateReasonModal({
                 {reason.length > 0 && `${reason.length} characters`}
               </p>
               {forceClose && (
-                <p className={`text-xs font-semibold ${reason.length >= MIN_CHARS ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                  {reason.length < MIN_CHARS ? `Minimum ${MIN_CHARS} characters required` : "✓ Ready to submit"}
+                <p
+                  className={`text-xs font-semibold ${reason.length >= MIN_CHARS ? "text-green-600 dark:text-green-400" : "text-orange-600 dark:text-orange-400"}`}
+                >
+                  {reason.length < MIN_CHARS
+                    ? `Minimum ${MIN_CHARS} characters required`
+                    : "✓ Ready to submit"}
                 </p>
               )}
             </div>
@@ -143,10 +159,18 @@ export function LateReasonModal({
           {!readOnly && (
             <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
               <p className="text-sm text-orange-800 dark:text-orange-200">
-                <strong>Note:</strong> Late attendance (marked after 15 minutes of expected
-                time) will be recorded as "Present - Late"{shouldRequireReason ? " with the reason you provide." : "."}
-                {!shouldRequireReason && " You can close the dialog without entering a reason."}
-                {forceClose && !isAdmin && <> You must provide at least {MIN_CHARS} characters before submitting.</>}
+                <strong>Note:</strong> Late attendance (marked after 15 minutes
+                of expected time) will be recorded as "Present - Late"
+                {shouldRequireReason ? " with the reason you provide." : "."}
+                {!shouldRequireReason &&
+                  " You can close the dialog without entering a reason."}
+                {forceClose && !isAdmin && (
+                  <>
+                    {" "}
+                    You must provide at least {MIN_CHARS} characters before
+                    submitting.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -157,7 +181,11 @@ export function LateReasonModal({
               onClick={() => handleOpenChange(false)}
               disabled={isSaving || !canClose}
               className={!canClose ? "opacity-50 cursor-not-allowed" : ""}
-              title={!canClose ? `Please add at least ${MIN_CHARS} characters to the reason` : ""}
+              title={
+                !canClose
+                  ? `Please add at least ${MIN_CHARS} characters to the reason`
+                  : ""
+              }
             >
               {readOnly ? "Close" : "Cancel"}
             </Button>

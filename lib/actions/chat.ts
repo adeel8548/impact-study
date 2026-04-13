@@ -31,7 +31,9 @@ export async function fetchMessages(conversationId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("messages")
-    .select("id, message, sender_id, is_read, created_at, sender:profiles(name)")
+    .select(
+      "id, message, sender_id, is_read, created_at, sender:profiles(name)",
+    )
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
   if (error) return { messages: [], error: error.message };
@@ -56,7 +58,11 @@ export async function sendMessageAction(params: {
 
   const { error, data } = await supabase
     .from("messages")
-    .insert({ conversation_id: conversationId, sender_id: senderId, message: trimmed })
+    .insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      message: trimmed,
+    })
     .select()
     .single();
 
@@ -66,7 +72,10 @@ export async function sendMessageAction(params: {
   return { message: data, error: null };
 }
 
-export async function markConversationRead(conversationId: string, readerId: string) {
+export async function markConversationRead(
+  conversationId: string,
+  readerId: string,
+) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("messages")

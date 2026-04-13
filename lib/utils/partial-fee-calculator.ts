@@ -1,7 +1,7 @@
 /**
  * Partial Fee Calculator Utility
  * Handles fee calculation for students joining mid-month
- * 
+ *
  * Rules:
  * 1. Partial fee only applies to the JOINING month
  * 2. All subsequent months use full fee
@@ -39,11 +39,10 @@ export function getDaysInMonth(year: number, month: number): number {
 export function calculatePayableDays(
   joiningDate: string | Date,
   month: number,
-  year: number
+  year: number,
 ): number {
-  const joinDate = typeof joiningDate === 'string' 
-    ? new Date(joiningDate) 
-    : joiningDate;
+  const joinDate =
+    typeof joiningDate === "string" ? new Date(joiningDate) : joiningDate;
 
   const joinMonth = joinDate.getMonth() + 1; // 0-indexed to 1-indexed
   const joinYear = joinDate.getFullYear();
@@ -66,13 +65,12 @@ export function calculatePayableDays(
 export function shouldApplyPartialFee(
   joiningDate: string | Date | null | undefined,
   targetMonth: number,
-  targetYear: number
+  targetYear: number,
 ): boolean {
   if (!joiningDate) return false;
 
-  const joinDate = typeof joiningDate === 'string' 
-    ? new Date(joiningDate) 
-    : joiningDate;
+  const joinDate =
+    typeof joiningDate === "string" ? new Date(joiningDate) : joiningDate;
 
   const joinMonth = joinDate.getMonth() + 1;
   const joinYear = joinDate.getFullYear();
@@ -81,11 +79,7 @@ export function shouldApplyPartialFee(
   // Partial fee only if:
   // 1. This is the joining month
   // 2. Student joined after the 1st
-  return (
-    joinMonth === targetMonth &&
-    joinYear === targetYear &&
-    joinDay > 1
-  );
+  return joinMonth === targetMonth && joinYear === targetYear && joinDay > 1;
 }
 
 /**
@@ -96,10 +90,10 @@ export function calculateFeeForMonth(
   fullFee: number,
   joiningDate: string | Date | null | undefined,
   targetMonth: number,
-  targetYear: number
+  targetYear: number,
 ): PartialFeeCalculation {
   const totalDaysInMonth = getDaysInMonth(targetYear, targetMonth);
-  
+
   // Default to full fee
   let result: PartialFeeCalculation = {
     isPartial: false,
@@ -119,7 +113,11 @@ export function calculateFeeForMonth(
   }
 
   // Calculate partial fee
-  const payableDays = calculatePayableDays(joiningDate!, targetMonth, targetYear);
+  const payableDays = calculatePayableDays(
+    joiningDate!,
+    targetMonth,
+    targetYear,
+  );
   const perDayFee = fullFee / totalDaysInMonth;
   const calculatedFee = parseFloat((perDayFee * payableDays).toFixed(2));
 
@@ -151,7 +149,7 @@ export function formatPartialFeeBreakdown(calc: PartialFeeCalculation): string {
     `Per Day Fee: Rs. ${calc.perDayFee.toFixed(2)}`,
     `Payable Days: ${calc.payableDays} (joined on ${calc.joiningDate.getDate()})`,
     `Calculated Fee: Rs. ${calc.perDayFee.toFixed(2)} × ${calc.payableDays} = Rs. ${calc.calculatedFee.toFixed(2)}`,
-  ].join('\n');
+  ].join("\n");
 }
 
 /**
@@ -162,41 +160,40 @@ export function validateJoiningDate(joiningDate: string | Date): {
   error?: string;
 } {
   try {
-    const date = typeof joiningDate === 'string' 
-      ? new Date(joiningDate) 
-      : joiningDate;
+    const date =
+      typeof joiningDate === "string" ? new Date(joiningDate) : joiningDate;
 
     if (isNaN(date.getTime())) {
-      return { valid: false, error: 'Invalid date format' };
+      return { valid: false, error: "Invalid date format" };
     }
 
     // Check if date is not in the future
     if (date > new Date()) {
-      return { valid: false, error: 'Joining date cannot be in the future' };
+      return { valid: false, error: "Joining date cannot be in the future" };
     }
 
     // Check if date is reasonable (not too far in the past)
     const fiveYearsAgo = new Date();
     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 10);
-    
+
     if (date < fiveYearsAgo) {
-      return { valid: false, error: 'Joining date seems too old' };
+      return { valid: false, error: "Joining date seems too old" };
     }
 
     return { valid: true };
   } catch (error) {
-    return { valid: false, error: 'Invalid date' };
+    return { valid: false, error: "Invalid date" };
   }
 }
 
 /**
  * Example usage:
- * 
+ *
  * const student = {
  *   fullFee: 5000,
  *   joiningDate: '2026-01-15'
  * };
- * 
+ *
  * // Calculate fee for January 2026 (joining month)
  * const janFee = calculateFeeForMonth(
  *   student.fullFee,
@@ -206,7 +203,7 @@ export function validateJoiningDate(joiningDate: string | Date): {
  * );
  * console.log(janFee);
  * // Output: { isPartial: true, calculatedFee: 2741.94, payableDays: 17, ... }
- * 
+ *
  * // Calculate fee for February 2026 (next month - full fee)
  * const febFee = calculateFeeForMonth(
  *   student.fullFee,

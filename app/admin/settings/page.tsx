@@ -24,7 +24,7 @@ export default function SchoolSettingsPage() {
     try {
       setLoading(true);
       const response = await fetch(`/api/school-settings`);
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.settings) {
@@ -71,7 +71,7 @@ export default function SchoolSettingsPage() {
 
       const data = await response.json();
       setSettingsId(data.settings.id);
-      
+
       toast.success("School settings saved successfully");
     } catch (error: any) {
       console.error("Error saving settings:", error);
@@ -98,7 +98,9 @@ export default function SchoolSettingsPage() {
       <div className="flex-1 p-8">
         <div className="max-w-3xl mx-auto space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">School Settings</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              School Settings
+            </h1>
             <p className="text-muted-foreground mt-2">
               Configure school timing and other settings
             </p>
@@ -108,7 +110,9 @@ export default function SchoolSettingsPage() {
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold text-foreground">School Timings</h2>
+                <h2 className="text-xl font-semibold text-foreground">
+                  School Timings
+                </h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -122,7 +126,8 @@ export default function SchoolSettingsPage() {
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Students arriving after this time + 15 minutes will be marked as late
+                    Students arriving after this time + 15 minutes will be
+                    marked as late
                   </p>
                 </div>
 
@@ -168,9 +173,18 @@ export default function SchoolSettingsPage() {
               📋 Note
             </h3>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• School start time is used to automatically mark students as late</li>
-              <li>• Students marked present after start time + 15 minutes will be auto-marked as late</li>
-              <li>• These settings apply to all attendance marking across the school</li>
+              <li>
+                • School start time is used to automatically mark students as
+                late
+              </li>
+              <li>
+                • Students marked present after start time + 15 minutes will be
+                auto-marked as late
+              </li>
+              <li>
+                • These settings apply to all attendance marking across the
+                school
+              </li>
             </ul>
           </Card>
         </div>

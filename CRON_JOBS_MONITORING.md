@@ -7,12 +7,12 @@ description: Complete guide to all automated cron jobs
 
 ## تمام Cron Jobs کا خلاصہ Summary
 
-| Job | Schedule | وقت Time | مقصد Purpose |
-|-----|----------|----------|-------------|
-| **Auto Teacher OUT + ABSENT** | `0 14 * * *` | **7:00 PM PKT** | Auto out + Mark absent |
-| **Monthly Billing** | `0 0 1 * *` | **5:00 AM PKT** (1st) | Fees + Salaries + Vouchers |
+| Job                           | Schedule     | وقت Time              | مقصد Purpose               |
+| ----------------------------- | ------------ | --------------------- | -------------------------- |
+| **Auto Teacher OUT + ABSENT** | `0 14 * * *` | **7:00 PM PKT**       | Auto out + Mark absent     |
+| **Monthly Billing**           | `0 0 1 * *`  | **5:00 AM PKT** (1st) | Fees + Salaries + Vouchers |
 
-*Note: Combined into 1 cron job due to Vercel free plan limitation (max 2 crons)*
+_Note: Combined into 1 cron job due to Vercel free plan limitation (max 2 crons)_
 
 ---
 
@@ -41,12 +41,14 @@ description: Complete guide to all automated cron jobs
 ### 7:00 PM PKT پر ایک ہی cron job دونوں کریں گے:
 
 **Step 1: AUTO OUT**
+
 ```
 جو teachers PRESENT/LATE ہیں لیکن out_time نہیں
 → out_time = 7:00 PM PKT set کریں
 ```
 
 **Step 2: AUTO ABSENT**
+
 ```
 جو teachers کا کوئی record نہیں
 → ABSENT mark کریں (remarks: auto_marked)
@@ -57,14 +59,17 @@ description: Complete guide to all automated cron jobs
 ## 1️⃣ Combined Auto Teacher OUT + ABSENT (7 PM PKT)
 
 ### 📍 File
+
 `app/api/cron/auto-teacher-out/route.ts` (COMBINED: OUT + ABSENT دونوں)
 
 ### ⏰ Schedule
+
 ```
 UTC: 0 14 * * * (2:00 PM UTC = 7:00 PM PKT)
 ```
 
 ### 🎯 کام کرتا ہے
+
 ```
 Step 1: Teachers جو PRESENT/LATE ہیں لیکن out_time نہیں ہے
         → out_time = 7:00 PM PKT set کریں
@@ -74,6 +79,7 @@ Step 2: Teachers جن کا کوئی attendance record نہیں
 ```
 
 ### مثال Example:
+
 ```
 Scenario: علی teacher نے 2 PM میں IN mark کیا
 ├─ 3 PM: Still no OUT marked
@@ -82,6 +88,7 @@ Scenario: علی teacher نے 2 PM میں IN mark کیا
 ```
 
 ### کیا ہوتا ہے:
+
 ```
 teacher_attendance table میں:
 ┌────────────┬────────────┬──────────┬──────────┐
@@ -96,14 +103,17 @@ teacher_attendance table میں:
 ## 2️⃣ Monthly Billing (1st of Month)
 
 ### 📍 File
+
 `app/api/cron/monthly-billing/route.ts`
 
 ### ⏰ Schedule
+
 ```
 UTC: 0 0 1 * * (12:00 AM UTC = 5:00 AM PKT on 1st of month)
 ```
 
 ### 🎯 کام کرتا ہے
+
 ```
 Step 1: Student fees create کریں (current month)
 Step 2: Fee vouchers auto-create کریں ✨
@@ -112,6 +122,7 @@ Step 4: Expiration checks
 ```
 
 ### مثال Example:
+
 ```
 1 January 2026 5:00 AM PKT
 ├─ 45 students کے fees create
@@ -125,6 +136,7 @@ Step 4: Expiration checks
 ## � Logs دیکھنے کے لیے
 
 ### Vercel Dashboard میں
+
 ```
 1. https://vercel.com → Project select کریں
 2. "Functions" tab → "Cron Jobs"
@@ -132,6 +144,7 @@ Step 4: Expiration checks
 ```
 
 ### Expected Logs (ایک ہی execution میں):
+
 ```
 [Auto Teacher Out] Running for date: 2025-12-30
 [Auto Teacher Out] Auto-out set for 5 records
@@ -145,6 +158,7 @@ Step 4: Expiration checks
 ## 🧪 Manual Testing
 
 ### Auto Teacher Out/Absent
+
 ```bash
 # GET request
 curl "https://your-domain.com/api/cron/auto-teacher-out"
@@ -157,6 +171,7 @@ curl "https://your-domain.com/api/cron/auto-teacher-out?secret=YOUR_CRON_SECRET"
 ```
 
 ### Response Example:
+
 ```json
 {
   "success": true,
@@ -178,16 +193,19 @@ curl "https://your-domain.com/api/cron/auto-teacher-out?secret=YOUR_CRON_SECRET"
 ### مسئلہ: Cron job نہیں چل رہی
 
 **حل 1: Vercel میں schedule verify کریں**
+
 ```
 Vercel Dashboard → Settings → Cron Jobs
 ```
 
 **حل 2: API endpoint manually test کریں**
+
 ```
 GET /api/cron/auto-teacher-out
 ```
 
 **حل 3: Logs چیک کریں**
+
 ```
 Vercel → Functions → Recent executions
 Look for [Cron] messages
@@ -198,18 +216,21 @@ Look for [Cron] messages
 ### مسئلہ: Teachers marked نہیں ہو رہے
 
 **حل 1: teacher_attendance table میں check کریں**
+
 ```sql
-SELECT * FROM teacher_attendance 
-WHERE date = TODAY() 
+SELECT * FROM teacher_attendance
+WHERE date = TODAY()
 ORDER BY created_at DESC;
 ```
 
 **حل 2: Profiles table میں teachers ہیں یا نہیں**
+
 ```sql
 SELECT id, name FROM profiles WHERE role = 'teacher';
 ```
 
 **حل 3: Database permissions check کریں**
+
 - RLS policies enable ہیں؟
 - admin role ہے؟
 
@@ -218,6 +239,7 @@ SELECT id, name FROM profiles WHERE role = 'teacher';
 ## 📊 Monitor کریں
 
 ### یہ check کریں Daily:
+
 ```
 1. Vercel logs میں [Auto Teacher Out] messages
    - دونوں operations ایک execution میں
@@ -226,14 +248,15 @@ SELECT id, name FROM profiles WHERE role = 'teacher';
 ```
 
 ### SQL Queries for Monitoring:
+
 ```sql
 -- آج کے cron updates
-SELECT * FROM teacher_attendance 
-WHERE date = TODAY() 
+SELECT * FROM teacher_attendance
+WHERE date = TODAY()
 AND remarks = 'auto_marked';
 
 -- Monthly vouchers check
-SELECT COUNT(*) FROM fee_vouchers 
+SELECT COUNT(*) FROM fee_vouchers
 WHERE month = 'December';
 
 -- Teachers without attendance
@@ -259,17 +282,20 @@ AND p.id NOT IN (
 ## 📞 Quick Reference
 
 **Auto OUT + ABSENT کو manually trigger کریں:**
+
 ```
 GET /api/cron/auto-teacher-out?secret=YOUR_SECRET
 ```
 
 **Monthly Billing کو manually trigger کریں:**
+
 ```
 POST /api/cron/monthly-billing
 Headers: Authorization: Bearer YOUR_CRON_SECRET
 ```
 
 **Vercel Cron Editor:**
+
 ```
 vercel.json میں صرف 2 schedules ہیں (free plan)
 ```

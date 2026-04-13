@@ -1,9 +1,9 @@
 // Firebase Cloud Messaging Service Worker
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"
+  "https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js",
 );
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.5.0/firebase-messaging-compat.js"
+  "https://www.gstatic.com/firebasejs/10.5.0/firebase-messaging-compat.js",
 );
 
 const firebaseConfig = {
@@ -25,11 +25,13 @@ const playedMessageIds = new Set();
 messaging.onBackgroundMessage((payload) => {
   console.log(
     "[firebase-messaging-sw.js] Received background message ",
-    payload
+    payload,
   );
 
   // Attempt to dedupe by message id
-  const messageId = payload.messageId || (payload.data && (payload.data.message_id || payload.data.id));
+  const messageId =
+    payload.messageId ||
+    (payload.data && (payload.data.message_id || payload.data.id));
   if (messageId && playedMessageIds.has(messageId)) {
     console.log("Duplicate background message, skipping sound:", messageId);
   } else {
@@ -73,7 +75,7 @@ function playNotificationSound() {
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(
       0.01,
-      audioContext.currentTime + 0.5
+      audioContext.currentTime + 0.5,
     );
 
     oscillator.start(audioContext.currentTime);
@@ -92,12 +94,15 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((clientList) => {
       for (let client of clientList) {
-        if (client.url.includes("/admin/chat") || client.url.includes("/teacher/chat")) {
+        if (
+          client.url.includes("/admin/chat") ||
+          client.url.includes("/teacher/chat")
+        ) {
           return client.focus();
         }
       }
       // If no chat window is open, open one
       return clients.openWindow("/admin/chat");
-    })
+    }),
   );
 });

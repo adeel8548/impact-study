@@ -22,7 +22,7 @@ import { FeeVoucher } from "@/components/fee-voucher";
 import { Loader2, Printer } from "lucide-react";
 import { getMultipleFeeVouchers } from "@/lib/actions/fee-vouchers";
 import type { Class as SchoolClass } from "@/lib/types";
-import Logo from "@/app/Assests/imgs/logo_2.png"
+import Logo from "@/app/Assests/imgs/logo_2.png";
 interface BulkFeeVoucherPrintDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -52,8 +52,9 @@ export function BulkFeeVoucherPrintDialog({
     setLoading(true);
     try {
       // Use the passed fineValue or fall back to current state
-      const shouldIncludeFine = fineValue !== undefined ? fineValue : includeFine;
-      
+      const shouldIncludeFine =
+        fineValue !== undefined ? fineValue : includeFine;
+
       let studentIds: string[] = [];
 
       if (printType === "all") {
@@ -80,7 +81,11 @@ export function BulkFeeVoucherPrintDialog({
         return;
       }
 
-      const { data, error } = await getMultipleFeeVouchers(studentIds, shouldIncludeFine, removeArrears);
+      const { data, error } = await getMultipleFeeVouchers(
+        studentIds,
+        shouldIncludeFine,
+        removeArrears,
+      );
       if (data) {
         setVouchersData(data);
       }
@@ -115,8 +120,13 @@ export function BulkFeeVoucherPrintDialog({
           {vouchersData.length === 0 && (
             <div className="space-y-4 border rounded-lg p-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Print Type</label>
-                <Select value={printType} onValueChange={(value: any) => setPrintType(value)}>
+                <label className="text-sm font-medium mb-2 block">
+                  Print Type
+                </label>
+                <Select
+                  value={printType}
+                  onValueChange={(value: any) => setPrintType(value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select print type" />
                   </SelectTrigger>
@@ -129,8 +139,13 @@ export function BulkFeeVoucherPrintDialog({
 
               {printType === "class" && (
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Select Class</label>
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <label className="text-sm font-medium mb-2 block">
+                    Select Class
+                  </label>
+                  <Select
+                    value={selectedClass}
+                    onValueChange={setSelectedClass}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
@@ -149,7 +164,9 @@ export function BulkFeeVoucherPrintDialog({
                 <Checkbox
                   id="includeFine"
                   checked={includeFine}
-                  onCheckedChange={(checked) => setIncludeFine(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setIncludeFine(checked as boolean)
+                  }
                 />
                 <label
                   htmlFor="includeFine"
@@ -163,7 +180,9 @@ export function BulkFeeVoucherPrintDialog({
                 <Checkbox
                   id="removeArrears"
                   checked={removeArrears}
-                  onCheckedChange={(checked) => setRemoveArrears(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setRemoveArrears(checked as boolean)
+                  }
                 />
                 <label
                   htmlFor="removeArrears"
@@ -175,10 +194,15 @@ export function BulkFeeVoucherPrintDialog({
 
               {/* Info: Partial Fee Override Note */}
               <div className="border-2 border-blue-300 bg-blue-50 p-3 rounded text-sm text-blue-900">
-                💡 <span className="font-semibold">Partial Fee Note:</span> For students with partial fees, a checkbox will appear in each voucher to use full fee instead.
+                💡 <span className="font-semibold">Partial Fee Note:</span> For
+                students with partial fees, a checkbox will appear in each
+                voucher to use full fee instead.
               </div>
 
-              <Button onClick={handleGeneratePreview} disabled={loading || (printType === "class" && !selectedClass)}>
+              <Button
+                onClick={handleGeneratePreview}
+                disabled={loading || (printType === "class" && !selectedClass)}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -228,15 +252,18 @@ export function BulkFeeVoucherPrintDialog({
                   className="bg-white flex flex-col gap-8 items-center print:w-full print:h-[105mm] print:px-3 print:py-3 print:max-w-full"
                 >
                   {vouchersData.map((voucher, index) => (
-                    <div key={index} className="page-break w-full flex flex-row gap-1 justify-between items-start print:flex-row print:gap-5 print:w-full print:max-w-full">
-                      <FeeVoucher 
-                        {...voucher} 
+                    <div
+                      key={index}
+                      className="page-break w-full flex flex-row gap-1 justify-between items-start print:flex-row print:gap-5 print:w-full print:max-w-full"
+                    >
+                      <FeeVoucher
+                        {...voucher}
                         copyType="head"
                         fullFee={voucher.fullFee}
                         isPartialFee={voucher.isPartial}
                       />
-                      <FeeVoucher 
-                        {...voucher} 
+                      <FeeVoucher
+                        {...voucher}
                         copyType="student"
                         fullFee={voucher.fullFee}
                         isPartialFee={voucher.isPartial}
@@ -251,11 +278,14 @@ export function BulkFeeVoucherPrintDialog({
 
               {/* Print Button - Fixed at bottom */}
               <div className="flex justify-end gap-2 pb-4 bg-background border-t pt-4">
-                <Button variant="outline" onClick={() => {
-                  setVouchersData([]);
-                  setSelectedClass("");
-                  setPrintType("all");
-                }}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setVouchersData([]);
+                    setSelectedClass("");
+                    setPrintType("all");
+                  }}
+                >
                   Back
                 </Button>
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -276,7 +306,8 @@ export function BulkFeeVoucherPrintDialog({
               size: A4 landscape;
               margin: 5mm;
             }
-            html, body {
+            html,
+            body {
               width: 297mm;
               height: 210mm;
               margin: 0 !important;
@@ -298,7 +329,7 @@ export function BulkFeeVoucherPrintDialog({
             .voucher-print-wrapper > * {
               display: inline-block !important;
               vertical-align: top;
-              
+
               width: 130mm;
               height: 200mm;
               max-width: 130mm;

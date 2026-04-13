@@ -57,7 +57,7 @@ export function TeacherHeader() {
         typeof window !== "undefined"
           ? JSON.parse(localStorage.getItem("currentUser") || "{}")
           : {};
-      
+
       const userId = user?.id;
       if (!userId) {
         console.log("No user ID found");
@@ -68,23 +68,24 @@ export function TeacherHeader() {
 
       try {
         // Import Firebase functions
-        const { collection, query, where, onSnapshot } = await import("firebase/firestore");
+        const { collection, query, where, onSnapshot } =
+          await import("firebase/firestore");
         const { db } = await import("@/lib/firebase");
-        
+
         console.log("Firebase imported, setting up listeners");
-        
+
         // Get all conversations where this teacher is involved
         const q = query(
           collection(db, "conversations"),
-          where("teacherId", "==", userId)
+          where("teacherId", "==", userId),
         );
-        
+
         const convSubsRef: Record<string, () => void> = {};
-        
+
         const unsubscribe = onSnapshot(q, (snap) => {
           console.log("Conversations loaded:", snap.docs.length);
-          const convIds = snap.docs.map(doc => doc.id);
-          
+          const convIds = snap.docs.map((doc) => doc.id);
+
           // Clean up subscriptions for removed conversations
           Object.keys(convSubsRef).forEach((id) => {
             if (!convIds.includes(id)) {
@@ -92,58 +93,66 @@ export function TeacherHeader() {
               delete convSubsRef[id];
             }
           });
-          
+
           // Subscribe to unread messages for each conversation in real-time
           const unreadByConv: Record<string, number> = {};
-          
+
           convIds.forEach((convId) => {
             if (convSubsRef[convId]) return; // Already subscribed
-            
+
             console.log("Setting up unread listener for conversation:", convId);
-            
+
             const msgsQ = query(
               collection(db, "conversations", convId, "messages"),
-              where("isRead", "==", false)
+              where("isRead", "==", false),
             );
-            
+
             convSubsRef[convId] = onSnapshot(msgsQ, (msgsSnap) => {
               // Count messages NOT from this teacher (i.e., from admin)
               let unread = 0;
-              msgsSnap.docs.forEach(msgDoc => {
+              msgsSnap.docs.forEach((msgDoc) => {
                 if (msgDoc.data().senderId !== userId) {
                   unread++;
                 }
               });
-              
+
               unreadByConv[convId] = unread;
-              
+
               // Calculate total unread from all conversations
-              const totalUnread = Object.values(unreadByConv).reduce((sum, count) => sum + count, 0);
-              console.log("Teacher header unread count updated:", totalUnread, "in conversation", convId);
+              const totalUnread = Object.values(unreadByConv).reduce(
+                (sum, count) => sum + count,
+                0,
+              );
+              console.log(
+                "Teacher header unread count updated:",
+                totalUnread,
+                "in conversation",
+                convId,
+              );
               setUnreadCount(totalUnread);
             });
           });
-          
+
           // If no conversations, set unread to 0
           if (convIds.length === 0) {
             console.log("No conversations found, setting unread to 0");
             setUnreadCount(0);
           }
         });
-        
+
         return unsubscribe;
       } catch (err) {
         console.error("Error getting unread count:", err);
       }
     };
-    
+
     let unsubscribe: (() => void) | undefined;
-    
+
     loadUnreadCount().then((unsub) => {
       unsubscribe = unsub;
       console.log("Unread count listener setup complete");
     });
-    
+
     return () => {
       if (unsubscribe) {
         console.log("Cleaning up unread count listeners");
@@ -309,18 +318,18 @@ export function TeacherHeader() {
           Chat
         </Button>
 
-          {/* Timetable - always visible */}
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/teacher/timetable")}
-            className={`rounded-none border-b-2 ${
-              isActive("/teacher/timetable")
-                ? "text-primary font-semibold border-primary"
-                : "text-muted-foreground hover:text-foreground border-transparent"
-            }`}
-          >
-            Timetable
-          </Button>
+        {/* Timetable - always visible */}
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/teacher/timetable")}
+          className={`rounded-none border-b-2 ${
+            isActive("/teacher/timetable")
+              ? "text-primary font-semibold border-primary"
+              : "text-muted-foreground hover:text-foreground border-transparent"
+          }`}
+        >
+          Timetable
+        </Button>
 
         {/* Show Quizzes, Exams, Results only if teacher has assigned subjects */}
         {hasAssignedSubjects && (

@@ -45,7 +45,12 @@ export function FeeVoucherPrintDialog({
       setError(null);
       // Don't reset voucherData if it already exists (to avoid flicker when toggling fine)
 
-      const { data, error } = await getFeeVoucherData(studentId, includeFine, undefined, removeArrears);
+      const { data, error } = await getFeeVoucherData(
+        studentId,
+        includeFine,
+        undefined,
+        removeArrears,
+      );
 
       if (error) {
         console.error("Error from getFeeVoucherData:", error);
@@ -130,16 +135,13 @@ export function FeeVoucherPrintDialog({
           {/* Full Fee Override - Show when partial fee exists */}
           {voucherData?.isPartial && (
             <div className="flex items-center gap-2 border-2 border-yellow-400 bg-yellow-50 p-3 rounded">
-              <Checkbox
-                id="useFullFee"
-                disabled
-                className="opacity-50"
-              />
+              <Checkbox id="useFullFee" disabled className="opacity-50" />
               <label
                 htmlFor="useFullFee"
                 className="text-sm font-semibold text-yellow-900"
               >
-                ⚠️ Partial Fee Detected: Check the checkbox inside the voucher to use full fee ({voucherData?.fullFee?.toLocaleString()})
+                ⚠️ Partial Fee Detected: Check the checkbox inside the voucher
+                to use full fee ({voucherData?.fullFee?.toLocaleString()})
               </label>
             </div>
           )}
@@ -154,25 +156,25 @@ export function FeeVoucherPrintDialog({
               <div className="w-full h-[calc(100vh-120px)] overflow-y-auto p-4 bg-gray-50">
                 <div
                   ref={printRef}
-                  className={`voucher-print-wrapper bg-white ${voucherData?.singleVoucher ? 'single-voucher' : 'flex flex-row gap-2 justify-between items-start print:p-1 print:flex-row print:gap-5 print:max-w-full'}`}
+                  className={`voucher-print-wrapper bg-white ${voucherData?.singleVoucher ? "single-voucher" : "flex flex-row gap-2 justify-between items-start print:p-1 print:flex-row print:gap-5 print:max-w-full"}`}
                 >
                   {voucherData?.singleVoucher ? (
-                    <FeeVoucher 
-                      {...voucherData} 
+                    <FeeVoucher
+                      {...voucherData}
                       copyType="student"
                       fullFee={voucherData.fullFee}
                       isPartialFee={voucherData.isPartial}
                     />
                   ) : (
                     <>
-                      <FeeVoucher 
-                        {...voucherData} 
+                      <FeeVoucher
+                        {...voucherData}
                         copyType="head"
                         fullFee={voucherData.fullFee}
                         isPartialFee={voucherData.isPartial}
                       />
-                      <FeeVoucher 
-                        {...voucherData} 
+                      <FeeVoucher
+                        {...voucherData}
                         copyType="student"
                         fullFee={voucherData.fullFee}
                         isPartialFee={voucherData.isPartial}

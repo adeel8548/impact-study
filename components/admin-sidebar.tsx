@@ -53,7 +53,9 @@ export function AdminSidebar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadByConversation, setUnreadByConversation] = useState<Record<string, number>>({});
+  const [unreadByConversation, setUnreadByConversation] = useState<
+    Record<string, number>
+  >({});
   const convSubsRef = useRef<Record<string, () => void>>({});
   const supabase = useMemo(() => createClient(), []);
 
@@ -87,8 +89,10 @@ export function AdminSidebar() {
       if (!userId) return;
 
       // Use Firestore to get unread count across conversations (initial snapshot)
-      const { getUnreadCountForUser, subscribeUnreadCount } = await import("@/lib/firestore-chat");
-      const { collection, query, where, onSnapshot, orderBy } = await import("firebase/firestore");
+      const { getUnreadCountForUser, subscribeUnreadCount } =
+        await import("@/lib/firestore-chat");
+      const { collection, query, where, onSnapshot, orderBy } =
+        await import("firebase/firestore");
       const { db } = await import("@/lib/firebase");
 
       // Load initial unread count immediately
@@ -105,12 +109,12 @@ export function AdminSidebar() {
       // All admins can see all teacher conversations
       const q = query(
         collection(db, "conversations"),
-        orderBy("updatedAt", "desc")
+        orderBy("updatedAt", "desc"),
       );
-      
+
       const unsubscribe = onSnapshot(q, (snap) => {
         // Filter to only teacher conversations (teacherId exists)
-        const teacherConversations = snap.docs.filter(doc => {
+        const teacherConversations = snap.docs.filter((doc) => {
           const data = doc.data();
           return data.teacherId != null && data.teacherId !== "";
         });
@@ -127,17 +131,24 @@ export function AdminSidebar() {
         // Subscribe to new conversations for unread counts
         convIds.forEach((convId) => {
           if (convSubsRef.current[convId]) return;
-          convSubsRef.current[convId] = subscribeUnreadCount(convId, userId, (count) => {
-            setUnreadByConversation((prev) => {
-              const next = { ...prev, [convId]: count };
-              const total = Object.values(next).reduce((sum, c) => sum + c, 0);
-              setUnreadCount(total);
-              return next;
-            });
-          });
+          convSubsRef.current[convId] = subscribeUnreadCount(
+            convId,
+            userId,
+            (count) => {
+              setUnreadByConversation((prev) => {
+                const next = { ...prev, [convId]: count };
+                const total = Object.values(next).reduce(
+                  (sum, c) => sum + c,
+                  0,
+                );
+                setUnreadCount(total);
+                return next;
+              });
+            },
+          );
         });
       });
-      
+
       return () => {
         unsubscribe();
         Object.values(convSubsRef.current).forEach((fn) => fn());

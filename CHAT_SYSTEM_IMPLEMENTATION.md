@@ -1,7 +1,9 @@
 # Real-Time Chat System - Complete Implementation Guide
 
 ## Overview
+
 This guide provides the complete implementation for a real-time chat system with:
+
 - **Supabase Auth** for authentication
 - **Firebase Firestore** for chat data storage and real-time messaging
 - **Multi-select broadcast** capability for admins
@@ -11,6 +13,7 @@ This guide provides the complete implementation for a real-time chat system with
 ## 1. Architecture
 
 ### Authentication Flow
+
 ```
 User Login → Supabase Auth → Get Supabase UID → Exchange for Firebase Custom Token → Chat Operations
 ```
@@ -18,6 +21,7 @@ User Login → Supabase Auth → Get Supabase UID → Exchange for Firebase Cust
 ### Database Structure (Firebase Firestore)
 
 #### Collections
+
 - **users** - User profiles with role and FCM token
 - **conversations** - Chat sessions between admin and teacher
   - adminId: string
@@ -33,6 +37,7 @@ User Login → Supabase Auth → Get Supabase UID → Exchange for Firebase Cust
 ## 2. Required Files
 
 ### Already Created
+
 - `/lib/firestore-helpers.ts` - Firebase Firestore helpers for all CRUD operations
 - `/lib/firebase.ts` - Firebase initialization
 - `/components/chat/ChatWindow.tsx` - Updated chat component with real-time messaging
@@ -40,6 +45,7 @@ User Login → Supabase Auth → Get Supabase UID → Exchange for Firebase Cust
 - `.env.local.example` - Environment template
 
 ### Still Need To Create
+
 - `app/admin/chat/page.tsx` - Admin chat page with broadcast
 - `app/teacher/chat/page.tsx` - Teacher chat page
 - `lib/firebase-admin.ts` - Admin SDK for backend operations
@@ -50,6 +56,7 @@ User Login → Supabase Auth → Get Supabase UID → Exchange for Firebase Cust
 ## 3. Admin Chat Page Implementation
 
 The admin page should:
+
 1. Load all teachers from Supabase profiles
 2. Display list of conversations from Firebase
 3. Allow multi-select of teachers via checkboxes
@@ -57,6 +64,7 @@ The admin page should:
 5. Show active conversation with selected teacher
 
 ### Key Features
+
 - **Teacher Search** - Filter teachers by name/email
 - **Multi-Select** - Choose multiple teachers with checkboxes
 - **Broadcast Messages** - Send same message to multiple teachers at once
@@ -66,6 +74,7 @@ The admin page should:
 ## 4. Teacher Chat Page Implementation
 
 The teacher page should:
+
 1. Load all conversations with admins from Firebase
 2. Display admin name from Firebase users collection
 3. Show real-time messages
@@ -75,6 +84,7 @@ The teacher page should:
 ## 5. Setup Steps
 
 ### Step 1: Create Firebase Project
+
 1. Go to https://console.firebase.google.com
 2. Create a new project
 3. Enable Firestore Database
@@ -82,7 +92,9 @@ The teacher page should:
 5. Start in production mode
 
 ### Step 2: Configure Environment Variables
+
 Copy `.env.local.example` to `.env.local` and fill:
+
 ```
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
@@ -98,11 +110,13 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY----
 ```
 
 ### Step 3: Apply Firestore Security Rules
+
 1. Go to Firebase Console > Firestore Database > Rules
 2. Copy rules from `/scripts/firestore-security-rules.txt`
 3. Paste and Deploy
 
 ### Step 4: Create API Route for Custom Tokens
+
 Create `app/api/firebase/custom-token/route.ts` with firebase-admin SDK initialization
 
 ## 6. Broadcast Logic Flow
@@ -114,13 +128,13 @@ async function broadcastMessage(adminId, teacherIds, text) {
   for (const teacherId of teacherIds) {
     // Get or create conversation
     const conversationId = await getOrCreateConversation(adminId, teacherId);
-    
+
     // Add message to messages subcollection
     await sendMessage(conversationId, adminId, text);
-    
+
     // Firestore automatically updates lastMessage and updatedAt
   }
-  
+
   // Teacher sees new message in real-time via onSnapshot
 }
 ```
@@ -128,26 +142,35 @@ async function broadcastMessage(adminId, teacherIds, text) {
 ## 7. Real-Time Updates
 
 ### For Admins
+
 ```typescript
 useEffect(() => {
-  const unsubscribe = subscribeToAdminConversations(adminId, (conversations) => {
-    setConversations(conversations);
-  });
+  const unsubscribe = subscribeToAdminConversations(
+    adminId,
+    (conversations) => {
+      setConversations(conversations);
+    },
+  );
   return () => unsubscribe();
 }, [adminId]);
 ```
 
 ### For Teachers
+
 ```typescript
 useEffect(() => {
-  const unsubscribe = subscribeToTeacherConversations(teacherId, (conversations) => {
-    setConversations(conversations);
-  });
+  const unsubscribe = subscribeToTeacherConversations(
+    teacherId,
+    (conversations) => {
+      setConversations(conversations);
+    },
+  );
   return () => unsubscribe();
 }, [teacherId]);
 ```
 
 ### For Messages
+
 ```typescript
 useEffect(() => {
   const unsubscribe = subscribeToMessages(conversationId, (messages) => {
@@ -160,24 +183,27 @@ useEffect(() => {
 ## 8. Push Notifications Setup
 
 ### Enable FCM in Firebase
+
 1. Firebase Console > Cloud Messaging tab
 2. Note your Server API Key
 3. Create Web Push Credentials
 4. Note your VAPID Key
 
 ### Register Service Worker
+
 ```typescript
 // In layout.tsx or app.tsx
-navigator.serviceWorker.register('/firebase-messaging-sw.js');
+navigator.serviceWorker.register("/firebase-messaging-sw.js");
 ```
 
 ### Get FCM Token and Store
+
 ```typescript
-import { getMessaging, getToken } from 'firebase/messaging';
+import { getMessaging, getToken } from "firebase/messaging";
 
 const messaging = getMessaging();
-const token = await getToken(messaging, { 
-  vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY 
+const token = await getToken(messaging, {
+  vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
 });
 
 // Store in Firebase users collection
@@ -222,22 +248,22 @@ markConversationAsRead() updates isRead flag
 
 ```typescript
 // Users
-setFirebaseUser(user) // Create/update user
-getFirebaseUser(uid) // Get user by UID
-updateUserFcmToken(uid, token) // Update FCM token
+setFirebaseUser(user); // Create/update user
+getFirebaseUser(uid); // Get user by UID
+updateUserFcmToken(uid, token); // Update FCM token
 
 // Conversations
-getOrCreateConversation(adminId, teacherId) // Get or create conversation
-subscribeToAdminConversations(adminId, callback) // Real-time conversations for admin
-subscribeToTeacherConversations(teacherId, callback) // Real-time conversations for teacher
+getOrCreateConversation(adminId, teacherId); // Get or create conversation
+subscribeToAdminConversations(adminId, callback); // Real-time conversations for admin
+subscribeToTeacherConversations(teacherId, callback); // Real-time conversations for teacher
 
 // Messages
-sendMessage(conversationId, senderId, text) // Send message
-subscribeToMessages(conversationId, callback) // Real-time messages
-markConversationAsRead(conversationId, readerId) // Mark as read
+sendMessage(conversationId, senderId, text); // Send message
+subscribeToMessages(conversationId, callback); // Real-time messages
+markConversationAsRead(conversationId, readerId); // Mark as read
 
 // Broadcast
-broadcastMessage(adminId, teacherIds, text) // Send to multiple teachers
+broadcastMessage(adminId, teacherIds, text); // Send to multiple teachers
 ```
 
 ## 11. Testing Checklist
@@ -258,17 +284,20 @@ broadcastMessage(adminId, teacherIds, text) // Send to multiple teachers
 ## 12. Troubleshooting
 
 ### Messages not appearing
+
 - Check Firestore rules in Firebase Console
 - Verify userId matches across Supabase and Firebase
 - Check browser console for errors
 - Ensure onSnapshot subscriptions are active
 
 ### Broadcast not working
+
 - Verify teacherIds exist in Firebase users collection
 - Check that getOrCreateConversation completes before sendMessage
 - Look for errors in sendMessage Firestore calls
 
 ### Notifications not working
+
 - Verify VAPID key is correct
 - Check FCM token is stored in users collection
 - Ensure service worker is registered

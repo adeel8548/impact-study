@@ -176,7 +176,7 @@ Jan 1, 2026                                        Jan 31, 2026
     │                         │                          │
     ├─────────────────────────┼──────────────────────────┤
     │◄─ Not Payable (14 days)─►◄─ Payable (17 days) ───►│
-                                                         
+
     Fee: Rs. 0                Fee: Rs. 2,741.93
     (before joining)          (17 days × Rs. 161.29)
 
@@ -185,7 +185,7 @@ Feb 1, 2026                                        Feb 28, 2026
     │                                                     │
     ├─────────────────────────────────────────────────────┤
     │◄──────────────── Full Month Payable ───────────────►│
-                                                         
+
                     Fee: Rs. 5,000.00
                     (Full monthly fee)
 
@@ -194,7 +194,7 @@ Mar 1, 2026                                        Mar 31, 2026
     │                                                     │
     ├─────────────────────────────────────────────────────┤
     │◄──────────────── Full Month Payable ───────────────►│
-                                                         
+
                     Fee: Rs. 5,000.00
                     (Full monthly fee)
 
@@ -472,18 +472,18 @@ student_fees: (empty)
     │
     │ Cron job runs ▼
     │
-student_fees: { 
-  amount: 2741.93, 
+student_fees: {
+  amount: 2741.93,
   is_partial: true,
-  payable_days: 17 
+  payable_days: 17
 }
 
 
 State 2: First Month (Partial Fee)
 ───────────────────────────────────
 Month: January 2026 (joining month)
-student_fees: { 
-  amount: 2741.93, 
+student_fees: {
+  amount: 2741.93,
   is_partial: true,
   status: 'unpaid'
 }
@@ -491,8 +491,8 @@ student_fees: {
 
 State 3: Payment Made
 ─────────────────────
-student_fees: { 
-  amount: 2741.93, 
+student_fees: {
+  amount: 2741.93,
   is_partial: true,
   status: 'paid',
   paid_date: '2026-01-20'
@@ -505,7 +505,7 @@ Month: February 2026 (next month)
     │
     │ Cron job runs ▼
     │
-student_fees: { 
+student_fees: {
   amount: 5000.00,
   is_partial: false,
   payable_days: 28,
@@ -516,7 +516,7 @@ student_fees: {
 State 5: All Subsequent Months
 ───────────────────────────────
 March, April, May... (always full fee)
-student_fees: { 
+student_fees: {
   amount: 5000.00,
   is_partial: false,
   status: 'unpaid'
@@ -555,6 +555,7 @@ Optimization Strategy:
 ---
 
 This visual guide helps understand:
+
 - ✅ How data flows through the system
 - ✅ When partial vs full fee is applied
 - ✅ Edge case handling logic

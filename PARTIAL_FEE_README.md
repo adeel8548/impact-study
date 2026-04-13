@@ -78,6 +78,7 @@ Next Month (February):
 ## 📁 What's Included
 
 ### Code Files
+
 - ✅ `lib/utils/partial-fee-calculator.ts` - Core calculation logic
 - ✅ `app/api/cron/monthly-billing/route.ts` - Automated monthly billing (updated)
 - ✅ `lib/actions/fee-vouchers.ts` - Voucher generation (updated)
@@ -85,12 +86,14 @@ Next Month (February):
 - ✅ `__tests__/partial-fee-calculator.test.ts` - Comprehensive test suite
 
 ### Database
+
 - ✅ `scripts/025_partial_fee_support.sql` - Migration script
 - ✅ Adds 9 new fields across 3 tables
 - ✅ Creates 2 indexes for performance
 - ✅ Includes rollback procedures
 
 ### Documentation (2,500+ lines!)
+
 - 📖 **[PARTIAL_FEE_INDEX.md](PARTIAL_FEE_INDEX.md)** - Start here! Complete index
 - 📖 **[PARTIAL_FEE_QUICK_START.md](PARTIAL_FEE_QUICK_START.md)** - 5-minute setup
 - 📖 **[PARTIAL_FEE_SYSTEM_GUIDE.md](PARTIAL_FEE_SYSTEM_GUIDE.md)** - Complete guide (400+ lines)
@@ -104,12 +107,14 @@ Next Month (February):
 ## 🎯 Use Cases
 
 ### Perfect For:
+
 - 🏫 Schools with mid-month admissions
 - 📚 Educational institutions with rolling enrollment
 - 💼 Any subscription-based system with pro-rated billing
 - 📅 Monthly fee systems needing fair calculation
 
 ### Handles These Scenarios:
+
 - ✅ Student joins on 1st → Full fee
 - ✅ Student joins mid-month → Partial fee for first month only
 - ✅ Student joins on last day → 1 day fee
@@ -122,12 +127,14 @@ Next Month (February):
 ## 🗄️ Database Schema
 
 ### Students Table
+
 ```sql
 + full_fee DECIMAL(10, 2)      -- Base monthly fee (set once)
 + joining_date DATE             -- Admission date
 ```
 
 ### Student Fees Table
+
 ```sql
 + is_partial BOOLEAN            -- True if partial fee applied
 + total_days_in_month INTEGER   -- Total days in month
@@ -137,6 +144,7 @@ Next Month (February):
 ```
 
 ### Fee Vouchers Table
+
 ```sql
 + is_partial BOOLEAN            -- For display
 + total_days_in_month INTEGER   -- For breakdown
@@ -149,23 +157,25 @@ Next Month (February):
 ## 🔧 API Reference
 
 ### Calculate Fee
+
 ```typescript
-import { calculateFeeForMonth } from '@/lib/utils/partial-fee-calculator';
+import { calculateFeeForMonth } from "@/lib/utils/partial-fee-calculator";
 
 const fee = calculateFeeForMonth(
-  5000,              // full_fee
-  '2026-01-15',     // joining_date
-  1,                // month (1-12)
-  2026              // year
+  5000, // full_fee
+  "2026-01-15", // joining_date
+  1, // month (1-12)
+  2026, // year
 );
 
-console.log(fee.calculatedFee);  // 2741.93
-console.log(fee.isPartial);      // true
+console.log(fee.calculatedFee); // 2741.93
+console.log(fee.isPartial); // true
 ```
 
 ### Display Breakdown
+
 ```tsx
-import { PartialFeeDisplay } from '@/components/fees/PartialFeeDisplay';
+import { PartialFeeDisplay } from "@/components/fees/PartialFeeDisplay";
 
 <PartialFeeDisplay
   isPartial={true}
@@ -174,10 +184,11 @@ import { PartialFeeDisplay } from '@/components/fees/PartialFeeDisplay';
   payableDays={17}
   totalDaysInMonth={31}
   perDayFee={161.29}
-/>
+/>;
 ```
 
 ### Trigger Monthly Billing
+
 ```bash
 POST /api/cron/monthly-billing?secret=your-secret
 ```
@@ -196,6 +207,7 @@ node --test __tests__/partial-fee-calculator.test.ts
 ```
 
 **Test Coverage:**
+
 - ✅ Mid-month joining (partial fee)
 - ✅ Joining on 1st (full fee)
 - ✅ Joining on last day (1 day fee)
@@ -213,6 +225,7 @@ node --test __tests__/partial-fee-calculator.test.ts
 ### Fee Voucher Display
 
 **Joining Month (Partial Fee):**
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     FEE VOUCHER - JANUARY 2026
@@ -237,6 +250,7 @@ Monthly Fee:          Rs. 2,741.93
 ```
 
 **Next Month (Full Fee):**
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     FEE VOUCHER - FEBRUARY 2026
@@ -261,25 +275,25 @@ Monthly Fee:          Rs. 5,000.00
 
 ### Quick Links:
 
-| Need | Document |
-|------|----------|
-| **5-min setup** | [Quick Start](PARTIAL_FEE_QUICK_START.md) |
+| Need                   | Document                                          |
+| ---------------------- | ------------------------------------------------- |
+| **5-min setup**        | [Quick Start](PARTIAL_FEE_QUICK_START.md)         |
 | **One-page reference** | [Quick Reference](PARTIAL_FEE_QUICK_REFERENCE.md) |
-| **Complete guide** | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md) |
-| **Upgrade existing** | [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md) |
-| **Understand flow** | [Architecture](PARTIAL_FEE_ARCHITECTURE.md) |
-| **Find anything** | [Documentation Index](PARTIAL_FEE_INDEX.md) |
+| **Complete guide**     | [System Guide](PARTIAL_FEE_SYSTEM_GUIDE.md)       |
+| **Upgrade existing**   | [Migration Guide](PARTIAL_FEE_MIGRATION_GUIDE.md) |
+| **Understand flow**    | [Architecture](PARTIAL_FEE_ARCHITECTURE.md)       |
+| **Find anything**      | [Documentation Index](PARTIAL_FEE_INDEX.md)       |
 
 ---
 
 ## 🆘 Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Fee is 0 | Set `full_fee` in students table |
+| Problem                     | Solution                                         |
+| --------------------------- | ------------------------------------------------ |
+| Fee is 0                    | Set `full_fee` in students table                 |
 | Partial fee not calculating | Check `joining_date` is set and in current month |
-| Full fee in joining month | Student joined on 1st (expected behavior) |
-| Cron not running | Check Vercel cron schedule in dashboard |
+| Full fee in joining month   | Student joined on 1st (expected behavior)        |
+| Cron not running            | Check Vercel cron schedule in dashboard          |
 
 📖 **[Full Troubleshooting Guide →](PARTIAL_FEE_SYSTEM_GUIDE.md#troubleshooting)**
 
@@ -297,12 +311,14 @@ Monthly Fee:          Rs. 5,000.00
 ## 🎯 Benefits
 
 ### For Schools
+
 - ⏱️ **Time Savings** - No manual calculations
 - 🎯 **Accuracy** - Eliminates human errors
 - 💰 **Fair Billing** - Students pay only for attended days
 - 📊 **Transparency** - Parents see clear breakdown
 
 ### For Developers
+
 - ✅ **Production Ready** - Battle-tested code
 - 📚 **Well Documented** - 2,500+ lines of docs
 - 🧪 **Well Tested** - Comprehensive test suite
@@ -389,6 +405,7 @@ This implementation is provided as-is for educational and commercial use in scho
 Built with ❤️ for schools that need fair, automatic fee calculation.
 
 **Technologies:**
+
 - Next.js - React framework
 - Supabase - PostgreSQL database
 - TypeScript - Type safety
@@ -411,6 +428,6 @@ Get started in 5 minutes: **[Quick Start Guide →](PARTIAL_FEE_QUICK_START.md)*
 
 ---
 
-*Last Updated: January 31, 2026*
-*Version: 1.0.0*
-*Status: Production Ready ✅*
+_Last Updated: January 31, 2026_
+_Version: 1.0.0_
+_Status: Production Ready ✅_

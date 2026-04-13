@@ -2,7 +2,10 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { upsertTeacherSalary } from "@/lib/server/teacher-salary";
-import { syncTeacherToFirebase, deleteTeacherFromFirebase } from "@/lib/actions/sync-teachers-to-firebase";
+import {
+  syncTeacherToFirebase,
+  deleteTeacherFromFirebase,
+} from "@/lib/actions/sync-teachers-to-firebase";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -147,8 +150,10 @@ export async function updateTeacher(
   if (updates.name !== undefined) updatePayload.name = updates.name;
   if (updates.email !== undefined) updatePayload.email = updates.email;
   if (updates.phone !== undefined) updatePayload.phone = updates.phone;
-  if (updates.joining_date !== undefined) updatePayload.joining_date = updates.joining_date || null;
-  if (updates.expected_time !== undefined) updatePayload.expected_time = updates.expected_time || null;
+  if (updates.joining_date !== undefined)
+    updatePayload.joining_date = updates.joining_date || null;
+  if (updates.expected_time !== undefined)
+    updatePayload.expected_time = updates.expected_time || null;
 
   const { data, error } = await adminClient
     .from("profiles")

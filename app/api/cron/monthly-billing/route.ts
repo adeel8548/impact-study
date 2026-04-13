@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       { status: 401 },
     );
   }
-  
+
   // Allow if no secret provided (Vercel free plan) OR if authHeader matches
   if (authHeader && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json(
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       .eq("year", currentMonth === 1 ? currentYear - 1 : currentYear);
 
     const feeMap = new Map(
-      (previousMonthFees || []).map((fee: any) => [fee.student_id, fee.amount])
+      (previousMonthFees || []).map((fee: any) => [fee.student_id, fee.amount]),
     );
 
     // Check which students already have fees for current month
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       .eq("year", currentYear);
 
     const existingStudentIds = new Set(
-      (existingCurrentMonthFees || []).map((fee: any) => fee.student_id)
+      (existingCurrentMonthFees || []).map((fee: any) => fee.student_id),
     );
 
     // Only insert fees for students who don't have current month fees yet
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
           fullFee,
           student.joining_date,
           currentMonth,
-          currentYear
+          currentYear,
         );
 
         return {
@@ -138,10 +138,20 @@ export async function POST(request: NextRequest) {
     const vouchersToInsert = [];
     const issueDate = now.toISOString().split("T")[0];
     const dueDate = `${currentYear}-${String(currentMonth).padStart(2, "0")}-12`;
-    
+
     const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     const monthName = monthNames[currentMonth - 1];
 
@@ -159,7 +169,9 @@ export async function POST(request: NextRequest) {
       // Get student fees for current month (which now has partial fee calculation)
       const { data: studentFees } = await adminClient
         .from("student_fees")
-        .select("amount, is_partial, total_days_in_month, payable_days, per_day_fee")
+        .select(
+          "amount, is_partial, total_days_in_month, payable_days, per_day_fee",
+        )
         .eq("student_id", student.id)
         .eq("month", currentMonth)
         .eq("year", currentYear)
@@ -172,12 +184,15 @@ export async function POST(request: NextRequest) {
         .eq("student_id", student.id)
         .eq("status", "unpaid")
         .or(
-          `year.lt.${currentYear},and(year.eq.${currentYear},month.lt.${currentMonth})`
+          `year.lt.${currentYear},and(year.eq.${currentYear},month.lt.${currentMonth})`,
         );
 
       // Use calculated amount (partial or full) from student_fees
       const monthlyFee = studentFees?.amount || 0;
-      const arrears = (arrearsFees || []).reduce((sum, fee) => sum + fee.amount, 0);
+      const arrears = (arrearsFees || []).reduce(
+        (sum, fee) => sum + fee.amount,
+        0,
+      );
       const totalAmount = monthlyFee + arrears;
 
       vouchersToInsert.push({
@@ -234,7 +249,10 @@ export async function POST(request: NextRequest) {
         .eq("year", currentMonth === 1 ? currentYear - 1 : currentYear);
 
       const teacherSalaryMap = new Map(
-        (previousTeacherSalaries || []).map((salary: any) => [salary.teacher_id, salary.amount])
+        (previousTeacherSalaries || []).map((salary: any) => [
+          salary.teacher_id,
+          salary.amount,
+        ]),
       );
 
       // Check which teachers already have salaries for current month
@@ -245,7 +263,9 @@ export async function POST(request: NextRequest) {
         .eq("year", currentYear);
 
       const existingTeacherIds = new Set(
-        (existingCurrentMonthSalaries || []).map((salary: any) => salary.teacher_id)
+        (existingCurrentMonthSalaries || []).map(
+          (salary: any) => salary.teacher_id,
+        ),
       );
 
       // Only insert salaries for teachers who don't have current month salary yet

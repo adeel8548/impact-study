@@ -79,7 +79,7 @@ export async function markStudentAttendance(
       },
       {
         onConflict: "student_id,date",
-      }
+      },
     );
 
     if (error) {
@@ -212,10 +212,7 @@ export async function updateAttendanceRemarks(
 /**
  * Update late reason for teacher attendance
  */
-export async function updateLateReason(
-  recordId: string,
-  lateReason: string,
-) {
+export async function updateLateReason(recordId: string, lateReason: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -283,4 +280,3 @@ export async function clearTeacherLateAttendance(recordId: string) {
   revalidatePath("/teacher/my-attendance");
   return { error: null };
 }
-

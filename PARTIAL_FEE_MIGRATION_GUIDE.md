@@ -19,11 +19,13 @@ Before running the migration:
 ## Step 1: Backup Database
 
 ### Option A: Supabase Dashboard
+
 1. Go to Database → Backups
 2. Create manual backup
 3. Download backup file
 
 ### Option B: Command Line
+
 ```bash
 # Using pg_dump
 pg_dump -U postgres -h db.yourproject.supabase.co -d postgres > backup_$(date +%Y%m%d).sql
@@ -78,9 +80,9 @@ Run these queries to verify the migration was successful:
 
 ```sql
 -- Check new columns in students table
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_name = 'students' 
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'students'
 AND column_name IN ('full_fee', 'joining_date');
 
 -- Expected output:
@@ -88,9 +90,9 @@ AND column_name IN ('full_fee', 'joining_date');
 -- joining_date | date
 
 -- Check new columns in student_fees table
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_name = 'student_fees' 
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'student_fees'
 AND column_name IN ('is_partial', 'total_days_in_month', 'payable_days', 'per_day_fee', 'full_fee');
 
 -- Expected output:
@@ -101,14 +103,14 @@ AND column_name IN ('is_partial', 'total_days_in_month', 'payable_days', 'per_da
 -- full_fee            | numeric
 
 -- Check new columns in fee_vouchers table
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_name = 'fee_vouchers' 
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'fee_vouchers'
 AND column_name IN ('is_partial', 'total_days_in_month', 'payable_days', 'per_day_fee');
 
 -- Verify indexes
-SELECT indexname FROM pg_indexes 
-WHERE tablename IN ('students', 'student_fees') 
+SELECT indexname FROM pg_indexes
+WHERE tablename IN ('students', 'student_fees')
 AND indexname LIKE '%partial%' OR indexname LIKE '%joining%';
 ```
 
@@ -138,7 +140,7 @@ FROM students;
 ```sql
 -- Set fee based on class
 UPDATE students s
-SET full_fee = CASE 
+SET full_fee = CASE
   WHEN c.name LIKE 'Class 1%' THEN 3000
   WHEN c.name LIKE 'Class 2%' THEN 3500
   WHEN c.name LIKE 'Class 3%' THEN 4000
@@ -168,7 +170,7 @@ ORDER BY c.name;
 ```sql
 -- Copy most recent fee amount from student_fees to students.full_fee
 WITH latest_fees AS (
-  SELECT 
+  SELECT
     student_id,
     amount,
     ROW_NUMBER() OVER (PARTITION BY student_id ORDER BY year DESC, month DESC) as rn
@@ -177,12 +179,12 @@ WITH latest_fees AS (
 UPDATE students s
 SET full_fee = lf.amount
 FROM latest_fees lf
-WHERE s.id = lf.student_id 
+WHERE s.id = lf.student_id
 AND lf.rn = 1
 AND (s.full_fee IS NULL OR s.full_fee = 0);
 
 -- Verify
-SELECT 
+SELECT
   COUNT(*) as total,
   AVG(full_fee) as avg_fee,
   MIN(full_fee) as min_fee,
@@ -217,7 +219,7 @@ WHERE joining_date IS NULL;
 ```sql
 -- Set joining date to first month they have fee record
 WITH first_fee AS (
-  SELECT 
+  SELECT
     student_id,
     MIN(DATE(year || '-' || LPAD(month::text, 2, '0') || '-01')) as first_month
   FROM student_fees
@@ -250,7 +252,7 @@ If you want to retroactively apply partial fees to students who joined recently:
 ```sql
 -- Example: Update January 2026 fees for students who joined mid-month
 UPDATE student_fees sf
-SET 
+SET
   is_partial = TRUE,
   total_days_in_month = 31,
   payable_days = (31 - EXTRACT(DAY FROM s.joining_date)::INTEGER + 1),
@@ -259,7 +261,7 @@ SET
   full_fee = s.full_fee
 FROM students s
 WHERE sf.student_id = s.id
-AND sf.month = 1 
+AND sf.month = 1
 AND sf.year = 2026
 AND s.joining_date IS NOT NULL
 AND EXTRACT(YEAR FROM s.joining_date) = 2026
@@ -267,7 +269,7 @@ AND EXTRACT(MONTH FROM s.joining_date) = 1
 AND EXTRACT(DAY FROM s.joining_date) > 1;
 
 -- Verify updated records
-SELECT 
+SELECT
   s.name,
   s.joining_date,
   sf.amount,
@@ -288,11 +290,11 @@ AND sf.is_partial = TRUE;
 ```sql
 -- Create a test student with mid-month joining
 INSERT INTO students (
-  name, 
-  roll_number, 
-  class_id, 
-  school_id, 
-  full_fee, 
+  name,
+  roll_number,
+  class_id,
+  school_id,
+  full_fee,
   joining_date
 )
 VALUES (
@@ -319,7 +321,7 @@ curl -X POST "https://yourapp.vercel.app/api/cron/monthly-billing?secret=your-se
 
 ```sql
 -- Check if partial fee was calculated correctly
-SELECT 
+SELECT
   s.name,
   s.joining_date,
   s.full_fee,
@@ -339,6 +341,7 @@ LIMIT 1;
 ### 7.4 Generate Test Voucher
 
 Use your admin panel to generate a fee voucher for the test student and verify:
+
 - ✅ Partial fee breakdown is shown
 - ✅ Calculation is correct
 - ✅ Total days and payable days are accurate
@@ -385,9 +388,10 @@ git push origin main
 After deployment, monitor the system for the first month:
 
 ### Week 1: Check Fee Generation
+
 ```sql
 -- Verify fees are being created with correct partial/full flags
-SELECT 
+SELECT
   COUNT(*) as total,
   COUNT(CASE WHEN is_partial THEN 1 END) as partial_fees,
   COUNT(CASE WHEN NOT is_partial THEN 1 END) as full_fees
@@ -397,9 +401,10 @@ AND year = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER;
 ```
 
 ### Week 2: Check Voucher Generation
+
 ```sql
 -- Verify vouchers are being created correctly
-SELECT 
+SELECT
   COUNT(*) as total_vouchers,
   COUNT(CASE WHEN is_partial THEN 1 END) as partial_vouchers
 FROM fee_vouchers
@@ -407,10 +412,12 @@ WHERE month = TO_CHAR(CURRENT_DATE, 'Month');
 ```
 
 ### Week 3: Verify Payment Processing
+
 - Check if partial fee students can pay successfully
 - Verify receipt shows correct breakdown
 
 ### Week 4: Prepare for Next Month
+
 - Ensure cron job is scheduled correctly
 - Verify students with partial fee this month will get full fee next month
 
@@ -435,9 +442,9 @@ psql -h db.yourproject.supabase.co \
 ```sql
 -- Reset all new fields to default
 UPDATE students SET full_fee = 0, joining_date = NULL;
-UPDATE student_fees SET is_partial = FALSE, total_days_in_month = NULL, 
+UPDATE student_fees SET is_partial = FALSE, total_days_in_month = NULL,
                         payable_days = NULL, per_day_fee = NULL, full_fee = NULL;
-UPDATE fee_vouchers SET is_partial = FALSE, total_days_in_month = NULL, 
+UPDATE fee_vouchers SET is_partial = FALSE, total_days_in_month = NULL,
                          payable_days = NULL, per_day_fee = NULL;
 ```
 
@@ -456,6 +463,7 @@ UPDATE fee_vouchers SET is_partial = FALSE, total_days_in_month = NULL,
 ### Issue: Partial fee not calculating
 
 **Checklist:**
+
 - [ ] Is `full_fee` set? (Should be > 0)
 - [ ] Is `joining_date` set?
 - [ ] Is `joining_date` in current month?
@@ -464,6 +472,7 @@ UPDATE fee_vouchers SET is_partial = FALSE, total_days_in_month = NULL,
 ### Issue: Cron job not creating fees
 
 **Solution:**
+
 ```bash
 # Check cron job logs in Vercel Dashboard
 # Or trigger manually and check response
@@ -499,6 +508,7 @@ If you encounter issues:
 **Total Migration Time:** 30-60 minutes (depending on student count)
 
 **Steps:**
+
 1. ✅ Backup database
 2. ✅ Run migration script
 3. ✅ Verify schema changes
@@ -510,6 +520,7 @@ If you encounter issues:
 9. ✅ Monitor first month
 
 **Files to Review:**
+
 - [`PARTIAL_FEE_SYSTEM_GUIDE.md`](PARTIAL_FEE_SYSTEM_GUIDE.md) - Complete guide
 - [`PARTIAL_FEE_QUICK_REFERENCE.md`](PARTIAL_FEE_QUICK_REFERENCE.md) - Quick reference
 - [`scripts/025_partial_fee_support.sql`](scripts/025_partial_fee_support.sql) - Migration script

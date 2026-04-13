@@ -44,16 +44,19 @@ Students Page
 ## 🎯 How to Print
 
 ### One Student
+
 ```
 [Printer Icon] → Check Fine? → Generate Preview → Print
 ```
 
 ### All Students
+
 ```
 [Print Fee Vouchers] → All Students → Check Fine? → Generate → Print
 ```
 
 ### By Class
+
 ```
 [Print Fee Vouchers] → By Class → Select Class → Check Fine? → Generate → Print
 ```
@@ -93,6 +96,7 @@ Voucher shows:
 ## ⚙️ Customize (2 Options)
 
 ### Option 1: Change Fine Amount
+
 ```
 File: lib/actions/fee-vouchers.ts
 Line: ~45
@@ -101,6 +105,7 @@ To:     const FINE_PER_DAY = 30; (or your amount)
 ```
 
 ### Option 2: Change Due Date
+
 ```
 File: lib/actions/fee-vouchers.ts
 Line: ~68
@@ -158,13 +163,13 @@ Security: Row Level Security enabled
 
 ## 🐛 Quick Fixes
 
-| Issue | Fix |
-|-------|-----|
-| Print button missing | Refresh browser (F5) |
-| Database error | Run SQL migration |
-| Date error | Already fixed ✓ |
-| Arrears wrong | Check student_fees table |
-| Fine not showing | Today must be after 12th |
+| Issue                | Fix                      |
+| -------------------- | ------------------------ |
+| Print button missing | Refresh browser (F5)     |
+| Database error       | Run SQL migration        |
+| Date error           | Already fixed ✓          |
+| Arrears wrong        | Check student_fees table |
+| Fine not showing     | Today must be after 12th |
 
 ---
 

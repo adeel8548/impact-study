@@ -2,7 +2,11 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import dayjs from "dayjs";
-import { sendMessage, subscribeMessages, markConversationAsRead } from "@/lib/firestore-chat";
+import {
+  sendMessage,
+  subscribeMessages,
+  markConversationAsRead,
+} from "@/lib/firestore-chat";
 import { ensureFirebaseAuth } from "@/lib/firebase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +29,16 @@ export function ChatWindow({
   onUnreadChange,
   timeFormat12h = false,
 }: ChatWindowProps) {
-  const [messages, setMessages] = useState<Array<{ id: string; senderId: string; text: string; createdAt: Date; senderName?: string; isRead?: boolean }>>([]);
+  const [messages, setMessages] = useState<
+    Array<{
+      id: string;
+      senderId: string;
+      text: string;
+      createdAt: Date;
+      senderName?: string;
+      isRead?: boolean;
+    }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -37,19 +50,24 @@ export function ChatWindow({
   const playNotificationSound = useCallback(() => {
     try {
       // Create a simple beep sound using Web Audio API
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.frequency.value = 880; // A5 note
-      oscillator.type = 'sine';
-      
+      oscillator.type = "sine";
+
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-      
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.2,
+      );
+
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.2);
     } catch (err) {
@@ -69,7 +87,9 @@ export function ChatWindow({
       // Play sound ONLY if page is not focused (user on different tab/page)
       if (msgs.length > lastMessageCountRef.current) {
         const newMessages = msgs.slice(lastMessageCountRef.current);
-        const hasMessageFromOther = newMessages.some(m => m.senderId !== currentUserId);
+        const hasMessageFromOther = newMessages.some(
+          (m) => m.senderId !== currentUserId,
+        );
         // Only play sound if browser tab is NOT visible
         if (hasMessageFromOther && !document.hidden) {
           // User is on this page but conversation open, don't play sound
@@ -82,11 +102,13 @@ export function ChatWindow({
 
       setMessages(msgs);
       setLoading(false);
-      
+
       // Report unread count to parent - only count messages that are actually unread
       if (onUnreadChange) {
-        const unreadCount = msgs.filter(m => 
-          m.senderId !== currentUserId && (m.isRead === false || m.isRead === undefined)
+        const unreadCount = msgs.filter(
+          (m) =>
+            m.senderId !== currentUserId &&
+            (m.isRead === false || m.isRead === undefined),
         ).length;
         onUnreadChange(unreadCount);
       }
@@ -94,7 +116,8 @@ export function ChatWindow({
       // Stop spinner once our pending message appears
       if (pendingTextRef.current) {
         const delivered = msgs.some(
-          (m) => m.senderId === currentUserId && m.text === pendingTextRef.current
+          (m) =>
+            m.senderId === currentUserId && m.text === pendingTextRef.current,
         );
         if (delivered) {
           setSending(false);
@@ -111,7 +134,9 @@ export function ChatWindow({
       // This prevents showing unread messages when user first loads the page
       if (!document.hidden && msgs.length > 0) {
         // Mark as read immediately if user is viewing the conversation
-        markConversationAsRead(conversationId, currentUserId).catch(console.error);
+        markConversationAsRead(conversationId, currentUserId).catch(
+          console.error,
+        );
       }
     });
 
@@ -124,9 +149,9 @@ export function ChatWindow({
     const messageText = input.trim();
     setInput(""); // Clear input immediately for better UX
     setSending(true);
-    
+
     console.log("handleSend started, conversationId:", conversationId);
-    
+
     try {
       // Try to ensure Firebase auth, but continue even if it fails
       try {
@@ -138,21 +163,33 @@ export function ChatWindow({
       } catch (authError) {
         console.warn("Firebase auth skipped:", authError);
       }
-      
-      console.log("Sending message to conversation:", conversationId, "text:", messageText);
+
+      console.log(
+        "Sending message to conversation:",
+        conversationId,
+        "text:",
+        messageText,
+      );
       // Mark this text pending so we can stop spinner once it appears via subscription
       pendingTextRef.current = messageText;
 
-      const msgId = await sendMessage(conversationId, currentUserId, messageText, currentUserName);
+      const msgId = await sendMessage(
+        conversationId,
+        currentUserId,
+        messageText,
+        currentUserName,
+      );
       console.log("Message sent successfully, ID:", msgId);
       // Do not setSending(false) here; we'll stop when it appears in the stream
-      
     } catch (error) {
       console.error("Error sending message:", error);
       setSending(false); // Reset on error
       pendingTextRef.current = null;
-      
-      toast.error("Failed to send message: " + (error instanceof Error ? error.message : "Unknown error"));
+
+      toast.error(
+        "Failed to send message: " +
+          (error instanceof Error ? error.message : "Unknown error"),
+      );
       // Restore message text on error
       setInput(messageText);
     }
@@ -200,7 +237,9 @@ export function ChatWindow({
                     <p className="text-sm">{msg.text}</p>
                     <p className="text-xs opacity-70 mt-1">
                       {msg.createdAt instanceof Date
-                        ? dayjs(msg.createdAt).format(timeFormat12h ? "hh:mm A" : "HH:mm")
+                        ? dayjs(msg.createdAt).format(
+                            timeFormat12h ? "hh:mm A" : "HH:mm",
+                          )
                         : "sending..."}
                     </p>
                   </div>

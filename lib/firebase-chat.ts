@@ -28,7 +28,7 @@ export async function saveMessageToFirebase(
   conversationId: string,
   senderId: string,
   senderName: string,
-  message: string
+  message: string,
 ): Promise<{ id: string; error?: string }> {
   try {
     console.log("Firebase: Saving message to conversation:", conversationId, {
@@ -57,22 +57,25 @@ export async function saveMessageToFirebase(
  * Fetch all messages for a conversation from Firestore
  */
 export async function fetchMessagesFromFirebase(
-  conversationId: string
+  conversationId: string,
 ): Promise<ChatMessage[]> {
   try {
-    console.log("Firebase: Fetching messages for conversation:", conversationId);
+    console.log(
+      "Firebase: Fetching messages for conversation:",
+      conversationId,
+    );
     const q = query(
       collection(db, "messages"),
       where("conversationId", "==", conversationId),
-      orderBy("createdAt", "asc")
+      orderBy("createdAt", "asc"),
     );
 
     // Get docs once
     const { getDocs } = await import("firebase/firestore");
     const snapshot = await getDocs(q);
-    
+
     console.log("Firebase: Found", snapshot.docs.length, "messages");
-    
+
     return snapshot.docs.map((doc) => {
       const data = doc.data();
       console.log("Firebase message:", doc.id, data);
@@ -99,13 +102,13 @@ export async function fetchMessagesFromFirebase(
 export function subscribeToMessages(
   conversationId: string,
   onNewMessage: (message: ChatMessage) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
 ): () => void {
   try {
     const q = query(
       collection(db, "messages"),
       where("conversationId", "==", conversationId),
-      orderBy("createdAt", "asc")
+      orderBy("createdAt", "asc"),
     );
 
     const unsubscribe = onSnapshot(
@@ -131,7 +134,7 @@ export function subscribeToMessages(
       (error) => {
         console.error("Error in message subscription:", error);
         if (onError) onError(error);
-      }
+      },
     );
 
     return unsubscribe;
@@ -160,7 +163,7 @@ export async function markMessageAsRead(messageId: string): Promise<void> {
  */
 export async function markConversationAsRead(
   conversationId: string,
-  currentUserId: string
+  currentUserId: string,
 ): Promise<void> {
   try {
     const { getDocs, updateDoc, doc } = await import("firebase/firestore");
@@ -168,11 +171,13 @@ export async function markConversationAsRead(
       collection(db, "messages"),
       where("conversationId", "==", conversationId),
       where("senderId", "!=", currentUserId),
-      where("isRead", "==", false)
+      where("isRead", "==", false),
     );
 
     const snapshot = await getDocs(q);
-    const batch = await import("firebase/firestore").then((m) => m.writeBatch(db));
+    const batch = await import("firebase/firestore").then((m) =>
+      m.writeBatch(db),
+    );
 
     snapshot.docs.forEach((document) => {
       batch.update(document.ref, { isRead: true });
@@ -189,7 +194,7 @@ export async function markConversationAsRead(
  */
 export async function getUnreadMessageCount(
   currentUserId: string,
-  conversationIds: string[]
+  conversationIds: string[],
 ): Promise<number> {
   try {
     if (conversationIds.length === 0) return 0;
@@ -199,7 +204,7 @@ export async function getUnreadMessageCount(
       collection(db, "messages"),
       where("conversationId", "in", conversationIds),
       where("senderId", "!=", currentUserId),
-      where("isRead", "==", false)
+      where("isRead", "==", false),
     );
 
     const snapshot = await getDocs(q);

@@ -108,7 +108,9 @@ export function formatCurrency(amount: number): string {
  * Check if attendance is marked as late once the allowed grace period has passed.
  * Default grace period is 15 minutes; override via thresholdMinutes when needed.
  */
-const parseExpectedTime = (expectedTime: string | null | undefined): { hours: number; minutes: number } | null => {
+const parseExpectedTime = (
+  expectedTime: string | null | undefined,
+): { hours: number; minutes: number } | null => {
   if (!expectedTime) return null;
 
   const trimmed = expectedTime.trim();
@@ -142,7 +144,7 @@ export function isAttendanceLate(
   createdAt: Date | string,
   expectedTime: string | null | undefined,
   date: string | Date,
-  thresholdMinutes: number = 15
+  thresholdMinutes: number = 15,
 ): boolean {
   const parsed = parseExpectedTime(expectedTime);
   if (!parsed) return false;
@@ -170,7 +172,7 @@ export function isAttendanceLate(
 export function getAttendanceTimeOffset(
   createdAt: Date | string,
   expectedTime: string | null | undefined,
-  date: string | Date
+  date: string | Date,
 ): number {
   const parsed = parseExpectedTime(expectedTime);
   if (!parsed) return 0;
@@ -193,7 +195,7 @@ export function shouldMarkAsLate(
   createdAt: Date | string,
   expectedTime: string | null | undefined,
   date: string | Date,
-  thresholdMinutes: number = 15
+  thresholdMinutes: number = 15,
 ): boolean {
   return isAttendanceLate(createdAt, expectedTime, date, thresholdMinutes);
 }

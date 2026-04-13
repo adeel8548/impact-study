@@ -74,13 +74,13 @@ export default function AdminAttendancePage() {
   >([]);
   const [isFetching, setIsFetching] = useState(false);
   const [activeTab, setActiveTab] = useState<"students" | "teachers">(
-    "students"
+    "students",
   );
   const [studentsPastLoaded, setStudentsPastLoaded] = useState(false);
   const [teachersPastLoaded, setTeachersPastLoaded] = useState(false);
   const [markingModalOpen, setMarkingModalOpen] = useState(false);
   const [markingType, setMarkingType] = useState<"teacher" | "student">(
-    "student"
+    "student",
   );
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaveModalData, setLeaveModalData] = useState<{
@@ -117,7 +117,7 @@ export default function AdminAttendancePage() {
   // Date range helper: accepts option keys and optional custom dates, returns local start/end strings, day count and label
   const computeRange = (
     option: string,
-    custom?: { start?: string; end?: string }
+    custom?: { start?: string; end?: string },
   ) => {
     const today = new Date();
     let start: Date | null = null;
@@ -141,7 +141,7 @@ export default function AdminAttendancePage() {
         const firstOfThisMonth = new Date(
           today.getFullYear(),
           today.getMonth(),
-          1
+          1,
         );
         end = new Date(firstOfThisMonth.getTime() - 1 * 24 * 60 * 60 * 1000); // last day of previous month
         start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -192,7 +192,7 @@ export default function AdminAttendancePage() {
       const e = new Date(
         today.getFullYear(),
         today.getMonth(),
-        today.getDate()
+        today.getDate(),
       );
       const s = new Date(e.getTime() - (7 - 1) * 24 * 60 * 60 * 1000);
       start = s;
@@ -326,7 +326,7 @@ export default function AdminAttendancePage() {
   const openLeaveReason = (
     record: AttendanceRecord | null | undefined,
     type: "student" | "teacher",
-    name: string
+    name: string,
   ) => {
     if (!record || !record.id) return;
     setLeaveModalData({
@@ -345,19 +345,19 @@ export default function AdminAttendancePage() {
   const updateLocalRemarks = (
     recordId: string,
     reason: string,
-    type: "student" | "teacher"
+    type: "student" | "teacher",
   ) => {
     if (type === "student") {
       setStudentAttendance((prev) =>
         (prev || []).map((r) =>
-          r.id === recordId ? { ...r, remarks: reason } : r
-        )
+          r.id === recordId ? { ...r, remarks: reason } : r,
+        ),
       );
     } else {
       setTeacherAttendance((prev) =>
         (prev || []).map((r) =>
-          r.id === recordId ? { ...r, remarks: reason } : r
-        )
+          r.id === recordId ? { ...r, remarks: reason } : r,
+        ),
       );
     }
   };
@@ -404,7 +404,7 @@ export default function AdminAttendancePage() {
   // Fetch attendance for students for a computed range option or explicit custom dates
   const fetchStudentAttendance = async (
     rangeOption = "last7",
-    customDates?: { start?: string; end?: string }
+    customDates?: { start?: string; end?: string },
   ) => {
     if (!selectedClass) return;
     try {
@@ -431,7 +431,7 @@ export default function AdminAttendancePage() {
       ).map((a: any) => {
         const d = new Date(a.date);
         const localDate = toLocalDate(
-          new Date(d.getFullYear(), d.getMonth(), d.getDate())
+          new Date(d.getFullYear(), d.getMonth(), d.getDate()),
         );
         return { ...a, date: localDate };
       });
@@ -469,7 +469,7 @@ export default function AdminAttendancePage() {
 
   const fetchTeacherAttendance = async (
     rangeOption = "last7",
-    customDates?: { start?: string; end?: string }
+    customDates?: { start?: string; end?: string },
   ) => {
     try {
       setIsFetching(true);
@@ -493,7 +493,7 @@ export default function AdminAttendancePage() {
       ).map((a: any) => {
         const d = new Date(a.date);
         const localDate = toLocalDate(
-          new Date(d.getFullYear(), d.getMonth(), d.getDate())
+          new Date(d.getFullYear(), d.getMonth(), d.getDate()),
         );
         return { ...a, date: localDate };
       });
@@ -535,12 +535,12 @@ export default function AdminAttendancePage() {
         .map((record: any) => {
           const d = new Date(record.date);
           const localDate = toLocalDate(
-            new Date(d.getFullYear(), d.getMonth(), d.getDate())
+            new Date(d.getFullYear(), d.getMonth(), d.getDate()),
           );
           return { ...record, date: localDate };
         })
         .sort((a: AttendanceRecord, b: AttendanceRecord) =>
-          a.date.localeCompare(b.date)
+          a.date.localeCompare(b.date),
         );
 
       setUpcomingTeacherLeaves(upcoming);
@@ -555,19 +555,19 @@ export default function AdminAttendancePage() {
   const handleStudentAttendanceChange = async (
     studentId: string,
     date: string,
-    status: "present" | "absent" | "leave" | "late" | null
+    status: "present" | "absent" | "leave" | "late" | null,
   ) => {
     try {
       if (!status) {
         // Delete attendance locally for now
         const recordToDelete = studentAttendance.find(
-          (a) => a.student_id === studentId && a.date === date
+          (a) => a.student_id === studentId && a.date === date,
         );
         if (recordToDelete) {
           setStudentAttendance((prev) =>
             (prev || []).filter(
-              (a) => !(a.student_id === studentId && a.date === date)
-            )
+              (a) => !(a.student_id === studentId && a.date === date),
+            ),
           );
         }
         return;
@@ -575,7 +575,7 @@ export default function AdminAttendancePage() {
 
       // Check if we already have a record for this student & date
       const existing = (studentAttendance || []).find(
-        (a) => a.student_id === studentId && a.date === date
+        (a) => a.student_id === studentId && a.date === date,
       );
 
       let response: Response | null = null;
@@ -615,7 +615,7 @@ export default function AdminAttendancePage() {
 
       setStudentAttendance((prev) => {
         const filtered = (prev || []).filter(
-          (a) => !(a.student_id === studentId && a.date === date)
+          (a) => !(a.student_id === studentId && a.date === date),
         );
         if (Array.isArray(returned)) return [...filtered, ...returned];
         return [...filtered, returned];
@@ -629,7 +629,7 @@ export default function AdminAttendancePage() {
         const savedRecord = Array.isArray(returned)
           ? returned.find(
               (a: AttendanceRecord) =>
-                a.student_id === studentId && a.date === date
+                a.student_id === studentId && a.date === date,
             )
           : returned;
         openLeaveReason(savedRecord, "student", studentName);
@@ -643,22 +643,22 @@ export default function AdminAttendancePage() {
   const handleTeacherAttendanceChange = async (
     teacherId: string,
     date: string,
-    status: "present" | "absent" | "leave" | "late" | null
+    status: "present" | "absent" | "leave" | "late" | null,
   ) => {
     try {
       if (!status) {
         setTeacherAttendance((prev) =>
           Array.isArray(prev)
             ? prev.filter(
-                (a) => !(a.teacher_id === teacherId && a.date === date)
+                (a) => !(a.teacher_id === teacherId && a.date === date),
               )
-            : []
+            : [],
         );
         return;
       }
 
       const teacherExpectedTime = teachers.find(
-        (t) => t.id === teacherId
+        (t) => t.id === teacherId,
       )?.expected_time;
       let finalStatus = status;
       if (status === "present" && teacherExpectedTime) {
@@ -666,7 +666,7 @@ export default function AdminAttendancePage() {
           new Date(),
           teacherExpectedTime,
           date,
-          20
+          20,
         );
         if (late) {
           finalStatus = "late";
@@ -693,7 +693,7 @@ export default function AdminAttendancePage() {
 
       setTeacherAttendance((prev) => {
         const filtered = (prev || []).filter(
-          (a) => !(a.teacher_id === teacherId && a.date === date)
+          (a) => !(a.teacher_id === teacherId && a.date === date),
         );
         if (Array.isArray(returned)) return [...filtered, ...returned];
         return [...filtered, returned];
@@ -707,7 +707,7 @@ export default function AdminAttendancePage() {
         const savedRecord = Array.isArray(returned)
           ? returned.find(
               (a: AttendanceRecord) =>
-                a.teacher_id === teacherId && a.date === date
+                a.teacher_id === teacherId && a.date === date,
             )
           : returned;
         openLeaveReason(savedRecord, "teacher", teacherName);
@@ -718,7 +718,7 @@ export default function AdminAttendancePage() {
         const savedRecord = Array.isArray(returned)
           ? returned.find(
               (a: AttendanceRecord) =>
-                a.teacher_id === teacherId && a.date === date
+                a.teacher_id === teacherId && a.date === date,
             )
           : returned;
         if (savedRecord) {
@@ -734,7 +734,7 @@ export default function AdminAttendancePage() {
   const openMarkingModal = (
     type: "teacher" | "student",
     id: string,
-    name: string
+    name: string,
   ) => {
     setMarkingType(type);
     setMarkingTargetId(id);
@@ -744,7 +744,7 @@ export default function AdminAttendancePage() {
 
   const handleMarked = (
     date: string,
-    status: "present" | "absent" | "leave" | "late"
+    status: "present" | "absent" | "leave" | "late",
   ) => {
     // Refresh attendance after marking
     if (markingType === "teacher") {
@@ -758,7 +758,7 @@ export default function AdminAttendancePage() {
     date: string,
     recordId: string,
     personName: string,
-    type: "student" | "teacher"
+    type: "student" | "teacher",
   ) => {
     const records = type === "student" ? studentAttendance : teacherAttendance;
     const record = records.find((r) => r.id === recordId);
@@ -862,7 +862,7 @@ export default function AdminAttendancePage() {
                                 start: studentCustomStart,
                                 end: studentCustomEnd,
                               }
-                            : undefined
+                            : undefined,
                         );
                       }}
                       disabled={
@@ -890,8 +890,8 @@ export default function AdminAttendancePage() {
                         onClick={() => {
                           setStudentAttendance((prev) =>
                             prev.filter(
-                              (a) => a.date === toLocalDate(new Date())
-                            )
+                              (a) => a.date === toLocalDate(new Date()),
+                            ),
                           );
                           setStudentsPastLoaded(false);
                         }}
@@ -929,16 +929,16 @@ export default function AdminAttendancePage() {
                               : []
                           ).filter((a) => a.date === today);
                           const presentCount = todayRecords.filter(
-                            (r) => r.status === "present"
+                            (r) => r.status === "present",
                           ).length;
                           const absentCount = todayRecords.filter(
                             (r) =>
                               r.status === "absent" ||
-                              (r as any).approval_status === "rejected"
+                              (r as any).approval_status === "rejected",
                           ).length;
                           const notMarked = Math.max(
                             0,
-                            students.length - (presentCount + absentCount)
+                            students.length - (presentCount + absentCount),
                           );
 
                           return (
@@ -971,7 +971,7 @@ export default function AdminAttendancePage() {
                     <div className="space-y-4">
                       {students?.map((student) => {
                         const studentRecords = studentAttendance.filter(
-                          (a) => a.student_id === student.id
+                          (a) => a.student_id === student.id,
                         );
                         return (
                           <div
@@ -992,7 +992,7 @@ export default function AdminAttendancePage() {
                                   openMarkingModal(
                                     "student",
                                     student.id,
-                                    student.name
+                                    student.name,
                                   )
                                 }
                                 className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
@@ -1007,7 +1007,7 @@ export default function AdminAttendancePage() {
                                 handleStudentAttendanceChange(
                                   student.id,
                                   date,
-                                  status
+                                  status,
                                 )
                               }
                               onLateDetected={(date, recordId, personName) =>
@@ -1015,7 +1015,7 @@ export default function AdminAttendancePage() {
                                   date,
                                   recordId,
                                   personName,
-                                  "student"
+                                  "student",
                                 )
                               }
                               isAdmin={true}
@@ -1028,7 +1028,7 @@ export default function AdminAttendancePage() {
                                         start: studentCustomStart,
                                         end: studentCustomEnd,
                                       }
-                                    : undefined
+                                    : undefined,
                                 ).days
                               }
                               startDateIso={
@@ -1039,7 +1039,7 @@ export default function AdminAttendancePage() {
                                         start: studentCustomStart,
                                         end: studentCustomEnd,
                                       }
-                                    : undefined
+                                    : undefined,
                                 ).start
                               }
                               maxDateIso={toLocalDate(new Date())}
@@ -1080,16 +1080,16 @@ export default function AdminAttendancePage() {
                           : []
                       ).filter((a) => a.date === today);
                       const presentCount = todayRecords.filter(
-                        (r) => r.status === "present"
+                        (r) => r.status === "present",
                       ).length;
                       const absentCount = todayRecords.filter(
                         (r) =>
                           r.status === "absent" ||
-                          (r as any).approval_status === "rejected"
+                          (r as any).approval_status === "rejected",
                       ).length;
                       const notMarked = Math.max(
                         0,
-                        teachers.length - (presentCount + absentCount)
+                        teachers.length - (presentCount + absentCount),
                       );
 
                       return (
@@ -1148,7 +1148,7 @@ export default function AdminAttendancePage() {
                                       start: teacherCustomStart,
                                       end: teacherCustomEnd,
                                     }
-                                  : undefined
+                                  : undefined,
                               );
                             }}
                             disabled={
@@ -1187,8 +1187,8 @@ export default function AdminAttendancePage() {
                             onClick={() => {
                               setTeacherAttendance((prev) =>
                                 prev.filter(
-                                  (a) => a.date === toLocalDate(new Date())
-                                )
+                                  (a) => a.date === toLocalDate(new Date()),
+                                ),
                               );
                               setTeachersPastLoaded(false);
                             }}
@@ -1237,7 +1237,7 @@ export default function AdminAttendancePage() {
                                 openMarkingModal(
                                   "teacher",
                                   teacher.id,
-                                  teacher.name
+                                  teacher.name,
                                 )
                               }
                               className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors whitespace-nowrap"
@@ -1252,7 +1252,7 @@ export default function AdminAttendancePage() {
                               handleTeacherAttendanceChange(
                                 teacher.id,
                                 date,
-                                status
+                                status,
                               )
                             }
                             onLateDetected={(date, recordId, personName) =>
@@ -1260,7 +1260,7 @@ export default function AdminAttendancePage() {
                                 date,
                                 recordId,
                                 personName,
-                                "teacher"
+                                "teacher",
                               )
                             }
                             isAdmin={true}
@@ -1277,7 +1277,7 @@ export default function AdminAttendancePage() {
                                       start: teacherCustomStart,
                                       end: teacherCustomEnd,
                                     }
-                                  : undefined
+                                  : undefined,
                               ).days
                             }
                             startDateIso={
@@ -1288,7 +1288,7 @@ export default function AdminAttendancePage() {
                                       start: teacherCustomStart,
                                       end: teacherCustomEnd,
                                     }
-                                  : undefined
+                                  : undefined,
                               ).start
                             }
                             maxDateIso={toLocalDate(new Date())}
@@ -1308,7 +1308,7 @@ export default function AdminAttendancePage() {
                                 openLeaveReason(
                                   record as AttendanceRecord,
                                   type,
-                                  personName
+                                  personName,
                                 );
                               }
                             }}
@@ -1354,7 +1354,7 @@ export default function AdminAttendancePage() {
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {upcomingTeacherLeaves.map((record) => {
                       const recordTeacher = teachers.find(
-                        (t) => t.id === record.teacher_id
+                        (t) => t.id === record.teacher_id,
                       );
                       const teacherName = recordTeacher?.name || "Teacher";
                       const statusLabel = record.approval_status || "pending";
@@ -1362,14 +1362,14 @@ export default function AdminAttendancePage() {
                         statusLabel === "approved"
                           ? "Approved"
                           : statusLabel === "rejected"
-                          ? "Rejected"
-                          : "Pending admin review";
+                            ? "Rejected"
+                            : "Pending admin review";
                       const statusClass =
                         statusLabel === "approved"
                           ? "text-green-600"
                           : statusLabel === "rejected"
-                          ? "text-red-600"
-                          : "text-orange-600";
+                            ? "text-red-600"
+                            : "text-orange-600";
                       return (
                         <div
                           key={record.id}
@@ -1487,8 +1487,8 @@ export default function AdminAttendancePage() {
                     prev.map((record) =>
                       record.id === recordId
                         ? { ...record, approval_status: status }
-                        : record
-                    )
+                        : record,
+                    ),
                   );
                   // Also refresh upcoming leaves card
                   fetchUpcomingTeacherLeaves();
@@ -1497,8 +1497,8 @@ export default function AdminAttendancePage() {
                     prev.map((record) =>
                       record.id === recordId
                         ? { ...record, approval_status: status }
-                        : record
-                    )
+                        : record,
+                    ),
                   );
                 }
               }}
@@ -1539,16 +1539,16 @@ export default function AdminAttendancePage() {
                       (prev || []).map((r) =>
                         r.id === lateModalData.recordId
                           ? { ...r, late_reason: reason }
-                          : r
-                      )
+                          : r,
+                      ),
                     );
                   } else {
                     setTeacherAttendance((prev) =>
                       (prev || []).map((r) =>
                         r.id === lateModalData.recordId
                           ? { ...r, late_reason: reason }
-                          : r
-                      )
+                          : r,
+                      ),
                     );
                   }
                 } catch (error) {

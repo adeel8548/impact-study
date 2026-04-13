@@ -43,7 +43,7 @@ export default function TeacherAttendance() {
   >({});
   const [teacherId, setTeacherId] = useState<string>("");
   const [teacherName, setTeacherName] = useState<string>("");
-    const [schoolExpectedTime, setSchoolExpectedTime] = useState<string>("15:00"); // Default school start time for students
+  const [schoolExpectedTime, setSchoolExpectedTime] = useState<string>("15:00"); // Default school start time for students
   const classesFetchedRef = useRef(false);
   const attendanceFetchKeyRef = useRef<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -150,10 +150,14 @@ export default function TeacherAttendance() {
         const data = await res.json();
         if (data.settings?.school_start_time) {
           setSchoolExpectedTime(data.settings.school_start_time);
-          console.log("School start time loaded from database:", data.settings.school_start_time);
-        }
-        else {
-          console.warn("School settings found but no school_start_time; using fallback 15:00");
+          console.log(
+            "School start time loaded from database:",
+            data.settings.school_start_time,
+          );
+        } else {
+          console.warn(
+            "School settings found but no school_start_time; using fallback 15:00",
+          );
         }
       } else {
         console.warn("Failed to fetch school settings; using fallback 15:00");
@@ -277,7 +281,10 @@ export default function TeacherAttendance() {
         `/api/attendance?classId=${selectedClass}&teacherId=${teacherId}`,
       );
       const data = await response.json();
-      const attendanceMap: Record<string, "present" | "absent" | "leave" | "late"> = {};
+      const attendanceMap: Record<
+        string,
+        "present" | "absent" | "leave" | "late"
+      > = {};
       const leaveMap: Record<string, string> = {};
       const meta: Record<string, { id?: string; remarks?: string }> = {};
       if (data.attendance) {
@@ -319,7 +326,7 @@ export default function TeacherAttendance() {
     // Build map: studentId -> { name, dateStatus: Record<date, 'P'|'A'|'L'|'-'> }
     const perStudent: Record<
       string,
-      { name: string; dateStatus: Record<string, 'P' | 'A' | 'L' | '-'> }
+      { name: string; dateStatus: Record<string, "P" | "A" | "L" | "-"> }
     > = {};
 
     // Initialize from current class students so all students appear even if no records
@@ -334,19 +341,28 @@ export default function TeacherAttendance() {
     historyRecords.forEach((r: any) => {
       const sid = r.student_id;
       if (!perStudent[sid]) {
-        perStudent[sid] = { name: r.student_name || `Student ${sid}` , dateStatus: {} };
+        perStudent[sid] = {
+          name: r.student_name || `Student ${sid}`,
+          dateStatus: {},
+        };
       }
       const status =
-        r.status === 'present' ? 'P' : r.status === 'absent' ? 'A' : r.status === 'leave' ? 'L' : '-';
+        r.status === "present"
+          ? "P"
+          : r.status === "absent"
+            ? "A"
+            : r.status === "leave"
+              ? "L"
+              : "-";
       perStudent[sid].dateStatus[r.date] = status;
     });
 
     // Aggregate totals for the range
     const totals = historyRecords.reduce(
       (acc, r: any) => {
-        if (r.status === 'present') acc.present += 1;
-        else if (r.status === 'absent') acc.absent += 1;
-        else if (r.status === 'leave') acc.leaves += 1;
+        if (r.status === "present") acc.present += 1;
+        else if (r.status === "absent") acc.absent += 1;
+        else if (r.status === "leave") acc.leaves += 1;
         return acc;
       },
       { present: 0, absent: 0, leaves: 0 },
@@ -360,13 +376,22 @@ export default function TeacherAttendance() {
       <Card className="p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-semibold text-base">
-            Attendance ({studentEntries.length} students × {uniqueDates.length} days)
+            Attendance ({studentEntries.length} students × {uniqueDates.length}{" "}
+            days)
           </h4>
           <div className="hidden md:flex items-center gap-2 text-xs">
-            <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 font-semibold">P</span>
-            <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-semibold">A</span>
-            <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold">L</span>
-            <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold">-</span>
+            <span className="px-2 py-0.5 rounded bg-green-100 text-green-700 font-semibold">
+              P
+            </span>
+            <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-semibold">
+              A
+            </span>
+            <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold">
+              L
+            </span>
+            <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold">
+              -
+            </span>
           </div>
         </div>
 
@@ -374,11 +399,17 @@ export default function TeacherAttendance() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-secondary border-b border-border">
-                <th className="sticky left-0 z-10 bg-secondary text-left p-3 font-semibold">Student</th>
+                <th className="sticky left-0 z-10 bg-secondary text-left p-3 font-semibold">
+                  Student
+                </th>
                 {uniqueDates.map((d) => {
-                  const day = d.split('-')[2];
+                  const day = d.split("-")[2];
                   return (
-                    <th key={d} className="text-center p-2 font-semibold text-foreground" title={d}>
+                    <th
+                      key={d}
+                      className="text-center p-2 font-semibold text-foreground"
+                      title={d}
+                    >
                       {day}
                     </th>
                   );
@@ -387,23 +418,28 @@ export default function TeacherAttendance() {
             </thead>
             <tbody>
               {studentEntries.map(([sid, info]) => (
-                <tr key={sid} className="border-b border-border hover:bg-secondary/40">
+                <tr
+                  key={sid}
+                  className="border-b border-border hover:bg-secondary/40"
+                >
                   <td className="sticky left-0 bg-background p-3 font-medium text-foreground whitespace-nowrap">
                     {info.name}
                   </td>
                   {uniqueDates.map((d) => {
-                    const status = info.dateStatus[d] || '-';
+                    const status = info.dateStatus[d] || "-";
                     const cls =
-                      status === 'P'
-                        ? 'bg-green-100 text-green-700'
-                        : status === 'A'
-                        ? 'bg-red-100 text-red-700'
-                        : status === 'L'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-700';
+                      status === "P"
+                        ? "bg-green-100 text-green-700"
+                        : status === "A"
+                          ? "bg-red-100 text-red-700"
+                          : status === "L"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-700";
                     return (
                       <td key={d} className="p-1 text-center">
-                        <span className={`inline-flex items-center justify-center w-8 h-7 rounded font-semibold ${cls}`}>
+                        <span
+                          className={`inline-flex items-center justify-center w-8 h-7 rounded font-semibold ${cls}`}
+                        >
                           {status}
                         </span>
                       </td>
@@ -419,7 +455,9 @@ export default function TeacherAttendance() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
           <div className="text-center p-2 bg-gray-50 rounded">
             <p className="text-xs text-muted-foreground">Total Days</p>
-            <p className="text-lg font-bold text-gray-700">{uniqueDates.length}</p>
+            <p className="text-lg font-bold text-gray-700">
+              {uniqueDates.length}
+            </p>
           </div>
           <div className="text-center p-2 bg-green-50 rounded">
             <p className="text-xs text-muted-foreground">Total Present</p>
@@ -452,7 +490,7 @@ export default function TeacherAttendance() {
     if (status === "present") {
       const today = toLocalDate(new Date());
       const isToday = selectedDate === today;
-      
+
       if (isToday) {
         const now = new Date();
         // Debug: print the values used for late calculation
@@ -464,8 +502,15 @@ export default function TeacherAttendance() {
             selectedDate,
           });
         } catch {}
-        const isLate = isAttendanceLate(now, schoolExpectedTime, selectedDate, 40);
-        try { console.log("[Attendance] Is late?", isLate); } catch {}
+        const isLate = isAttendanceLate(
+          now,
+          schoolExpectedTime,
+          selectedDate,
+          40,
+        );
+        try {
+          console.log("[Attendance] Is late?", isLate);
+        } catch {}
         if (isLate) {
           finalStatus = "late";
           toast.info("Student marked Late (>40 min after start)");
@@ -538,7 +583,12 @@ export default function TeacherAttendance() {
     try {
       // Check current time to determine if students should be marked late
       const now = new Date();
-      const shouldMarkLate = isAttendanceLate(now, schoolExpectedTime, selectedDate, 40);
+      const shouldMarkLate = isAttendanceLate(
+        now,
+        schoolExpectedTime,
+        selectedDate,
+        40,
+      );
 
       // Only process students that were explicitly marked
       const markedStudentIds = Object.keys(attendance);
@@ -588,11 +638,13 @@ export default function TeacherAttendance() {
       }
 
       if (shouldMarkLate) {
-        toast.success("Attendance saved (students marked late due to >40 min delay)");
+        toast.success(
+          "Attendance saved (students marked late due to >40 min delay)",
+        );
       } else {
         toast.success("Attendance saved successfully");
       }
-      
+
       // Refresh state so colors/reasons reflect saved values
       await loadAttendance();
       await loadClassStudents();
@@ -776,12 +828,15 @@ export default function TeacherAttendance() {
                               handleAttendanceChange(student.id, "present")
                             }
                             className={`w-full px-3 py-2 rounded font-semibold text-sm transition-colors ${
-                              attendance[student.id] === "present" || attendance[student.id] === "late"
+                              attendance[student.id] === "present" ||
+                              attendance[student.id] === "late"
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-gray-200 hover:bg-gray-300 text-gray-700"
                             }`}
                           >
-                            {attendance[student.id] === "late" ? "⏰ Late" : "✓ Present"}
+                            {attendance[student.id] === "late"
+                              ? "⏰ Late"
+                              : "✓ Present"}
                           </button>
                         </td>
                         <td className="p-4 text-center">

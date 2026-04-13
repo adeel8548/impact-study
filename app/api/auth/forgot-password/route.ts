@@ -7,7 +7,9 @@ const GENERIC_SUCCESS_MESSAGE =
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
-    const email = String(body?.email || "").trim().toLowerCase();
+    const email = String(body?.email || "")
+      .trim()
+      .toLowerCase();
 
     if (!email) {
       return NextResponse.json(
@@ -31,7 +33,10 @@ export async function POST(request: Request) {
     }
 
     if (!profile || profile.role !== "teacher") {
-      return NextResponse.json({ success: true, message: GENERIC_SUCCESS_MESSAGE });
+      return NextResponse.json({
+        success: true,
+        message: GENERIC_SUCCESS_MESSAGE,
+      });
     }
 
     const callbackUrl = new URL("/auth/callback", request.url);
@@ -48,7 +53,10 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, message: GENERIC_SUCCESS_MESSAGE });
+    return NextResponse.json({
+      success: true,
+      message: GENERIC_SUCCESS_MESSAGE,
+    });
   } catch (error: any) {
     console.error("/api/auth/forgot-password", error);
     return NextResponse.json(

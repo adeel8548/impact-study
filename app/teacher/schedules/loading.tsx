@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <div className="min-h-screen bg-background">
       <TeacherHeader />
-      
+
       <div className="mt-16">
         <div className="p-4 md:p-8 space-y-6">
           <Card className="p-8">

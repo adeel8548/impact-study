@@ -283,15 +283,15 @@ Step 5: Teachers Reply (Appears for Admin)
 
 ## 🎯 Feature Comparison
 
-| Feature | Admin | Teacher |
-|---------|-------|---------|
-| Search Teachers | ✅ Yes | ❌ No |
-| Multi-Select | ✅ Yes | ❌ No |
-| Broadcast Message | ✅ Yes | ❌ No |
-| Send Individual | ✅ Yes | ✅ Yes |
-| See All Conversations | ✅ Yes | ✅ Yes |
-| Real-Time Updates | ✅ Yes | ✅ Yes |
-| Mark as Read | ✅ Auto | ✅ Auto |
+| Feature                 | Admin            | Teacher   |
+| ----------------------- | ---------------- | --------- |
+| Search Teachers         | ✅ Yes           | ❌ No     |
+| Multi-Select            | ✅ Yes           | ❌ No     |
+| Broadcast Message       | ✅ Yes           | ❌ No     |
+| Send Individual         | ✅ Yes           | ✅ Yes    |
+| See All Conversations   | ✅ Yes           | ✅ Yes    |
+| Real-Time Updates       | ✅ Yes           | ✅ Yes    |
+| Mark as Read            | ✅ Auto          | ✅ Auto   |
 | Create New Conversation | ✅ Via Broadcast | ✅ Manual |
 
 ---

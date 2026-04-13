@@ -3,7 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, ArrowLeft, Mail } from "lucide-react";
 
@@ -40,7 +46,9 @@ export default function ForgotPasswordPage() {
 
       setMessage(json.message || "Password reset email sent");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send reset email");
+      setError(
+        err instanceof Error ? err.message : "Failed to send reset email",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +96,10 @@ export default function ForgotPasswordPage() {
           </form>
 
           <div className="mt-4 flex items-center justify-between text-sm">
-            <Link href="/login" className="inline-flex items-center gap-2 text-blue-600 hover:underline">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+            >
               <ArrowLeft className="h-4 w-4" />
               Back to login
             </Link>

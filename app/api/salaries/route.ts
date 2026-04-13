@@ -79,8 +79,16 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const supabase = await createClient();
   try {
-    const { id, amount, status, paid_date, teacher_id, month, year, school_id } =
-      await request.json();
+    const {
+      id,
+      amount,
+      status,
+      paid_date,
+      teacher_id,
+      month,
+      year,
+      school_id,
+    } = await request.json();
 
     if (!id) {
       return NextResponse.json(
@@ -184,18 +192,22 @@ export async function PUT(request: NextRequest) {
 
     // If an existing row was found by teacher/month/year, update it; else insert.
     if (existingRow?.id) {
-        const { data: updated, error: updErr } = await supabase
-          .from("teacher_salary")
-          .update(updateData)
-          .eq("id", existingRow.id)
-          .select()
-          .maybeSingle();
+      const { data: updated, error: updErr } = await supabase
+        .from("teacher_salary")
+        .update(updateData)
+        .eq("id", existingRow.id)
+        .select()
+        .maybeSingle();
 
-        if (updErr && updErr.code !== "PGRST116") throw updErr;
-        if (updated) {
-          return NextResponse.json({ salary: updated, success: true, created: false });
-        }
-        // If no row returned even though id existed, continue to insert path to self-heal.
+      if (updErr && updErr.code !== "PGRST116") throw updErr;
+      if (updated) {
+        return NextResponse.json({
+          salary: updated,
+          success: true,
+          created: false,
+        });
+      }
+      // If no row returned even though id existed, continue to insert path to self-heal.
     }
 
     const insertPayload = {
@@ -217,7 +229,11 @@ export async function PUT(request: NextRequest) {
 
     if (insErr) throw insErr;
 
-    return NextResponse.json({ salary: inserted, success: true, created: true });
+    return NextResponse.json({
+      salary: inserted,
+      success: true,
+      created: true,
+    });
   } catch (error) {
     console.error("Error updating salary:", error);
     return NextResponse.json(

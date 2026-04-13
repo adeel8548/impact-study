@@ -20,7 +20,7 @@ export function SyncTeachersButton() {
         setMessage(`❌ Error: ${result.error}`);
       } else {
         setMessage(
-          `✅ ${result.message || `Synced ${result.synced} teachers to Firebase`}`
+          `✅ ${result.message || `Synced ${result.synced} teachers to Firebase`}`,
         );
       }
 
@@ -46,9 +46,7 @@ export function SyncTeachersButton() {
         <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         {loading ? "Syncing..." : "Sync to Firebase"}
       </Button>
-      {message && (
-        <span className="text-sm font-medium">{message}</span>
-      )}
+      {message && <span className="text-sm font-medium">{message}</span>}
     </div>
   );
 }

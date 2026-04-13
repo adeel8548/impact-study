@@ -13,7 +13,7 @@ interface FeeVoucherData {
   issueDate: string;
   dueDate: string;
   monthlyFee: number;
-  fullFee?: number;  // Base/full fee (for override option)
+  fullFee?: number; // Base/full fee (for override option)
   arrears: number;
   /** Human readable breakdown like "Jan 2025, Feb 2025" for pending months */
   arrearsMonthsLabel?: string;
@@ -63,7 +63,9 @@ export async function getFeeVoucherData(
   // Fetch basic student data first (without relying on Supabase FK relationship names)
   const { data: student, error: studentError } = await supabase
     .from("students")
-    .select("id, name, roll_number, guardian_name, class_id, ac_number, full_fee")
+    .select(
+      "id, name, roll_number, guardian_name, class_id, ac_number, full_fee",
+    )
     .eq("id", studentId)
     .single();
 
@@ -118,12 +120,14 @@ export async function getFeeVoucherData(
   if (!fees || fees.length === 0) {
     const { data: currentFee } = await supabase
       .from("student_fees")
-      .select("amount, is_partial, total_days_in_month, payable_days, per_day_fee")
+      .select(
+        "amount, is_partial, total_days_in_month, payable_days, per_day_fee",
+      )
       .eq("student_id", studentId)
       .eq("month", currentMonth)
       .eq("year", currentYear)
       .single();
-    
+
     if (currentFee) {
       currentMonthFeeRecord = currentFee;
     }
@@ -139,8 +143,18 @@ export async function getFeeVoucherData(
   const arrearsMonthLabels: string[] = [];
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   fees?.forEach((fee) => {
@@ -176,19 +190,21 @@ export async function getFeeVoucherData(
   let fines = 0;
   let daysLate = 0;
   const FINE_PER_DAY = 20;
-  
+
   if (includeFine) {
     const dueDate = new Date(currentYear, currentMonth - 1, 12);
     const today = new Date();
-    
+
     if (today > dueDate) {
-      daysLate = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      daysLate = Math.floor(
+        (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
       fines = daysLate * FINE_PER_DAY;
     }
   }
 
   // Generate serial number if not provided
-  const finalSerialNumber = serialNumber ?? await generateSerialNumber();
+  const finalSerialNumber = serialNumber ?? (await generateSerialNumber());
 
   // Format dates
   const issueDate = now.toISOString().split("T")[0];
@@ -208,7 +224,7 @@ export async function getFeeVoucherData(
     issueDate,
     dueDate,
     monthlyFee: currentMonthFee,
-    fullFee: student.full_fee || undefined,  // Base fee for override checkbox
+    fullFee: student.full_fee || undefined, // Base fee for override checkbox
     arrears,
     arrearsMonthsLabel:
       arrears > 0 && arrearsMonthLabels.length > 0
@@ -243,7 +259,12 @@ export async function getMultipleFeeVouchers(
   let currentSerialNumber = await generateSerialNumber();
 
   for (const studentId of studentIds) {
-    const { data, error } = await getFeeVoucherData(studentId, includeFine, currentSerialNumber, removeArrears);
+    const { data, error } = await getFeeVoucherData(
+      studentId,
+      includeFine,
+      currentSerialNumber,
+      removeArrears,
+    );
     if (data) {
       vouchers.push(data);
       // Increment serial number for next student
@@ -254,29 +275,29 @@ export async function getMultipleFeeVouchers(
   return { data: vouchers, error: null };
 }
 
-export async function saveFeeVoucher(voucherData: FeeVoucherData): Promise<{ error: string | null }> {
+export async function saveFeeVoucher(
+  voucherData: FeeVoucherData,
+): Promise<{ error: string | null }> {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("fee_vouchers")
-    .insert({
-      serial_number: voucherData.serialNumber,
-      student_id: voucherData.studentId,
-      issue_date: voucherData.issueDate,
-      due_date: voucherData.dueDate,
-      monthly_fee: voucherData.monthlyFee,
-      arrears: voucherData.arrears,
-      fines: voucherData.fines,
-      annual_charges: voucherData.annualCharges,
-      exam_fee: voucherData.examFee,
-      other_charges: voucherData.otherCharges,
-      total_amount: voucherData.totalAmount,
-      month: voucherData.month,
-      is_partial: voucherData.isPartial || false,
-      total_days_in_month: voucherData.totalDaysInMonth || null,
-      payable_days: voucherData.payableDays || null,
-      per_day_fee: voucherData.perDayFee || null,
-    });
+  const { error } = await supabase.from("fee_vouchers").insert({
+    serial_number: voucherData.serialNumber,
+    student_id: voucherData.studentId,
+    issue_date: voucherData.issueDate,
+    due_date: voucherData.dueDate,
+    monthly_fee: voucherData.monthlyFee,
+    arrears: voucherData.arrears,
+    fines: voucherData.fines,
+    annual_charges: voucherData.annualCharges,
+    exam_fee: voucherData.examFee,
+    other_charges: voucherData.otherCharges,
+    total_amount: voucherData.totalAmount,
+    month: voucherData.month,
+    is_partial: voucherData.isPartial || false,
+    total_days_in_month: voucherData.totalDaysInMonth || null,
+    payable_days: voucherData.payableDays || null,
+    per_day_fee: voucherData.perDayFee || null,
+  });
 
   if (error) {
     return { error: error.message };

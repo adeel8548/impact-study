@@ -19,12 +19,12 @@ UPDATE students SET joining_date = '2026-01-15' WHERE id = 'student-id';
 
 ### How It Works
 
-| Scenario | Joining Date | Month | Fee Type | Calculation |
-|----------|--------------|-------|----------|-------------|
-| Mid-month join | Jan 15 | January | **Partial** | (5000÷31)×17 = Rs. 2,741.93 |
-| Same student | Jan 15 | February | **Full** | Rs. 5,000.00 |
-| Join on 1st | Jan 1 | January | **Full** | Rs. 5,000.00 |
-| No joining date | NULL | Any | **Full** | Rs. 5,000.00 |
+| Scenario        | Joining Date | Month    | Fee Type    | Calculation                 |
+| --------------- | ------------ | -------- | ----------- | --------------------------- |
+| Mid-month join  | Jan 15       | January  | **Partial** | (5000÷31)×17 = Rs. 2,741.93 |
+| Same student    | Jan 15       | February | **Full**    | Rs. 5,000.00                |
+| Join on 1st     | Jan 1        | January  | **Full**    | Rs. 5,000.00                |
+| No joining date | NULL         | Any      | **Full**    | Rs. 5,000.00                |
 
 ---
 
@@ -32,9 +32,9 @@ UPDATE students SET joining_date = '2026-01-15' WHERE id = 'student-id';
 
 ```typescript
 // Calculate fee for any month
-import { calculateFeeForMonth } from '@/lib/utils/partial-fee-calculator';
+import { calculateFeeForMonth } from "@/lib/utils/partial-fee-calculator";
 
-const fee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
+const fee = calculateFeeForMonth(5000, "2026-01-15", 1, 2026);
 // Returns: { isPartial: true, calculatedFee: 2741.93, ... }
 ```
 
@@ -43,10 +43,12 @@ const fee = calculateFeeForMonth(5000, '2026-01-15', 1, 2026);
 ### Database Fields
 
 **students table:**
+
 - `full_fee` - Base monthly fee (set by admin)
 - `joining_date` - Admission date
 
 **student_fees table:**
+
 - `amount` - Calculated fee (partial or full)
 - `is_partial` - Boolean flag
 - `total_days_in_month` - e.g., 31, 28, 29
@@ -74,7 +76,7 @@ NULL joining_date  → Full fee (default)
 curl -X POST "http://localhost:3000/api/cron/monthly-billing?secret=your-secret"
 
 # Check fee calculation
-SELECT amount, is_partial, payable_days FROM student_fees 
+SELECT amount, is_partial, payable_days FROM student_fees
 WHERE student_id = 'id' AND month = 1 AND year = 2026;
 ```
 
@@ -85,7 +87,7 @@ WHERE student_id = 'id' AND month = 1 AND year = 2026;
 **Student:** Ahmed Ali  
 **Full Fee:** Rs. 5,000  
 **Joining:** January 15, 2026  
-**Days in Jan:** 31  
+**Days in Jan:** 31
 
 ```
 Per day fee = 5000 ÷ 31 = Rs. 161.29
@@ -99,12 +101,12 @@ Partial fee = 161.29 × 17 = Rs. 2,741.93
 
 ### Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Fee is 0 | Set `full_fee` in students table |
+| Problem                   | Solution                                             |
+| ------------------------- | ---------------------------------------------------- |
+| Fee is 0                  | Set `full_fee` in students table                     |
 | Full fee in joining month | Check if joined on 1st OR `joining_date` wrong month |
-| Partial fee in next month | Bug - check cron logic |
-| No fee generated | Run cron job or check student exists |
+| Partial fee in next month | Bug - check cron logic                               |
+| No fee generated          | Run cron job or check student exists                 |
 
 ---
 
@@ -126,6 +128,7 @@ Partial fee = 161.29 × 17 = Rs. 2,741.93
 ```
 
 **What it does:**
+
 1. Calculates partial/full fee for each student
 2. Creates fee records with breakdown
 3. Generates vouchers automatically

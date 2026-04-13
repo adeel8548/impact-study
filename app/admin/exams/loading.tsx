@@ -6,17 +6,13 @@ export default function Loading() {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar />
-      
+
       <div className="md:pl-64">
         <div className="p-4 md:p-8 space-y-6">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Exams
-              </h1>
-              <p className="text-muted-foreground">
-                Loading exams...
-              </p>
+              <h1 className="text-4xl font-bold text-foreground mb-2">Exams</h1>
+              <p className="text-muted-foreground">Loading exams...</p>
             </div>
           </div>
 

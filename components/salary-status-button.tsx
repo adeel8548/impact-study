@@ -51,7 +51,9 @@ export function SalaryStatusButton({
   const [salaries, setSalaries] = useState<SalaryRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear(),
+  );
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   const loadUnpaidSalaries = async () => {
@@ -62,7 +64,9 @@ export function SalaryStatusButton({
       );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || `Failed to load salaries (${res.status})`);
+        throw new Error(
+          body?.error || `Failed to load salaries (${res.status})`,
+        );
       }
       const data = await res.json();
       const fetched: SalaryRow[] = Array.isArray(data.salaries)
@@ -71,11 +75,13 @@ export function SalaryStatusButton({
       setSalaries(fetched);
 
       // Default year to current if present, otherwise latest available
-      const years = Array.from(new Set(fetched.map((f) => Number(f.year)))).sort(
-        (a, b) => b - a,
-      );
+      const years = Array.from(
+        new Set(fetched.map((f) => Number(f.year))),
+      ).sort((a, b) => b - a);
       if (years.length > 0) {
-        setSelectedYear((current) => (years.includes(current) ? current : years[0]));
+        setSelectedYear((current) =>
+          years.includes(current) ? current : years[0],
+        );
       }
     } catch (e) {
       console.error("Failed to load unpaid salaries", e);
@@ -119,7 +125,10 @@ export function SalaryStatusButton({
   const unpaidOptions = useMemo(
     () =>
       salaries
-        .filter((s) => s.status === "unpaid" && Number(s.year) === Number(selectedYear))
+        .filter(
+          (s) =>
+            s.status === "unpaid" && Number(s.year) === Number(selectedYear),
+        )
         .sort((a, b) => Number(a.month) - Number(b.month)),
     [salaries, selectedYear],
   );
@@ -156,7 +165,9 @@ export function SalaryStatusButton({
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        toast.error(data.error || `Failed to update salary status (${response.status})`);
+        toast.error(
+          data.error || `Failed to update salary status (${response.status})`,
+        );
         return;
       }
       toast.success("Salary marked as paid");
@@ -194,11 +205,13 @@ export function SalaryStatusButton({
             <DialogDescription>
               {teacherName && (
                 <span className="block font-medium border-2 p-2 rounded-md">
-                  TeacherName: <span className="font-bold text-black">{teacherName}</span>
+                  TeacherName:{" "}
+                  <span className="font-bold text-black">{teacherName}</span>
                 </span>
               )}
               <span className="block text-muted-foreground">
-                Select the pending month to mark as paid. Date will be saved as today.
+                Select the pending month to mark as paid. Date will be saved as
+                today.
               </span>
             </DialogDescription>
           </DialogHeader>
@@ -208,7 +221,9 @@ export function SalaryStatusButton({
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : salaries.length === 0 ? (
-            <Card className="p-4 text-sm text-muted-foreground">No pending salary found.</Card>
+            <Card className="p-4 text-sm text-muted-foreground">
+              No pending salary found.
+            </Card>
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -246,9 +261,13 @@ export function SalaryStatusButton({
                     <SelectContent>
                       {unpaidOptions.map((s) => (
                         <SelectItem key={s.id} value={String(s.month)}>
-                          {new Date(0, Number(s.month) - 1).toLocaleString("en-US", {
-                            month: "long",
-                          })} {s.year}
+                          {new Date(0, Number(s.month) - 1).toLocaleString(
+                            "en-US",
+                            {
+                              month: "long",
+                            },
+                          )}{" "}
+                          {s.year}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -273,7 +292,11 @@ export function SalaryStatusButton({
               </Card>
 
               <div className="flex justify-end">
-                <Button onClick={handleMarkPaid} disabled={!selectedSalary || paying} className="gap-2">
+                <Button
+                  onClick={handleMarkPaid}
+                  disabled={!selectedSalary || paying}
+                  className="gap-2"
+                >
                   {paying ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />

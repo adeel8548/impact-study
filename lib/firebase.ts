@@ -22,7 +22,7 @@ const isFirebaseConfigured = !!(
 if (!isFirebaseConfigured) {
   console.warn(
     "⚠️  Firebase is not configured. Chat features will not work. " +
-    "Please add Firebase environment variables to .env.local"
+      "Please add Firebase environment variables to .env.local",
   );
 }
 
@@ -40,7 +40,8 @@ const db = app ? getFirestore(app) : (null as any);
 let messaging: ReturnType<typeof getMessaging> | null = null;
 
 // VAPID Key for web push notifications
-export const VAPID_KEY = "BHsd0CUQ2p_X4-IvqnCxJPgRw7RQRH1hB1rLuavtl1ZKYXSO1phzZSGhfW2WJvMwnmnmr4D2IunamTY_THGSFPg";
+export const VAPID_KEY =
+  "BHsd0CUQ2p_X4-IvqnCxJPgRw7RQRH1hB1rLuavtl1ZKYXSO1phzZSGhfW2WJvMwnmnmr4D2IunamTY_THGSFPg";
 
 // Check if browser supports Service Workers and notifications
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -84,7 +85,7 @@ export async function ensureFirebaseAuth(userInfo?: {
           role: userInfo.role || null,
           updatedAt: serverTimestamp(),
         },
-        { merge: true }
+        { merge: true },
       );
     } catch (err) {
       console.warn("Failed to upsert user profile in Firestore", err);
@@ -95,4 +96,3 @@ export async function ensureFirebaseAuth(userInfo?: {
 }
 
 export { getAuth };
-

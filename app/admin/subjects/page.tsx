@@ -196,62 +196,63 @@ export default function SubjectsPage() {
                     placeholder="Example: Math, English"
                   />
                 </div>
-            <div className="flex gap-2 justify-end">
-              {editingId && (
-                <Button variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-              )}
-              <Button
-                onClick={handleSaveSubject}
-                disabled={saving}
-                className="gap-2"
-              >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                <Plus className="w-4 h-4" />
-                {editingId ? "Update" : "Add"}
-              </Button>
-            </div>
-          </Card>
-
-          {/* Subjects List */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-4">
-              Subjects for {classes.find((c) => c.id === selectedClass)?.name}
-            </h3>
-            {subjects.length === 0 ? (
-              <p className="text-muted-foreground">No subjects</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {subjects.map((subject) => (
-                  <div
-                    key={subject.id}
-                    className="flex items-center justify-between p-3 border border-border rounded hover:bg-muted/50"
+                <div className="flex gap-2 justify-end">
+                  {editingId && (
+                    <Button variant="outline" onClick={handleCancel}>
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleSaveSubject}
+                    disabled={saving}
+                    className="gap-2"
                   >
-                    <span className="font-medium">{subject.name}</span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditSubject(subject)}
-                        className="h-8 w-8"
+                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <Plus className="w-4 h-4" />
+                    {editingId ? "Update" : "Add"}
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Subjects List */}
+              <Card className="p-4">
+                <h3 className="font-semibold mb-4">
+                  Subjects for{" "}
+                  {classes.find((c) => c.id === selectedClass)?.name}
+                </h3>
+                {subjects.length === 0 ? (
+                  <p className="text-muted-foreground">No subjects</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {subjects.map((subject) => (
+                      <div
+                        key={subject.id}
+                        className="flex items-center justify-between p-3 border border-border rounded hover:bg-muted/50"
                       >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteSubject(subject.id)}
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                        <span className="font-medium">{subject.name}</span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditSubject(subject)}
+                            className="h-8 w-8"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteSubject(subject.id)}
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </Card>
+                )}
+              </Card>
             </>
           )}
         </div>

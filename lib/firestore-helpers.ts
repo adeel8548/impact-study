@@ -57,14 +57,16 @@ export async function setFirebaseUser(user: FirebaseUser) {
       fcmToken: user.fcmToken || "",
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 }
 
 /**
  * Get user from Firebase
  */
-export async function getFirebaseUser(uid: string): Promise<FirebaseUser | null> {
+export async function getFirebaseUser(
+  uid: string,
+): Promise<FirebaseUser | null> {
   const userRef = doc(db, "users", uid);
   const snap = await getDoc(userRef);
   return snap.exists() ? (snap.data() as FirebaseUser) : null;
@@ -85,13 +87,13 @@ export async function updateUserFcmToken(uid: string, fcmToken: string) {
  */
 export async function getOrCreateConversation(
   adminId: string,
-  teacherId: string
+  teacherId: string,
 ): Promise<string> {
   // Query for existing conversation
   const q = query(
     collection(db, "conversations"),
     where("adminId", "==", adminId),
-    where("teacherId", "==", teacherId)
+    where("teacherId", "==", teacherId),
   );
   const snapshots = await getDocs(q);
 
@@ -116,13 +118,13 @@ export async function getOrCreateConversation(
  */
 export function subscribeToAdminConversations(
   adminId: string,
-  callback: (conversations: Conversation[]) => void
+  callback: (conversations: Conversation[]) => void,
 ): Unsubscribe {
   // Query all conversations and filter to only teacher conversations
   // This allows all admins to see all teacher conversations
   const q = query(
     collection(db, "conversations"),
-    orderBy("updatedAt", "desc")
+    orderBy("updatedAt", "desc"),
   );
 
   return onSnapshot(q, async (snapshot) => {
@@ -149,12 +151,12 @@ export function subscribeToAdminConversations(
  */
 export function subscribeToTeacherConversations(
   teacherId: string,
-  callback: (conversations: Conversation[]) => void
+  callback: (conversations: Conversation[]) => void,
 ): Unsubscribe {
   const q = query(
     collection(db, "conversations"),
     where("teacherId", "==", teacherId),
-    orderBy("updatedAt", "desc")
+    orderBy("updatedAt", "desc"),
   );
 
   return onSnapshot(q, async (snapshot) => {
@@ -181,13 +183,13 @@ export function subscribeToTeacherConversations(
 export async function sendMessage(
   conversationId: string,
   senderId: string,
-  text: string
+  text: string,
 ) {
   const messagesRef = collection(
     db,
     "conversations",
     conversationId,
-    "messages"
+    "messages",
   );
   const messageRef = await addDoc(messagesRef, {
     senderId,
@@ -210,11 +212,11 @@ export async function sendMessage(
  */
 export function subscribeToMessages(
   conversationId: string,
-  callback: (messages: Message[]) => void
+  callback: (messages: Message[]) => void,
 ): Unsubscribe {
   const q = query(
     collection(db, "conversations", conversationId, "messages"),
-    orderBy("createdAt", "asc")
+    orderBy("createdAt", "asc"),
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -238,12 +240,12 @@ export function subscribeToMessages(
  */
 export async function markConversationAsRead(
   conversationId: string,
-  readerId: string
+  readerId: string,
 ) {
   const q = query(
     collection(db, "conversations", conversationId, "messages"),
     where("isRead", "==", false),
-    where("senderId", "!=", readerId)
+    where("senderId", "!=", readerId),
   );
 
   const snapshots = await getDocs(q);
@@ -260,7 +262,7 @@ export async function markConversationAsRead(
 export async function broadcastMessage(
   adminId: string,
   teacherIds: string[],
-  messageText: string
+  messageText: string,
 ) {
   for (const teacherId of teacherIds) {
     const conversationId = await getOrCreateConversation(adminId, teacherId);

@@ -3,9 +3,11 @@
 ## حل شدہ مسائل ✅
 
 ### 1. Student Update میں Date Error
+
 **مسئلہ**: Roll Number یا Fees update کرتے وقت "invalid input syntax for type date: ''" error آتا تھا
 
-**حل**: 
+**حل**:
+
 - `lib/actions/students.ts` میں خالی date string کو null میں تبدیل کیا
 - اب joining_date خالی رہ سکتا ہے بغیر error کے
 
@@ -14,23 +16,27 @@
 ## نیا Features - Fee Voucher System 🎟️
 
 ### کیا ہے؟
+
 ایک مکمل نظام جو students کے لیے خود کار fee vouchers پرنٹ کرتا ہے۔
 
 ### خصوصیات:
 
 #### 1️⃣ Serial Number - خود کار
+
 ```
 ہر voucher کو منفرد نمبر ملتا ہے
 مثال: Serial No. 1, 2, 3... وغیرہ
 ```
 
 #### 2️⃣ تاریخیں - خود کار
+
 ```
 Issue Date: جس دن print ہو
 Due Date: ہر مہینے کی 12 تاریخ
 ```
 
 #### 3️⃣ جرمانہ (Fine) - خود کار حساب
+
 ```
 حساب: 12 کے بعد ہر روز 20 روپے
 مثال:
@@ -40,6 +46,7 @@ Due Date: ہر مہینے کی 12 تاریخ
 ```
 
 #### 4️⃣ ماضی کی فیس (Arrears) - خود کار
+
 ```
 موجودہ مہینہ: Monthly Fee میں
 گزرے ہوئے مہینے: Arrears میں
@@ -54,6 +61,7 @@ Due Date: ہر مہینے کی 12 تاریخ
 ### استعمال کیسے کریں؟
 
 #### ایک بچے کا Print کریں:
+
 ```
 1. Admin Dashboard → Students
 2. بچے کے row میں Printer icon دیکھیں
@@ -63,6 +71,7 @@ Due Date: ہر مہینے کی 12 تاریخ
 ```
 
 #### سب بچوں کا Print کریں:
+
 ```
 1. "Print Fee Vouchers" button دیکھیں
 2. All Students منتخب کریں
@@ -71,6 +80,7 @@ Due Date: ہر مہینے کی 12 تاریخ
 ```
 
 #### کسی Class کے سب کا Print کریں:
+
 ```
 1. "Print Fee Vouchers" button
 2. By Class منتخب کریں
@@ -108,12 +118,14 @@ Due Date: ہر مہینے کی 12 تاریخ
 ## Advance Features
 
 ### Fine کے ساتھ Print
+
 ```
 Checkbox لگائیں: "Include fine"
 خود کار سے 20 روپے × دن بعد 12 تاریخ
 ```
 
 ### بغیر Fine کے Print
+
 ```
 Checkbox خالی رکھیں
 صرف Monthly Fee + Arrears دکھے گا
@@ -158,12 +170,14 @@ fee_vouchers ٹیبل بنایا جائے گا جو:
 ## Customization
 
 ### جرمانہ کی رقم تبدیل کریں:
+
 ```typescript
 // lib/actions/fee-vouchers.ts میں
-const FINE_PER_DAY = 20;  // 20 کو اپنی رقم سے بدلیں
+const FINE_PER_DAY = 20; // 20 کو اپنی رقم سے بدلیں
 ```
 
 ### Due Date تبدیل کریں:
+
 ```typescript
 // lib/actions/fee-vouchers.ts میں
 const dueDate = new Date(currentYear, currentMonth - 1, 12);
@@ -175,21 +189,25 @@ const dueDate = new Date(currentYear, currentMonth - 1, 12);
 ## مسائل کا حل (Troubleshooting)
 
 ### Problem 1: Serial number نہیں بڑھ رہے
+
 ```
 ✓ Solution: fee_vouchers ٹیبل بن گیا ہے یقینی بنائیں
 ```
 
 ### Problem 2: Arrears غلط ہیں
+
 ```
 ✓ Solution: student_fees میں month/year درست ہیں چیک کریں
 ```
 
 ### Problem 3: Fine غلط ہے
+
 ```
 ✓ Solution: Server اور local date ایک جیسا ہے چیک کریں
 ```
 
 ### Problem 4: Print نہیں ہو رہا
+
 ```
 ✓ Solution: Browser کی print settings چیک کریں
 ```
@@ -206,7 +224,7 @@ const dueDate = new Date(currentYear, currentMonth - 1, 12);
 ✅ سب کا ایک ساتھ print  
 ✅ Class کے حساب سے print  
 ✅ Fine کے ساتھ یا بغیر print  
-✅ دونوں copies (Head Office + Student)  
+✅ دونوں copies (Head Office + Student)
 
 ---
 

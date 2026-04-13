@@ -5,13 +5,14 @@
 # ❌ مسئلہ Problem
 
 ```
-[Cron] Student fees upsert error: there is no unique 
+[Cron] Student fees upsert error: there is no unique
 or exclusion constraint matching the ON CONFLICT specification
 ```
 
 ## کیا ہوا؟
 
 **Cron job** چلانے پر یہ error آتا ہے کیونکہ:
+
 - `student_fees` table میں **unique constraint** نہیں ہے
 - `teacher_salary` table میں **unique constraint** نہیں ہے
 - Upsert operation کو constraint چاہیے
@@ -23,6 +24,7 @@ or exclusion constraint matching the ON CONFLICT specification
 ## چرण 1: Supabase میں SQL چلائیں
 
 ### A. Supabase Dashboard کھولیں
+
 ```
 1. https://supabase.com/dashboard
 2. اپنا Project select کریں
@@ -34,6 +36,7 @@ or exclusion constraint matching the ON CONFLICT specification
 📄 **File:** `scripts/FIX_CRON_UNIQUE_CONSTRAINTS.sql`
 
 یہ کریں گے:
+
 ```
 ✅ Duplicate entries ہٹائیں (اگر ہوں)
 ✅ Unique constraints add کریں
@@ -47,13 +50,13 @@ or exclusion constraint matching the ON CONFLICT specification
 
 ```sql
 -- student_fees unique constraint
-ALTER TABLE student_fees 
-ADD CONSTRAINT student_fees_unique_student_month_year 
+ALTER TABLE student_fees
+ADD CONSTRAINT student_fees_unique_student_month_year
 UNIQUE (student_id, month, year);
 
 -- teacher_salary unique constraint
-ALTER TABLE teacher_salary 
-ADD CONSTRAINT teacher_salary_unique_teacher_month_year 
+ALTER TABLE teacher_salary
+ADD CONSTRAINT teacher_salary_unique_teacher_month_year
 UNIQUE (teacher_id, month, year);
 ```
 
@@ -62,6 +65,7 @@ UNIQUE (teacher_id, month, year);
 ## چرण 3: Run دبائیں
 
 Supabase SQL Editor میں:
+
 ```
 1. Script paste کریں
 2. "Run" button دبائیں (نیچے دائیں)
@@ -69,6 +73,7 @@ Supabase SQL Editor میں:
 ```
 
 **Expected Output:**
+
 ```
 Success. No rows returned
 ```
@@ -80,16 +85,19 @@ Success. No rows returned
 ## Cron Job Manually Trigger کریں
 
 ### Browser میں:
+
 ```
 https://your-domain.vercel.app/api/cron/monthly-billing
 ```
 
 ### یا Terminal میں:
+
 ```bash
 curl "https://your-domain.vercel.app/api/cron/monthly-billing"
 ```
 
 **Success Response:**
+
 ```json
 {
   "success": true,
@@ -106,15 +114,17 @@ curl "https://your-domain.vercel.app/api/cron/monthly-billing"
 ## Supabase میں Table Editor کھولیں
 
 ### Check Constraints:
+
 ```sql
 -- یہ query چلائیں
-SELECT constraint_name, constraint_type 
-FROM information_schema.table_constraints 
+SELECT constraint_name, constraint_type
+FROM information_schema.table_constraints
 WHERE table_name IN ('student_fees', 'teacher_salary')
 AND constraint_type = 'UNIQUE';
 ```
 
 **Expected Result:**
+
 ```
 ┌──────────────────────────────────────┬────────────┐
 │ constraint_name                      │ type       │
@@ -129,6 +139,7 @@ AND constraint_type = 'UNIQUE';
 # 📊 کیا ہوگا اب
 
 ## پہلے (Before):
+
 ```
 ❌ Cron job error
 ❌ Duplicate entries possible
@@ -136,6 +147,7 @@ AND constraint_type = 'UNIQUE';
 ```
 
 ## اب (After):
+
 ```
 ✅ Cron job works
 ✅ No duplicates (student/month/year)
@@ -148,22 +160,25 @@ AND constraint_type = 'UNIQUE';
 # 🚨 Troubleshooting
 
 ### Error: Constraint already exists
+
 ```
 حل: Constraint پہلے سے ہے - OK ہے! Skip کریں
 ```
 
 ### Error: Duplicate key value
+
 ```
 حل: پہلے duplicates delete کریں:
 
 DELETE FROM student_fees a USING student_fees b
-WHERE a.id > b.id 
-AND a.student_id = b.student_id 
-AND a.month = b.month 
+WHERE a.id > b.id
+AND a.student_id = b.student_id
+AND a.month = b.month
 AND a.year = b.year;
 ```
 
 ### Error: Permission denied
+
 ```
 حل: Admin rights چیک کریں Supabase میں
 ```
@@ -184,27 +199,30 @@ AND a.year = b.year;
 # 📞 Quick Commands
 
 **Database Backup (optional):**
+
 ```sql
 -- پہلے backup لے سکتے ہو
-CREATE TABLE student_fees_backup AS 
+CREATE TABLE student_fees_backup AS
 SELECT * FROM student_fees;
 
-CREATE TABLE teacher_salary_backup AS 
+CREATE TABLE teacher_salary_backup AS
 SELECT * FROM teacher_salary;
 ```
 
 **Check Duplicates:**
+
 ```sql
 -- Duplicates check کریں
-SELECT student_id, month, year, COUNT(*) 
-FROM student_fees 
-GROUP BY student_id, month, year 
+SELECT student_id, month, year, COUNT(*)
+FROM student_fees
+GROUP BY student_id, month, year
 HAVING COUNT(*) > 1;
 ```
 
 **Remove Constraint (اگر ضرورت ہو):**
+
 ```sql
-ALTER TABLE student_fees 
+ALTER TABLE student_fees
 DROP CONSTRAINT student_fees_unique_student_month_year;
 ```
 

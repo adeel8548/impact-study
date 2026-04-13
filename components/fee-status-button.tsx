@@ -61,7 +61,7 @@ export function FeeStatusButton({
   const [loadingFees, setLoadingFees] = useState(false);
   const [paying, setPaying] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear()
+    new Date().getFullYear(),
   );
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
@@ -79,11 +79,11 @@ export function FeeStatusButton({
         23,
         59,
         59,
-        999
+        999,
       );
       const now = new Date();
       const remaining = Math.ceil(
-        (lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        (lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
       );
       setDaysRemaining(Math.max(0, remaining));
       setIsPaidExpired(remaining <= 0);
@@ -98,7 +98,7 @@ export function FeeStatusButton({
     setLoadingFees(true);
     try {
       const res = await fetch(
-        `/api/students/fees?studentId=${studentId}&status=unpaid`
+        `/api/students/fees?studentId=${studentId}&status=unpaid`,
       );
       const data = await res.json();
       const fetched: FeeRow[] = Array.isArray(data.fees) ? data.fees : [];
@@ -106,11 +106,11 @@ export function FeeStatusButton({
 
       // Year defaults to current if available, otherwise latest year from data
       const years = Array.from(
-        new Set(fetched.map((f) => Number(f.year)))
+        new Set(fetched.map((f) => Number(f.year))),
       ).sort((a, b) => b - a);
       if (years.length > 0) {
         setSelectedYear((current) =>
-          years.includes(current) ? current : Number(years[0])
+          years.includes(current) ? current : Number(years[0]),
         );
       }
     } catch (error) {
@@ -136,7 +136,7 @@ export function FeeStatusButton({
     const currentMonth = new Date().getMonth() + 1;
     const unpaidForYear = fees.filter(
       (fee) =>
-        Number(fee.year) === Number(selectedYear) && fee.status === "unpaid"
+        Number(fee.year) === Number(selectedYear) && fee.status === "unpaid",
     );
 
     if (unpaidForYear.length === 0) {
@@ -145,7 +145,7 @@ export function FeeStatusButton({
     }
 
     const hasCurrentMonth = unpaidForYear.find(
-      (fee) => Number(fee.month) === currentMonth
+      (fee) => Number(fee.month) === currentMonth,
     );
     if (hasCurrentMonth) {
       setSelectedMonth(Number(hasCurrentMonth.month));
@@ -163,7 +163,7 @@ export function FeeStatusButton({
     return fees
       .filter(
         (fee) =>
-          fee.status === "unpaid" && Number(fee.year) === Number(selectedYear)
+          fee.status === "unpaid" && Number(fee.year) === Number(selectedYear),
       )
       .sort((a, b) => Number(a.month) - Number(b.month));
   }, [fees, selectedYear]);
@@ -171,9 +171,9 @@ export function FeeStatusButton({
   const selectedFee = useMemo(
     () =>
       unpaidOptions.find(
-        (fee) => Number(fee.month) === Number(selectedMonth ?? -1)
+        (fee) => Number(fee.month) === Number(selectedMonth ?? -1),
       ),
-    [unpaidOptions, selectedMonth]
+    [unpaidOptions, selectedMonth],
   );
 
   const checkExpiration = async () => {
@@ -193,12 +193,12 @@ export function FeeStatusButton({
           23,
           59,
           59,
-          999
+          999,
         );
 
         const now = new Date();
         const remaining = Math.ceil(
-          (lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          (lastOfMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
         );
         setDaysRemaining(Math.max(0, remaining));
       }
@@ -322,10 +322,14 @@ export function FeeStatusButton({
             </DialogTitle>
             <DialogDescription className="flex gap-2">
               {studentName ? (
-                <span className="block border-2 p-2 rounded-md">Student: <span className="font-bold">{studentName}</span></span>
+                <span className="block border-2 p-2 rounded-md">
+                  Student: <span className="font-bold">{studentName}</span>
+                </span>
               ) : null}
               {studentClassName ? (
-                <span className="block border-2 p-2 rounded-md">Class: <span className="font-bold">{studentClassName}</span></span>
+                <span className="block border-2 p-2 rounded-md">
+                  Class: <span className="font-bold">{studentClassName}</span>
+                </span>
               ) : null}
             </DialogDescription>
             <DialogDescription>
@@ -383,7 +387,7 @@ export function FeeStatusButton({
                         <SelectItem key={fee.id} value={String(fee.month)}>
                           {new Date(0, Number(fee.month) - 1).toLocaleString(
                             "en-US",
-                            { month: "long" }
+                            { month: "long" },
                           )}{" "}
                           {fee.year}
                         </SelectItem>
@@ -400,7 +404,7 @@ export function FeeStatusButton({
                     {selectedFee
                       ? `Paying ${new Date(
                           0,
-                          Number(selectedFee.month) - 1
+                          Number(selectedFee.month) - 1,
                         ).toLocaleString("en-US", { month: "long" })} ${
                           selectedFee.year
                         }`

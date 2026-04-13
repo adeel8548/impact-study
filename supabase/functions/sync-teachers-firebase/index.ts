@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Initialize Firebase Admin SDK
 const firebaseServiceAccount = JSON.parse(
-  Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}"
+  Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}",
 );
 
 if (!firebaseServiceAccount.project_id) {
@@ -62,11 +62,13 @@ async function syncTeacherToFirebase(teacher: TeacherData): Promise<void> {
 
     await chatUserRef.set(chatUserData, { merge: true });
 
-    console.log(`✅ Synced teacher ${teacher.id} (${teacher.name}) to Firebase`);
+    console.log(
+      `✅ Synced teacher ${teacher.id} (${teacher.name}) to Firebase`,
+    );
   } catch (error) {
     console.error(
       `❌ Failed to sync teacher ${teacher.id} to Firebase:`,
-      error
+      error,
     );
     throw error;
   }
@@ -106,12 +108,12 @@ async function deleteTeacherFromFirebase(teacherId: string): Promise<void> {
     await batch.commit();
 
     console.log(
-      `✅ Deleted teacher ${teacherId} from Firebase and archived conversations`
+      `✅ Deleted teacher ${teacherId} from Firebase and archived conversations`,
     );
   } catch (error) {
     console.error(
       `❌ Failed to delete teacher ${teacherId} from Firebase:`,
-      error
+      error,
     );
     throw error;
   }
@@ -147,7 +149,7 @@ async function syncAllTeachers(): Promise<void> {
     }
 
     console.log(
-      `Sync complete: ${successCount} successful, ${failureCount} failed`
+      `Sync complete: ${successCount} successful, ${failureCount} failed`,
     );
   } catch (error) {
     console.error("Failed to sync all teachers:", error);
@@ -191,16 +193,19 @@ Deno.serve(async (req) => {
   try {
     // Handle CORS
     if (req.method === "OPTIONS") {
-      return new Response("ok", { headers: { "Access-Control-Allow-Origin": "*" } });
+      return new Response("ok", {
+        headers: { "Access-Control-Allow-Origin": "*" },
+      });
     }
 
-    const { event, teacher_id, teacher_name, teacher_email, role } = await req.json() as Partial<SyncEvent>;
+    const { event, teacher_id, teacher_name, teacher_email, role } =
+      (await req.json()) as Partial<SyncEvent>;
 
     if (!event) {
-      return new Response(
-        JSON.stringify({ error: "Missing event field" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing event field" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const syncEvent: SyncEvent = {
@@ -223,7 +228,7 @@ Deno.serve(async (req) => {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("Edge Function error:", error);
@@ -237,7 +242,7 @@ Deno.serve(async (req) => {
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });

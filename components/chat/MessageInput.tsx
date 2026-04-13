@@ -71,8 +71,8 @@ export function MessageInput({ onSend, loading }: MessageInputProps) {
           }
         }}
       />
-      <Button 
-        disabled={!canSend} 
+      <Button
+        disabled={!canSend}
         onClick={handleSend}
         size="sm"
         className="flex-shrink-0 gap-2"

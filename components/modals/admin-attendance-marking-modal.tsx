@@ -23,7 +23,10 @@ interface AdminAttendanceMarkingModalProps {
   targetId: string;
   targetName: string;
   expectedTime?: string;
-  onMarked?: (date: string, status: "present" | "absent" | "leave" | "late") => void;
+  onMarked?: (
+    date: string,
+    status: "present" | "absent" | "leave" | "late",
+  ) => void;
 }
 
 export function AdminAttendanceMarkingModal({
@@ -36,15 +39,19 @@ export function AdminAttendanceMarkingModal({
   onMarked,
 }: AdminAttendanceMarkingModalProps) {
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
-  const [selectedStatus, setSelectedStatus] = useState<"present" | "absent" | "leave" | "late" | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<
+    "present" | "absent" | "leave" | "late" | null
+  >(null);
   const [isSaving, setIsSaving] = useState(false);
   const [leaveReasonModalOpen, setLeaveReasonModalOpen] = useState(false);
   const [lateReasonModalOpen, setLateReasonModalOpen] = useState(false);
 
   // Handle status selection
-  const handleStatusSelect = async (status: "present" | "absent" | "leave" | "late") => {
+  const handleStatusSelect = async (
+    status: "present" | "absent" | "leave" | "late",
+  ) => {
     if (
       type === "teacher" &&
       status === "present" &&
@@ -73,7 +80,10 @@ export function AdminAttendanceMarkingModal({
     }
   };
 
-  const submitMark = async (status: "present" | "absent" | "leave", remarks?: string) => {
+  const submitMark = async (
+    status: "present" | "absent" | "leave",
+    remarks?: string,
+  ) => {
     if (!selectedDate) {
       toast.error("Please select a date");
       return;
@@ -158,7 +168,7 @@ export function AdminAttendanceMarkingModal({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!response?.ok) throw new Error("Failed to mark attendance");
@@ -204,7 +214,7 @@ export function AdminAttendanceMarkingModal({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!markResponse?.ok) throw new Error("Failed to mark attendance");
@@ -218,7 +228,8 @@ export function AdminAttendanceMarkingModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             recordId: attendanceId,
-            table: type === "student" ? "student_attendance" : "teacher_attendance",
+            table:
+              type === "student" ? "student_attendance" : "teacher_attendance",
             reason,
           }),
         });
@@ -284,7 +295,11 @@ export function AdminAttendanceMarkingModal({
                   variant={selectedStatus === "present" ? "default" : "outline"}
                   onClick={() => handleStatusSelect("present")}
                   disabled={isSaving}
-                  className={selectedStatus === "present" ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                  className={
+                    selectedStatus === "present"
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : ""
+                  }
                 >
                   ✓ Present
                 </Button>
@@ -292,7 +307,11 @@ export function AdminAttendanceMarkingModal({
                   variant={selectedStatus === "absent" ? "default" : "outline"}
                   onClick={() => handleStatusSelect("absent")}
                   disabled={isSaving}
-                  className={selectedStatus === "absent" ? "bg-red-600 hover:bg-red-700 text-white" : ""}
+                  className={
+                    selectedStatus === "absent"
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : ""
+                  }
                 >
                   ✗ Absent
                 </Button>
@@ -300,7 +319,11 @@ export function AdminAttendanceMarkingModal({
                   variant={selectedStatus === "leave" ? "default" : "outline"}
                   onClick={() => handleStatusSelect("leave")}
                   disabled={isSaving}
-                  className={selectedStatus === "leave" ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+                  className={
+                    selectedStatus === "leave"
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : ""
+                  }
                 >
                   🏥 Leave
                 </Button>
@@ -308,7 +331,11 @@ export function AdminAttendanceMarkingModal({
                   variant={selectedStatus === "late" ? "default" : "outline"}
                   onClick={() => handleStatusSelect("late")}
                   disabled={isSaving}
-                  className={selectedStatus === "late" ? "bg-orange-600 hover:bg-orange-700 text-white" : ""}
+                  className={
+                    selectedStatus === "late"
+                      ? "bg-orange-600 hover:bg-orange-700 text-white"
+                      : ""
+                  }
                 >
                   ⏰ Late
                 </Button>
@@ -316,17 +343,21 @@ export function AdminAttendanceMarkingModal({
             </div>
 
             {/* Selected Status Display */}
-            {selectedStatus && (selectedStatus === "present" || selectedStatus === "absent") && (
-              <Card className="p-3 bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-500">
-                <p className="text-sm text-foreground">
-                  <strong>Selected:</strong> {targetName} will be marked as{" "}
-                  <strong className="capitalize text-blue-600 dark:text-blue-400">
-                    {selectedStatus}
-                  </strong>{" "}
-                  on <strong>{new Date(selectedDate).toLocaleDateString()}</strong>
-                </p>
-              </Card>
-            )}
+            {selectedStatus &&
+              (selectedStatus === "present" || selectedStatus === "absent") && (
+                <Card className="p-3 bg-blue-50 dark:bg-blue-950 border-l-4 border-l-blue-500">
+                  <p className="text-sm text-foreground">
+                    <strong>Selected:</strong> {targetName} will be marked as{" "}
+                    <strong className="capitalize text-blue-600 dark:text-blue-400">
+                      {selectedStatus}
+                    </strong>{" "}
+                    on{" "}
+                    <strong>
+                      {new Date(selectedDate).toLocaleDateString()}
+                    </strong>
+                  </p>
+                </Card>
+              )}
 
             {/* Action Buttons */}
             <div className="flex gap-2 justify-end">
@@ -354,7 +385,9 @@ export function AdminAttendanceMarkingModal({
             if (!open) setSelectedStatus(null);
           }}
           recordId=""
-          table={type === "student" ? "student_attendance" : "teacher_attendance"}
+          table={
+            type === "student" ? "student_attendance" : "teacher_attendance"
+          }
           type={type}
           name={targetName}
           date={selectedDate}

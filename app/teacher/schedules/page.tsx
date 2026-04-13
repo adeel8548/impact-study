@@ -139,19 +139,19 @@ export default function TeacherSchedulesPage() {
       loadQuizzes();
       const subjectsForClass = assignments.filter(
         (a) => a.class_id === selectedClass,
-          <DeleteConfirmationModal
-            open={deleteQuizModalOpen}
-            onOpenChange={(open) => {
-              setDeleteQuizModalOpen(open);
-              if (!open) setQuizToDeleteId(null);
-            }}
-            title="Delete Quiz"
-            description="Are you sure you want to delete this quiz? This action cannot be undone."
-            onConfirm={async () => {
-              if (quizToDeleteId) await deleteQuiz(quizToDeleteId);
-            }}
-            isLoading={deletingQuiz}
-          />
+        <DeleteConfirmationModal
+          open={deleteQuizModalOpen}
+          onOpenChange={(open) => {
+            setDeleteQuizModalOpen(open);
+            if (!open) setQuizToDeleteId(null);
+          }}
+          title="Delete Quiz"
+          description="Are you sure you want to delete this quiz? This action cannot be undone."
+          onConfirm={async () => {
+            if (quizToDeleteId) await deleteQuiz(quizToDeleteId);
+          }}
+          isLoading={deletingQuiz}
+        />,
       );
       if (subjectsForClass.length > 0) {
         setQuizSubject(

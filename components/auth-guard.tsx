@@ -37,13 +37,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
           } else {
             // Schedule auto-logout at expiry boundary
             const remaining = oneHourMs - (now - issuedAt);
-            const timeout = window.setTimeout(async () => {
-              await supabase.auth.signOut();
-              localStorage.removeItem("currentUser");
-              localStorage.removeItem("accessToken");
-              localStorage.removeItem("accessTokenIssuedAt");
-              router.replace("/");
-            }, Math.max(remaining, 0));
+            const timeout = window.setTimeout(
+              async () => {
+                await supabase.auth.signOut();
+                localStorage.removeItem("currentUser");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("accessTokenIssuedAt");
+                router.replace("/");
+              },
+              Math.max(remaining, 0),
+            );
             // Clear on unmount
             return () => window.clearTimeout(timeout);
           }

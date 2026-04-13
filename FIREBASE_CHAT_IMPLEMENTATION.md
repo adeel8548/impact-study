@@ -3,12 +3,14 @@
 ## ✅ Completed Setup
 
 ### 1. Firebase Configuration
+
 - **File**: `lib/firebase.ts`
 - Initialized Firebase with your credentials
 - Cloud Messaging enabled
 - Works with both browser and service worker
 
 ### 2. Service Worker
+
 - **File**: `public/firebase-messaging-sw.js`
 - Handles background messages (app closed)
 - Plays notification sound automatically
@@ -16,6 +18,7 @@
 - Click handling to open chat window
 
 ### 3. Chat Notifications Hook
+
 - **File**: `hooks/useChatNotifications.ts`
 - Handles foreground messages (app open)
 - Requests notification permission
@@ -24,12 +27,14 @@
 - Toast notifications using Sonner
 
 ### 4. Chat Integration
+
 - **File**: `components/chat/ChatWindow.tsx`
 - Integrated `useChatNotifications` hook
 - Real-time message notifications enabled
 - Sound alerts activated
 
 ### 5. Firebase Initialization
+
 - **File**: `app/layout.tsx`
 - Firebase imported in root layout
 - Automatically initialized for entire app
@@ -37,6 +42,7 @@
 ## 🔊 Notification Sound Details
 
 **Sound Pattern:**
+
 - **Type**: Digital beeps (sine wave)
 - **First Beep**: 800 Hz, 200ms duration
 - **Delay**: 250ms between beeps
@@ -47,6 +53,7 @@
 ## 📱 How It Works
 
 ### When App is Open:
+
 1. Message arrives in chat
 2. `useChatNotifications` hook detects it
 3. Sound plays (two beeps)
@@ -54,6 +61,7 @@
 5. Message appears in chat window
 
 ### When App is Closed/Background:
+
 1. Message arrives
 2. Service worker handles it
 3. Sound notification plays
@@ -63,6 +71,7 @@
 ## 🔔 Notification Permission
 
 The system automatically:
+
 - Requests notification permission on first message
 - Handles denied permissions gracefully
 - Continues to work without full notification support
@@ -71,6 +80,7 @@ The system automatically:
 ## 🛠️ No Additional Installation Required
 
 Firebase is already in your dependencies:
+
 ```json
 "firebase": "^12.7.0"
 ```
@@ -98,6 +108,7 @@ Firebase is already in your dependencies:
 ## 📋 Testing
 
 To test notifications:
+
 1. Open admin or teacher chat
 2. Send message from another user
 3. You should hear the sound notification
