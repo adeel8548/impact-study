@@ -4,6 +4,7 @@ import { AdminSidebar } from "@/components/admin-sidebar";
 import { StudentsClientComponent } from "@/components/students-client";
 import { StudentsCountCard } from "@/components/students-count-card";
 import { getFeeSummary } from "@/lib/actions/fees";
+import { sortClassesBySequence } from "@/lib/class-sequence";
 
 // Force dynamic rendering for real-time data
 export const dynamic = "force-dynamic";
@@ -43,6 +44,7 @@ export default async function StudentManagement() {
     .from("classes")
     .select("*")
     .order("created_at", { ascending: false, nullsLast: true });
+  const orderedClasses = sortClassesBySequence(classes || []);
 
   // Fetch current month fees for all students
   const now = new Date();
@@ -88,7 +90,7 @@ export default async function StudentManagement() {
 
           <StudentsClientComponent
             initialStudents={studentsWithFees || []}
-            classes={classes || []}
+            classes={orderedClasses}
             feeSummary={{ totalFees, paidFees, unpaidFees }}
           />
         </div>

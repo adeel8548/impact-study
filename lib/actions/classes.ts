@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { sortClassesBySequence } from "@/lib/class-sequence";
 
 export async function getClasses() {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function getClasses() {
     return { classes: [], error: error.message };
   }
 
-  return { classes: data || [], error: null };
+  return { classes: sortClassesBySequence(data || []), error: null };
 }
 
 export async function getClassesForTeacher(teacherId: string) {
@@ -43,5 +44,5 @@ export async function getClassesForTeacher(teacherId: string) {
     return { classes: [], error: error.message };
   }
 
-  return { classes: classes || [], error: null };
+  return { classes: sortClassesBySequence(classes || []), error: null };
 }

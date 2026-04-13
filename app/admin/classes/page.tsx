@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/client"; // supabase client
-import { sortByNewest } from "@/lib/utils";
+import { CLASS_SEQUENCE_LABELS, sortClassesBySequence } from "@/lib/class-sequence";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 
 interface CurrentUser {
@@ -15,6 +15,42 @@ interface CurrentUser {
   role: string;
   school_id?: string;
 }
+
+const CLASS_SUGGESTIONS = CLASS_SEQUENCE_LABELS;
+
+const CLASS_SEQUENCE = new Map(
+  CLASS_SUGGESTIONS.map((label, index) => [label.toLowerCase(), index]),
+);
+
+const normalizeClassName = (name: string) =>
+  name.trim().toLowerCase().replace(/\s+/g, " ").replace(/\./g, ".");
+
+const formatClassDisplayName = (name: string) => {
+  const normalized = normalizeClassName(name);
+  const ordinalMap: Record<string, string> = {
+    "1": "1",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "6": "6",
+    "7": "7",
+    "8": "8",
+    "9": "9",
+    "10": "10",
+  };
+
+  if (ordinalMap[normalized]) {
+    return ordinalMap[normalized];
+  }
+
+  const ordinalMatch = normalized.match(/^(\d{1,2})(st|nd|rd|th)$/);
+  if (ordinalMatch) {
+    return `${ordinalMatch[1]}${ordinalMatch[2]}`;
+  }
+
+  return name;
+};
 
 export default function ClassManagement() {
   const router = useRouter();
@@ -55,7 +91,7 @@ export default function ClassManagement() {
       .from("classes")
       .select("*")
       .order("created_at", { ascending: false, nullsLast: true });
-    if (data) setClasses(sortByNewest(data));
+    if (data) setClasses(sortClassesBySequence(data));
   };
 
   const handleOpenModal = (cls?: any) => {
@@ -66,6 +102,12 @@ export default function ClassManagement() {
       setEditingClass(null);
       setClassName("");
     }
+    setModalOpen(true);
+  };
+
+  const handleQuickAddClass = (label: string) => {
+    setEditingClass(null);
+    setClassName(label);
     setModalOpen(true);
   };
 
@@ -93,7 +135,7 @@ export default function ClassManagement() {
 
         if (error) throw error;
         setClasses((prev) =>
-          sortByNewest(
+          sortClassesBySequence(
             prev.map((cls) => (cls.id === data.id ? { ...cls, ...data } : cls)),
           ),
         );
@@ -105,7 +147,7 @@ export default function ClassManagement() {
           .single();
 
         if (error) throw error;
-        setClasses((prev) => sortByNewest([...prev, data]));
+        setClasses((prev) => sortClassesBySequence([...prev, data]));
       }
       setClassName("");
       setModalOpen(false);
@@ -176,6 +218,25 @@ export default function ClassManagement() {
             </Button>
           </div>
 
+          <div className="mb-6 rounded-xl border bg-card p-4 shadow-sm">
+            <div className="mb-3 text-sm font-medium text-foreground">
+              Standard class labels
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {CLASS_SUGGESTIONS.map((label) => (
+                <Button
+                  key={label}
+                  type="button"
+                  variant="outline"
+                  className="h-8 rounded-full bg-transparent px-3 text-xs"
+                  onClick={() => handleQuickAddClass(label)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           {/* Classes Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {classes?.map((cls) => (
@@ -207,7 +268,7 @@ export default function ClassManagement() {
                   </div>
                 </div>
                 <h3 className="font-bold text-lg text-foreground mb-1">
-                  {cls.name}
+                  {formatClassDisplayName(cls.name)}
                 </h3>
               </Card>
             ))}
@@ -225,7 +286,13 @@ export default function ClassManagement() {
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
                   className="mb-4"
+                  list="class-suggestions"
                 />
+                <datalist id="class-suggestions">
+                  {CLASS_SUGGESTIONS.map((label) => (
+                    <option key={label} value={label} />
+                  ))}
+                </datalist>
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"

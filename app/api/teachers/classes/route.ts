@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { sortClassesBySequence } from "@/lib/class-sequence";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -70,7 +71,10 @@ export async function GET(request: NextRequest) {
 
     if (classError) throw classError;
 
-    return NextResponse.json({ success: true, classes: classes ?? [] });
+    return NextResponse.json({
+      success: true,
+      classes: sortClassesBySequence(classes ?? []),
+    });
   } catch (error) {
     console.error("Error fetching teacher classes:", error);
     return NextResponse.json(

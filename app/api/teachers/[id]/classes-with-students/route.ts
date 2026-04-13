@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { sortClassesBySequence } from "@/lib/class-sequence";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -92,7 +93,7 @@ export async function GET(
     console.log("Fetched students:", students?.length || 0, "students");
 
     return NextResponse.json({
-      classes: classes || [],
+      classes: sortClassesBySequence(classes || []),
       students: students || [],
       success: true,
     });

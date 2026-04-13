@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { sortClassesBySequence } from "@/lib/class-sequence";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -18,7 +19,10 @@ export async function GET(request: NextRequest) {
           .in("id", idArray);
 
         if (error) throw error;
-        return NextResponse.json({ classes: data || [], success: true });
+        return NextResponse.json({
+          classes: sortClassesBySequence(data || []),
+          success: true,
+        });
       }
     }
 
@@ -44,7 +48,10 @@ export async function GET(request: NextRequest) {
 
       if (classesErr) throw classesErr;
 
-      return NextResponse.json({ classes: classesData || [], success: true });
+      return NextResponse.json({
+        classes: sortClassesBySequence(classesData || []),
+        success: true,
+      });
     }
 
     // Otherwise return all classes
@@ -58,7 +65,10 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    return NextResponse.json({ classes: data || [], success: true });
+    return NextResponse.json({
+      classes: sortClassesBySequence(data || []),
+      success: true,
+    });
   } catch (error) {
     console.error("Error fetching classes:", error);
     return NextResponse.json(
