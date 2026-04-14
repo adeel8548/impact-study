@@ -111,7 +111,7 @@ export function calculateFeeForMonth(
   if (!shouldApplyPartialFee(joiningDate, targetMonth, targetYear)) {
     return result;
   }
-
+  
   // Calculate partial fee
   const payableDays = calculatePayableDays(
     joiningDate!,

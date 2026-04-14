@@ -7,10 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/client"; // supabase client
-import {
-  CLASS_SEQUENCE_LABELS,
-  sortClassesBySequence,
-} from "@/lib/class-sequence";
+import { CLASS_SEQUENCE_LABELS, sortClassesBySequence } from "@/lib/class-sequence";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 
 interface CurrentUser {
