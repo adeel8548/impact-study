@@ -26,6 +26,7 @@ import {
   Settings,
   Calendar,
   Trophy,
+  BookMarked,
 } from "lucide-react";
 import Logo from "@/app/Assests/imgs/logo_2.png";
 const menuItems = [
@@ -37,9 +38,10 @@ const menuItems = [
   { href: "/admin/chat", label: "Chat", icon: MessageSquare },
   { href: "/admin/timetable", label: "Timetable", icon: Calendar },
   { href: "/admin/subjects", label: "Subjects", icon: Book },
-  { href: "/admin/chapters", label: "Chapters Schedule ", icon: Layers },
+  // { href: "/admin/chapters", label: "Chapters Schedule ", icon: Layers },
+  { href: "/admin/study-schedule", label: "Study Schedule", icon: BookMarked },
   // { href: "/admin/revisions", label: "Revisions", icon: FileText },
-  { href: "/admin/series-exams", label: " Schedules", icon: Clipboard },
+  { href: "/admin/series-exams", label: " Quizes & Revisions", icon: Clipboard },
   // { href: "/admin/quizzes", label: "Quizzes", icon: BookOpen },
   { href: "/admin/student-results", label: "Student Results", icon: Notebook },
   { href: "/admin/quiz-results", label: "Quiz Results", icon: Trophy },

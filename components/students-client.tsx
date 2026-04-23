@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -145,9 +145,6 @@ export function StudentsClientComponent({
       new Date(student?.created_at || student?.createdAt || 0).getTime();
 
     return [...filteredStudents].sort((a, b) => {
-      const dateDiff = getTimestamp(b) - getTimestamp(a);
-      if (dateDiff !== 0) return dateDiff;
-
       const classA = classes?.find((cls) => cls.id === a?.class_id);
       const classB = classes?.find((cls) => cls.id === b?.class_id);
       const rankA =
@@ -157,10 +154,27 @@ export function StudentsClientComponent({
         classOrderMap.get(normalizeClassName(classB?.name)) ??
         preferredClassOrder.length;
 
+      if (!classFilter) {
+        if (rankA !== rankB) return rankA - rankB;
+        const classNameDiff = (classA?.name || "").localeCompare(classB?.name || "");
+        if (classNameDiff !== 0) return classNameDiff;
+      }
+
+      const dateDiff = getTimestamp(b) - getTimestamp(a);
+      if (dateDiff !== 0) return dateDiff;
+
       if (rankA !== rankB) return rankA - rankB;
       return a.name.localeCompare(b.name);
     });
-  }, [filteredStudents, classes, classOrderMap]);
+  }, [filteredStudents, classes, classOrderMap, classFilter]);
+
+  const classNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (classes || []).forEach((cls) => {
+      map.set(String(cls.id), cls.name || "Unknown Class");
+    });
+    return map;
+  }, [classes]);
 
   const handleOpenModal = (student?: Student) => {
     setSelectedStudent(student);
@@ -432,15 +446,34 @@ export function StudentsClientComponent({
               </tr>
             </thead>
             <tbody>
-              {orderedStudents?.map((student) => {
-                const studentClass = classes?.find(
-                  (c) => c.id === student?.class_id,
-                );
-                return (
-                  <tr
-                    key={student.id}
-                    className="border-b border-border hover:bg-secondary/50 transition-colors"
-                  >
+              {(() => {
+                let lastClassId = "";
+
+                return orderedStudents?.map((student) => {
+                  const studentClass = classes?.find(
+                    (c) => c.id === student?.class_id,
+                  );
+                  const currentClassId = String(student?.class_id || "");
+                  const shouldShowClassHeader =
+                    !classFilter && currentClassId !== lastClassId;
+
+                  lastClassId = currentClassId;
+
+                  return (
+                    <Fragment key={student.id}>
+                      {shouldShowClassHeader && (
+                        <tr className="bg-blue-50/70 border-b border-border">
+                          <td
+                            colSpan={14}
+                            className="p-3 font-semibold text-blue-800"
+                          >
+                            {classNameById.get(currentClassId) || "Unknown Class"}
+                          </td>
+                        </tr>
+                      )}
+                      <tr
+                        className="border-b border-border hover:bg-secondary/50 transition-colors"
+                      >
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
@@ -601,9 +634,11 @@ export function StudentsClientComponent({
                         </Button>
                       </div>
                     </td>
-                  </tr>
-                );
-              })}
+                      </tr>
+                    </Fragment>
+                  );
+                });
+              })()}
             </tbody>
           </table>
         </div>

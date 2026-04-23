@@ -183,6 +183,26 @@ export default async function TeacherDashboard() {
             <TeacherAssignedSubjects assignments={assignmentMapped} />
           </Card>
         )}
+
+        {/* Study Schedule Quick Link */}
+        <Card className="p-6 bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-foreground mb-2">
+                📚 Study Schedule
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                View your assigned study schedule and track progress
+              </p>
+            </div>
+            <Button
+              asChild
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Link href="/teacher/study-schedule">View Schedule</Link>
+            </Button>
+          </div>
+        </Card>
       </div>
     </div>
   );

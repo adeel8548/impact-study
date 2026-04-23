@@ -374,7 +374,14 @@ export default function AdminChatPage() {
         setConversations(deduplicatedItems);
       },
       (error) => {
-        console.error("Error loading conversations from Firestore:", error);
+        // Suppress permission-denied errors (Firestore rules not deployed yet, will use Supabase fallback)
+        if (error?.code === "permission-denied") {
+          console.log(
+            "Firestore permission denied (expected before rules deployment), falling back to Supabase",
+          );
+        } else {
+          console.error("Error loading conversations from Firestore:", error);
+        }
         // Error callback - fall back to Supabase
         (async () => {
           try {

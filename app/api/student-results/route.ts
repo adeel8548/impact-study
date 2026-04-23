@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  isTeacherAssignedToSubject,
+  isTeacherAssignedToSubjectInClass,
   getTeacherAssignedSubjects,
 } from "@/lib/server/teacher-permissions";
 
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   try {
     const body = await request.json();
-    const { student_id, series_exam_id, class_id, chapter_results } = body;
+    const { student_id, series_exam_id, class_id, chapter_results, teacherId } = body;
 
     if (!student_id || !series_exam_id || !class_id || !chapter_results) {
       return NextResponse.json(
@@ -105,6 +105,41 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    // Teacher can save marks only for subjects assigned in this class.
+    if (teacherId) {
+      for (const chapterResult of chapter_results) {
+        const chapterId = chapterResult.chapter_id as string;
+        const { data: chapter, error: chapterError } = await supabase
+          .from("exam_chapters")
+          .select("subject_id")
+          .eq("id", chapterId)
+          .single();
+
+        if (chapterError || !chapter?.subject_id) {
+          return NextResponse.json(
+            { error: "Invalid chapter selected", success: false },
+            { status: 400 },
+          );
+        }
+
+        const allowed = await isTeacherAssignedToSubjectInClass(
+          teacherId,
+          class_id,
+          chapter.subject_id,
+        );
+
+        if (!allowed) {
+          return NextResponse.json(
+            {
+              error: "You can only add marks for your assigned subjects",
+              success: false,
+            },
+            { status: 403 },
+          );
+        }
+      }
     }
 
     // Process each chapter result (upsert)

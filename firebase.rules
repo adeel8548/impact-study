@@ -5,10 +5,14 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // Check if user is admin by looking in /users/ collection
+    // OR by checking custom auth claim if set
     function isAdmin() {
-      return isSignedIn() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+        request.auth.token.get('role') == 'admin'
+      );
     }
     
     function isParticipant(conv) {
@@ -30,14 +34,17 @@ service cloud.firestore {
     match /conversations/{conversationId} {
       // Allow read if:
       // 1. User is a participant in the conversation, OR
-      // 2. User is an admin AND conversation has a teacherId (all admins see all teacher conversations)
+      // 2. User is an admin (can see all conversations)
       allow read: if isSignedIn() && (
         isParticipant(resource) ||
-        (isAdmin() && isTeacherConversation(resource))
+        isAdmin()
       );
       
-      // Allow update if user is a participant
-      allow update: if isParticipant(resource);
+      // Allow update if user is a participant or admin
+      allow update: if isSignedIn() && (
+        isParticipant(resource) ||
+        isAdmin()
+      );
       
       // Allow create if signed in
       allow create: if isSignedIn();
@@ -45,10 +52,10 @@ service cloud.firestore {
       match /messages/{messageId} {
         // Allow read if:
         // 1. User is a participant in the conversation, OR
-        // 2. User is an admin AND conversation has a teacherId
+        // 2. User is an admin
         allow read: if isSignedIn() && (
           isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId))) ||
-          (isAdmin() && isTeacherConversation(get(/databases/$(database)/documents/conversations/$(conversationId))))
+          isAdmin()
         );
         
         allow create: if isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)))

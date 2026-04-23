@@ -17,11 +17,25 @@ import { toast } from "sonner";
 
 type Class = { id: string; name: string };
 type Subject = { id: string; subject: string };
-type SeriesExam = {
+type SeriesOption = {
+  key: string;
+  series_name: string;
+  start_date?: string;
+  end_date?: string;
+};
+type StudyScheduleRow = {
   id: string;
+  day: number;
+  class_id?: string | null;
+  subject_id?: string | null;
   subject: string;
-  start_date: string;
-  end_date: string;
+  chapter: string;
+  series_name: string;
+  max_marks?: number | null;
+  schedule_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  teacher_id?: string | null;
 };
 type ExamChapter = { id: string; chapter_name: string; max_marks: number };
 type Student = { id: string; name: string; roll_number?: string };
@@ -50,7 +64,8 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
   } = props;
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [exams, setExams] = useState<SeriesExam[]>([]);
+  const [exams, setExams] = useState<SeriesOption[]>([]);
+  const [studyScheduleRows, setStudyScheduleRows] = useState<StudyScheduleRow[]>([]);
   const [chapters, setChapters] = useState<ExamChapter[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
 
@@ -62,12 +77,27 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedExamDetails, setSelectedExamDetails] =
-    useState<SeriesExam | null>(null);
+    useState<StudyScheduleRow | null>(null);
   const [prefillLoaded, setPrefillLoaded] = useState(false);
   const [chapterMaxDraft, setChapterMaxDraft] = useState<
     Record<string, number | "">
   >({});
   const classesLoadedRef = useRef(false);
+
+  const makeSeriesKey = (classId: string, subjectId: string, seriesName: string) =>
+    `${classId}::${subjectId}::${seriesName.trim().toLowerCase()}`;
+
+  const normalizeChapterName = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/chapter/gi, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const isVirtualChapterId = (id: string) => id.startsWith("schedule:");
+
+  const getSeriesLabel = (series: SeriesOption) => series.series_name;
 
   const totalMaxMarks = chapters.reduce(
     (sum, ch) => sum + (ch.max_marks || 0),
@@ -152,33 +182,35 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
     const loadSubjects = async () => {
       try {
-        // Get unique subjects from series exams for this class
-        const teacherParam = teacherId ? `&teacherId=${teacherId}` : "";
-        const res = await fetch(
-          `/api/series-exams?classId=${selectedClass}${teacherParam}`,
-        );
-        const data = await res.json();
-        const examsData: SeriesExam[] = data.data || [];
-        console.debug(
-          "[StudentResultsClient] loadSubjects for class",
-          selectedClass,
-          "teacher",
-          teacherId,
-          "exams returned",
-          examsData.length,
-        );
+        let subjectsArray: Subject[] = [];
 
-        // Extract unique subjects
-        const uniqueSubjects = Array.from(
-          new Map<string, SeriesExam>(
-            examsData.map((e) => [e.subject, e]),
-          ).values(),
-        );
+        if (role === "teacher" && teacherId) {
+          const assignmentRes = await fetch(`/api/teachers/${teacherId}/assignments`);
+          const assignmentJson = await assignmentRes.json();
+          const assignments = Array.isArray(assignmentJson.assignments)
+            ? assignmentJson.assignments
+            : [];
 
-        const subjectsArray = uniqueSubjects.map((exam) => ({
-          id: exam.subject,
-          subject: exam.subject,
-        }));
+          subjectsArray = assignments
+            .filter((item: any) => item.class_id === selectedClass)
+            .map((item: any) => ({
+              id: item.subject_id,
+              subject: item.subject_name || "Unknown Subject",
+            }));
+        } else {
+          // Admin: subjects come from selected class subjects list.
+          const res = await fetch(`/api/classes/${selectedClass}/subjects`);
+          const data = await res.json();
+          const classSubjects = Array.isArray(data.subjects) ? data.subjects : [];
+          subjectsArray = classSubjects.map((subject: any) => ({
+            id: subject.id,
+            subject: subject.name,
+          }));
+        }
+
+        subjectsArray = Array.from(
+          new Map(subjectsArray.map((s) => [s.id, s])).values(),
+        );
 
         setSubjects(subjectsArray);
 
@@ -190,6 +222,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
         setSelectedSubject(preferredSubject || "");
         setSelectedExam("");
+        setStudyScheduleRows([]);
         setChapters([]);
         setStudents([]);
         setMarks({});
@@ -200,51 +233,152 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     };
 
     loadSubjects();
-  }, [selectedClass, defaultSubjectId]);
+  }, [selectedClass, defaultSubjectId, role, teacherId]);
 
-  // Load exams when subject changes
+  // Load series from study schedule when subject changes
   useEffect(() => {
     if (!selectedClass || !selectedSubject) return;
 
-    const loadExams = async () => {
+    const loadSeries = async () => {
       try {
-        const teacherParam = teacherId ? `&teacherId=${teacherId}` : "";
-        const res = await fetch(
-          `/api/series-exams?classId=${selectedClass}${teacherParam}`,
+        const selectedSubjectDetails = subjects.find(
+          (s) => s.id === selectedSubject,
         );
+
+        const params = new URLSearchParams({
+          classId: selectedClass,
+          subjectId: selectedSubject,
+        });
+
+        if (teacherId) {
+          params.set("teacherId", teacherId);
+        }
+
+        const res = await fetch(`/api/study-schedule?${params.toString()}`, {
+          cache: "no-store",
+        });
         const data = await res.json();
-        const examsData = data.data || [];
+        const allRows: StudyScheduleRow[] = Array.isArray(data.data)
+          ? data.data
+          : [];
+        const relevantRows = allRows.filter((row) => {
+          const byClass = row.class_id === selectedClass;
+          const bySubject = row.subject_id === selectedSubject;
+          const bySubjectName =
+            !row.subject_id &&
+            selectedSubjectDetails?.subject &&
+            row.subject?.trim().toLowerCase() ===
+              selectedSubjectDetails.subject.trim().toLowerCase();
+          const byTeacher = !teacherId || row.teacher_id === teacherId;
+          return byClass && (bySubject || bySubjectName) && byTeacher;
+        });
 
-        // Filter by subject
-        const filteredExams = examsData.filter(
-          (e: SeriesExam) => e.subject === selectedSubject,
+        const grouped = new Map<string, StudyScheduleRow[]>();
+        relevantRows.forEach((row) => {
+          const key = makeSeriesKey(selectedClass, selectedSubject, row.series_name);
+          const list = grouped.get(key) || [];
+          list.push(row);
+          grouped.set(key, list);
+        });
+
+        const seriesList: SeriesOption[] = Array.from(grouped.entries()).map(
+          ([key, rows]) => {
+            const orderedRows = [...rows].sort((a, b) => {
+              if ((a.schedule_date || "") !== (b.schedule_date || "")) {
+                return (a.schedule_date || "").localeCompare(b.schedule_date || "");
+              }
+              return a.day - b.day;
+            });
+
+            return {
+              key,
+              series_name: orderedRows[0]?.series_name || "Series",
+              start_date: orderedRows[0]?.schedule_date || undefined,
+              end_date: orderedRows[orderedRows.length - 1]?.schedule_date || undefined,
+            };
+          },
         );
 
-        setExams(filteredExams);
-        setSelectedExam("");
+        seriesList.sort((a, b) => a.series_name.localeCompare(b.series_name));
+
+        setStudyScheduleRows(relevantRows);
+        setExams(seriesList);
+        setSelectedExam((prev) => {
+          if (prev && seriesList.some((series) => series.key === prev)) {
+            return prev;
+          }
+          return seriesList[0]?.key || "";
+        });
         setChapters([]);
         setStudents([]);
         setMarks({});
       } catch (error) {
-        console.error("Error loading exams:", error);
-        toast.error("Failed to load exams");
+        console.error("Error loading series:", error);
+        toast.error("Failed to load series");
       }
     };
 
-    loadExams();
-  }, [selectedClass, selectedSubject]);
+    loadSeries();
+  }, [selectedClass, selectedSubject, role, teacherId, subjects]);
 
-  // Load chapters and students when exam changes
+  // Load chapters and students when series changes
   useEffect(() => {
     if (!selectedExam) return;
 
     const loadData = async () => {
       try {
         setPrefillLoaded(false);
-        // Load chapters
-        const chaptersRes = await fetch(`/api/chapters?examId=${selectedExam}`);
+        const selectedSeriesRows = studyScheduleRows.filter(
+          (row) => makeSeriesKey(selectedClass, selectedSubject, row.series_name) === selectedExam,
+        );
+
+        const chapterNames = Array.from(
+          new Set(selectedSeriesRows.map((row) => row.chapter).filter(Boolean)),
+        );
+
+        const chaptersRes = await fetch(
+          `/api/chapters?subjectId=${selectedSubject}`,
+        );
         const chaptersData = await chaptersRes.json();
-        const chaptersArray: ExamChapter[] = chaptersData.data || [];
+        const allChapters: ExamChapter[] = Array.isArray(chaptersData.data)
+          ? chaptersData.data
+          : [];
+
+        const chaptersArray: ExamChapter[] = chapterNames
+          .map((chapterName) => {
+            const normalizedTarget = normalizeChapterName(chapterName);
+
+            const exact = allChapters.find(
+              (chapter) =>
+                normalizeChapterName(chapter.chapter_name) === normalizedTarget,
+            );
+            if (exact) return exact;
+
+            const partial = allChapters.find((chapter) => {
+              const normalizedCandidate = normalizeChapterName(
+                chapter.chapter_name,
+              );
+              return (
+                normalizedCandidate.includes(normalizedTarget) ||
+                normalizedTarget.includes(normalizedCandidate)
+              );
+            });
+            if (partial) return partial;
+
+            // Fallback: show schedule chapter even when it is not yet mapped in exam_chapters.
+            const sourceRow = selectedSeriesRows.find(
+              (row) =>
+                normalizeChapterName(row.chapter || "") === normalizedTarget,
+            );
+
+            return {
+              id: `schedule:${sourceRow?.id || normalizedTarget}`,
+              chapter_name: chapterName,
+              max_marks: Number(sourceRow?.max_marks || 100),
+            } as ExamChapter;
+          })
+          .filter(Boolean);
+
         setChapters(chaptersArray);
         setChapterMaxDraft(
           chaptersArray.reduce<Record<string, number | "">>(
@@ -273,12 +407,21 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         setMarks(zeroed);
 
         // Get exam details
-        const selectedExamData = exams.find((e) => e.id === selectedExam);
-        setSelectedExamDetails(selectedExamData || null);
+        const selectedSeriesData = [...selectedSeriesRows].sort((a, b) => {
+          if ((a.schedule_date || "") !== (b.schedule_date || "")) {
+            return (a.schedule_date || "").localeCompare(b.schedule_date || "");
+          }
+          return a.day - b.day;
+        })[0];
+        setSelectedExamDetails(
+          selectedSeriesData
+            ? selectedSeriesData
+            : null,
+        );
 
         // Prefill marks for existing results
         const resultsRes = await fetch(
-          `/api/student-results?seriesExamId=${selectedExam}&classId=${selectedClass}`,
+          `/api/student-results?seriesExamId=${encodeURIComponent(selectedSeriesData?.id || selectedExam)}&classId=${selectedClass}${teacherId ? `&teacherId=${teacherId}` : ""}`,
         );
         const resultsJson = await resultsRes.json();
         const existingResults = resultsJson.data || [];
@@ -303,7 +446,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     };
 
     loadData();
-  }, [selectedExam, selectedClass, exams]);
+  }, [selectedExam, selectedClass, studyScheduleRows, selectedSubject]);
 
   const handleMarkChange = (
     studentId: string,
@@ -360,10 +503,13 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
   const saveMaxMarks = async (chapterId: string, maxMarks: number) => {
     try {
-      const res = await fetch("/api/chapters", {
+      const isVirtual = isVirtualChapterId(chapterId);
+      const realId = isVirtual ? chapterId.replace("schedule:", "") : chapterId;
+
+      const res = await fetch(isVirtual ? "/api/study-schedule" : "/api/chapters", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: chapterId, max_marks: maxMarks }),
+        body: JSON.stringify({ id: realId, max_marks: maxMarks }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -403,6 +549,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
     }
 
     console.log("Current marks state:", marks);
+    const persistedSeriesId = selectedExamDetails?.id || selectedExam;
 
     // Prepare all results to save
     const allResults: Array<{
@@ -416,6 +563,9 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
       const chapterResults: Array<{ chapter_id: string; marks: number }> = [];
 
       chapters.forEach((chapter) => {
+        if (isVirtualChapterId(chapter.id)) {
+          return;
+        }
         const key = `${student.id}_${chapter.id}`;
         const markValue = marks[key];
 
@@ -437,19 +587,26 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
         });
       });
 
-      allResults.push({
-        student_id: student.id,
-        series_exam_id: selectedExam,
-        class_id: selectedClass,
-        chapter_results: chapterResults,
-      });
+      if (chapterResults.length > 0) {
+        allResults.push({
+          student_id: student.id,
+          series_exam_id: persistedSeriesId,
+          class_id: selectedClass,
+          chapter_results: chapterResults,
+        });
+      }
     });
 
     console.log("Prepared results to save:", allResults);
 
     if (allResults.length === 0) {
-      toast.error("No students to save");
+      toast.error("No mappable chapters found for saving. Create chapters in Chapters page first.");
       return;
+    }
+
+    const hasVirtualChapters = chapters.some((ch) => isVirtualChapterId(ch.id));
+    if (hasVirtualChapters) {
+      toast.info("Some chapters are shown from study schedule only and will not be saved until mapped in Chapters.");
     }
 
     setSaving(true);
@@ -504,13 +661,6 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
           }`,
         );
       }
-
-      if (failedSaves.length > 0) {
-        toast.error(`Failed to save ${failedSaves.length} student(s)`);
-      }
-    } catch (error) {
-      console.error("Unexpected error during save:", error);
-      toast.error("An unexpected error occurred while saving");
     } finally {
       setSaving(false);
     }
@@ -518,17 +668,12 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
 
   return (
     <div className="space-y-6">
-      {/* Dropdowns Section */}
       <Card className="p-6 bg-white">
-        <h2 className="text-lg font-semibold mb-4">Select Exam</h2>
+        <h2 className="text-lg font-semibold mb-4">Select Series</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Class Dropdown */}
           <div>
-            <Label
-              htmlFor="class-select"
-              className="text-sm font-medium mb-2 block"
-            >
+            <Label htmlFor="class-select" className="text-sm font-medium mb-2 block">
               Class
             </Label>
             <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -545,19 +690,12 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
             </Select>
           </div>
 
-          {/* Subject Dropdown */}
           <div>
-            <Label
-              htmlFor="subject-select"
-              className="text-sm font-medium mb-2 block"
-            >
+            <Label htmlFor="subject-select" className="text-sm font-medium mb-2 block">
               Subject
             </Label>
             <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger
-                id="subject-select"
-                disabled={!selectedClass || subjects.length === 0}
-              >
+              <SelectTrigger id="subject-select" disabled={!selectedClass || subjects.length === 0}>
                 <SelectValue placeholder="Select Subject" />
               </SelectTrigger>
               <SelectContent>
@@ -570,47 +708,41 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
             </Select>
           </div>
 
-          {/* Exam Dropdown */}
           <div>
-            <Label
-              htmlFor="exam-select"
-              className="text-sm font-medium mb-2 block"
-            >
-              Series Exam
+            <Label htmlFor="exam-select" className="text-sm font-medium mb-2 block">
+              Series
             </Label>
             <Select value={selectedExam} onValueChange={setSelectedExam}>
-              <SelectTrigger
-                id="exam-select"
-                disabled={!selectedSubject || exams.length === 0}
-              >
-                <SelectValue placeholder="Select Exam" />
+              <SelectTrigger id="exam-select" disabled={!selectedSubject || exams.length === 0}>
+                <SelectValue placeholder="Select Series" />
               </SelectTrigger>
               <SelectContent>
-                {exams.map((exam) => (
-                  <SelectItem key={exam.id} value={exam.id}>
-                    {exam.subject} ({exam.start_date} to {exam.end_date})
+                {exams.map((series) => (
+                  <SelectItem key={series.key} value={series.key}>
+                    {getSeriesLabel(series)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {selectedSubject && exams.length === 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                No series found for this class and subject yet. This page reads series from study schedule.
+              </p>
+            )}
           </div>
 
-          {/* Exam Date Info */}
           {selectedExamDetails && (
             <div className="flex flex-col justify-end">
               <div className="text-xs text-muted-foreground">
-                <p className="font-semibold">Exam Period:</p>
-                <p>
-                  {selectedExamDetails.start_date} →{" "}
-                  {selectedExamDetails.end_date}
-                </p>
+                <p className="font-semibold">Series Details:</p>
+                <p>{selectedExamDetails.series_name}</p>
+                <p>{selectedExamDetails.subject}</p>
               </div>
             </div>
           )}
         </div>
       </Card>
 
-      {/* Chapters and Students Info */}
       {selectedExam && (
         <Card className="p-6 bg-white">
           <div className="flex justify-between items-start mb-4">
@@ -636,8 +768,7 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
             <div className="p-8 text-center bg-muted/50 rounded-lg flex flex-col items-center gap-2">
               <AlertCircle className="h-6 w-6 text-muted-foreground" />
               <p className="text-muted-foreground">
-                No chapters found for the selected exam. Please create chapters
-                first.
+                No chapters found for the selected series. Please create chapters first.
               </p>
             </div>
           ) : students.length === 0 ? (
@@ -649,7 +780,6 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
             </div>
           ) : (
             <>
-              {/* Table */}
               <div className="overflow-x-auto border rounded-lg">
                 <table className="w-full">
                   <thead>
@@ -661,36 +791,25 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                         Roll No.
                       </th>
                       {chapters.map((chapter) => (
-                        <th
-                          key={chapter.id}
-                          className="px-4 py-3 text-left text-sm font-semibold min-w-[120px]"
-                        >
+                        <th key={chapter.id} className="px-4 py-3 text-left text-sm font-semibold min-w-[120px]">
                           <div className="flex flex-col gap-1">
-                            <span className="truncate">
-                              {chapter.chapter_name}
-                            </span>
+                            <span className="truncate">{chapter.chapter_name}</span>
                             <div className="flex items-center gap-2 text-xs">
-                              <span className="text-muted-foreground">
-                                Max:
-                              </span>
+                              <span className="text-muted-foreground">Max:</span>
                               <Input
                                 type="number"
                                 min="0"
                                 value={chapterMaxDraft[chapter.id] ?? ""}
-                                onChange={(e) =>
-                                  handleChapterMaxChange(
-                                    chapter.id,
-                                    e.target.value,
-                                  )
-                                }
+                                disabled={role === "teacher"}
+                                onChange={(e) => handleChapterMaxChange(chapter.id, e.target.value)}
                                 className="h-8 text-xs w-20"
                               />
                             </div>
                           </div>
                         </th>
                       ))}
-                      <th className="px-4 py-3 text-left text-sm font-semibold min-w-[110px]">
-                        Total
+                      <th className="px-4 py-3 text-left text-sm font-semibold min-w-[140px]">
+                        Subject Total
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold min-w-[110px]">
                         %
@@ -699,47 +818,23 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                   </thead>
                   <tbody>
                     {students.map((student, idx) => (
-                      <tr
-                        key={student.id}
-                        className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}
-                      >
-                        <td className="px-4 py-3 text-sm font-medium">
-                          {student.name}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">
-                          {student.roll_number || "-"}
-                        </td>
+                      <tr key={student.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}>
+                        <td className="px-4 py-3 text-sm font-medium">{student.name}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{student.roll_number || "-"}</td>
                         {chapters.map((chapter) => (
-                          <td
-                            key={`${student.id}-${chapter.id}`}
-                            className="px-4 py-3"
-                          >
+                          <td key={`${student.id}-${chapter.id}`} className="px-4 py-3">
                             <Input
                               type="number"
                               placeholder="0"
                               min="0"
                               max={chapter.max_marks}
                               value={marks[`${student.id}_${chapter.id}`] ?? 0}
-                              onChange={(e) =>
-                                handleMarkChange(
-                                  student.id,
-                                  chapter.id,
-                                  e.target.value,
-                                )
-                              }
+                              onChange={(e) => handleMarkChange(student.id, chapter.id, e.target.value)}
                               className="w-full h-9 text-sm"
                             />
                             <div className="text-[11px] text-muted-foreground mt-1">
-                              of {chapter.max_marks ?? 0} (
-                              {getCellPercent(student.id, chapter).toFixed(1)}%)
-                              {" · "}
-                              <span
-                                className={
-                                  getCellStatus(student.id, chapter) === "Fail"
-                                    ? "text-red-600 font-semibold"
-                                    : "text-green-600 font-semibold"
-                                }
-                              >
+                              of {chapter.max_marks ?? 0} ({getCellPercent(student.id, chapter).toFixed(1)}%) {" · "}
+                              <span className={getCellStatus(student.id, chapter) === "Fail" ? "text-red-600 font-semibold" : "text-green-600 font-semibold"}>
                                 {getCellStatus(student.id, chapter)}
                               </span>
                             </div>
@@ -757,37 +852,27 @@ export function StudentResultsClient(props: StudentResultsClientProps = {}) {
                 </table>
               </div>
 
-              {/* Summary + Save */}
               <div className="flex flex-col gap-4 mt-6">
                 <div className="flex flex-wrap gap-4 text-sm">
                   <div className="px-4 py-3 rounded border bg-muted/50">
                     <div className="font-semibold text-foreground">Overall</div>
                     <div className="text-muted-foreground">
-                      Total Obtained: {overallTotals.totalObtained} /{" "}
-                      {overallTotals.maxOverall}
+                      Total Obtained: {overallTotals.totalObtained} / {overallTotals.maxOverall}
                     </div>
                     <div className="text-muted-foreground">
                       Percent: {overallTotals.overallPercent.toFixed(1)}%
                     </div>
                   </div>
                   <div className="px-4 py-3 rounded border bg-muted/50">
-                    <div className="font-semibold text-foreground">
-                      Per Student
-                    </div>
-                    <div className="text-muted-foreground">
-                      Max per student: {totalMaxMarks}
-                    </div>
-                    <div className="text-muted-foreground">
-                      Students: {students.length}
-                    </div>
+                    <div className="font-semibold text-foreground">Per Student</div>
+                    <div className="text-muted-foreground">Max per student: {totalMaxMarks}</div>
+                    <div className="text-muted-foreground">Students: {students.length}</div>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button
                     onClick={handleSaveAll}
-                    disabled={
-                      saving || chapters.length === 0 || students.length === 0
-                    }
+                    disabled={saving || chapters.length === 0 || students.length === 0}
                     className="gap-2"
                   >
                     {saving ? (

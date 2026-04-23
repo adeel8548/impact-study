@@ -5,6 +5,8 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const classId = request.nextUrl.searchParams.get("classId");
   const subject = request.nextUrl.searchParams.get("subject");
+  const subjectLike = request.nextUrl.searchParams.get("subjectLike");
+  const subjectId = request.nextUrl.searchParams.get("subjectId");
   const teacherId = request.nextUrl.searchParams.get("teacherId");
   const startDate = request.nextUrl.searchParams.get("startDate");
   const endDate = request.nextUrl.searchParams.get("endDate");
@@ -14,7 +16,9 @@ export async function GET(request: NextRequest) {
 
     if (classId) query = query.eq("class_id", classId);
     if (teacherId) query = query.eq("teacher_id", teacherId);
+    if (subjectId) query = query.eq("subject_id", subjectId);
     if (subject) query = query.ilike("subject", subject);
+    if (subjectLike) query = query.ilike("subject", `%${subjectLike}%`);
     if (startDate && endDate)
       query = query.gte("start_date", startDate).lte("end_date", endDate);
 

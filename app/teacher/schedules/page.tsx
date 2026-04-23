@@ -11,10 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { ExamCard } from "@/components/exam-card";
 import { QuizCard } from "@/components/quiz-card";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
-import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
+import type { DailyQuiz, RevisionSchedule } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
 type Assignment = {
@@ -42,7 +41,6 @@ export default function TeacherSchedulesPage() {
   const today = useMemo(() => toLocalDate(new Date()), []);
 
   const [revisions, setRevisions] = useState<RevisionSchedule[]>([]);
-  const [exams, setExams] = useState<SeriesExam[]>([]);
   const [quizzes, setQuizzes] = useState<DailyQuiz[]>([]);
   const [deleteQuizModalOpen, setDeleteQuizModalOpen] = useState(false);
   const [quizToDeleteId, setQuizToDeleteId] = useState<string | null>(null);
@@ -72,8 +70,10 @@ export default function TeacherSchedulesPage() {
   // Sync tab with query param ?tab=revisions|exams|quizzes
   useEffect(() => {
     const t = searchParams?.get("tab");
-    if (t === "revisions" || t === "exams" || t === "quizzes") {
+    if (t === "revisions" || t === "quizzes") {
       setTab(t);
+    } else if (t === "exams") {
+      setTab("revisions");
     }
   }, [searchParams]);
 
@@ -135,23 +135,9 @@ export default function TeacherSchedulesPage() {
   useEffect(() => {
     if (selectedClass) {
       loadRevisions();
-      loadExams();
       loadQuizzes();
       const subjectsForClass = assignments.filter(
         (a) => a.class_id === selectedClass,
-        <DeleteConfirmationModal
-          open={deleteQuizModalOpen}
-          onOpenChange={(open) => {
-            setDeleteQuizModalOpen(open);
-            if (!open) setQuizToDeleteId(null);
-          }}
-          title="Delete Quiz"
-          description="Are you sure you want to delete this quiz? This action cannot be undone."
-          onConfirm={async () => {
-            if (quizToDeleteId) await deleteQuiz(quizToDeleteId);
-          }}
-          isLoading={deletingQuiz}
-        />,
       );
       if (subjectsForClass.length > 0) {
         setQuizSubject(
@@ -171,17 +157,6 @@ export default function TeacherSchedulesPage() {
       setRevisions(json.data || []);
     } catch (e) {
       toast.error("Failed to load revisions");
-    }
-  };
-
-  const loadExams = async () => {
-    try {
-      const params = new URLSearchParams({ classId: selectedClass, teacherId });
-      const res = await fetch(`/api/series-exams?${params}`);
-      const json = await res.json();
-      setExams(json.data || []);
-    } catch (e) {
-      toast.error("Failed to load exams");
     }
   };
 
@@ -283,7 +258,7 @@ export default function TeacherSchedulesPage() {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Schedules</h1>
               <p className="text-muted-foreground">
-                Manage revisions, series exams, and daily/weekly quizzes.
+                Manage revisions and daily/weekly quizzes.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -305,7 +280,6 @@ export default function TeacherSchedulesPage() {
           <Tabs value={tab} onValueChange={setTab} className="space-y-4">
             <TabsList>
               <TabsTrigger value="revisions">Revisions</TabsTrigger>
-              <TabsTrigger value="exams">Series Exams</TabsTrigger>
               <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
             </TabsList>
 
@@ -335,36 +309,6 @@ export default function TeacherSchedulesPage() {
                   ))}
                 </div>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="exams" className="space-y-4">
-              <div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Upcoming Exams
-                </h3>
-                {exams.length === 0 && (
-                  <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">
-                      No exams yet.
-                    </p>
-                  </Card>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {exams.map((e) => (
-                    <ExamCard
-                      key={e.id}
-                      exam={e}
-                      teacherName={teacherName}
-                      className={
-                        classes.find((c) => c.id === selectedClass)?.name || "—"
-                      }
-                      onEdit={undefined}
-                      onDelete={undefined}
-                      showChaptersLink={true}
-                    />
-                  ))}
-                </div>
-              </div>
             </TabsContent>
 
             <TabsContent value="quizzes" className="space-y-4">
