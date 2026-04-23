@@ -28,17 +28,37 @@ export async function ensureConversation(
   );
   const snap = await getDocs(q);
   if (!snap.empty) {
-    // Update name/email if provided and missing
+    // Keep teacher metadata synced when profile changes.
     const existingDoc = snap.docs[0];
     const existingData = existingDoc.data();
+    const updates: Record<string, string> = {};
+
     if (
-      (teacherName || teacherEmail) &&
-      (!existingData.teacherName || !existingData.teacherEmail)
+      teacherName &&
+      typeof existingData.teacherName === "string" &&
+      existingData.teacherName !== teacherName
     ) {
-      await updateDoc(existingDoc.ref, {
-        ...(teacherName && !existingData.teacherName ? { teacherName } : {}),
-        ...(teacherEmail && !existingData.teacherEmail ? { teacherEmail } : {}),
-      });
+      updates.teacherName = teacherName;
+    }
+
+    if (
+      teacherEmail &&
+      typeof existingData.teacherEmail === "string" &&
+      existingData.teacherEmail !== teacherEmail
+    ) {
+      updates.teacherEmail = teacherEmail;
+    }
+
+    if (teacherName && !existingData.teacherName) {
+      updates.teacherName = teacherName;
+    }
+
+    if (teacherEmail && !existingData.teacherEmail) {
+      updates.teacherEmail = teacherEmail;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await updateDoc(existingDoc.ref, updates);
     }
     return { id: snap.docs[0].id, exists: true };
   }

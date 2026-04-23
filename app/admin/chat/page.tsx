@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useTransition } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  useCallback,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { AdminSidebar } from "@/components/admin-sidebar";
@@ -61,6 +67,7 @@ export default function AdminChatPage() {
 
   const [conversationId, setConversationId] = useState<string>("");
   const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
+  const [hasLoadedTeachers, setHasLoadedTeachers] = useState(false);
   const [isEnsuringConversation, startEnsure] = useTransition();
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkMessage, setBulkMessage] = useState("");
@@ -96,24 +103,40 @@ export default function AdminChatPage() {
     });
   }, [supabase]);
 
-  useEffect(() => {
-    const loadTeachers = async () => {
+  const loadTeachers = useCallback(
+    async (showError = true) => {
       try {
         setIsLoadingTeachers(true);
-        const res = await fetch("/api/teachers");
+        const res = await fetch("/api/teachers", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load teachers");
         const body = await res.json();
         const list = Array.isArray(body.teachers) ? body.teachers : body;
-        setTeachers(list);
+        setTeachers(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load teachers");
+        if (showError) {
+          toast.error("Failed to load teachers");
+        }
       } finally {
+        setHasLoadedTeachers(true);
         setIsLoadingTeachers(false);
       }
-    };
+    },
+    [],
+  );
+
+  useEffect(() => {
     loadTeachers();
-  }, []);
+
+    const handleWindowFocus = () => {
+      loadTeachers(false);
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    return () => {
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, [loadTeachers]);
 
   // Load admin conversations directly from Firestore in realtime
   useEffect(() => {
@@ -309,15 +332,18 @@ export default function AdminChatPage() {
           const data: any = d.data();
           const teacherId = data.teacherId;
           if (!teacherId) continue; // Skip if no teacherId
+          if (hasLoadedTeachers && !teacherLookup[teacherId]) {
+            continue;
+          }
 
           const teacherName =
-            data.teacherName ||
             teacherLookup[teacherId]?.name ||
+            data.teacherName ||
             profileMap[teacherId]?.name ||
             "Teacher";
           const teacherEmail =
-            data.teacherEmail ||
             teacherLookup[teacherId]?.email ||
+            data.teacherEmail ||
             profileMap[teacherId]?.email ||
             "";
 
@@ -449,17 +475,52 @@ export default function AdminChatPage() {
       },
     );
     return () => unsub();
-  }, [currentUserId, supabase, teacherLookup]);
+  }, [currentUserId, supabase, teacherLookup, hasLoadedTeachers]);
 
-  const filteredConversations = useMemo(() => {
+  const conversationByTeacherId = useMemo(() => {
+    return new Map(conversations.map((c) => [c.teacherId, c]));
+  }, [conversations]);
+
+  const filteredTeachers = useMemo(() => {
     const term = filter.toLowerCase();
-    if (!term) return conversations;
-    return conversations.filter(
-      (c) =>
-        (c.teacherName || "").toLowerCase().includes(term) ||
-        (c.teacherEmail || "").toLowerCase().includes(term),
-    );
-  }, [conversations, filter]);
+    const base = !term
+      ? teachers
+      : teachers.filter(
+          (t) =>
+            (t.name || "").toLowerCase().includes(term) ||
+            (t.email || "").toLowerCase().includes(term),
+        );
+
+    // Show teachers with recent conversations first.
+    return [...base].sort((a, b) => {
+      const aUpdatedAt = conversationByTeacherId.get(a.id)?.updatedAt || 0;
+      const bUpdatedAt = conversationByTeacherId.get(b.id)?.updatedAt || 0;
+      return bUpdatedAt - aUpdatedAt;
+    });
+  }, [teachers, filter, conversationByTeacherId]);
+
+  const allVisibleTeacherIds = useMemo(
+    () => filteredTeachers.map((t) => t.id),
+    [filteredTeachers],
+  );
+
+  const areAllVisibleSelected =
+    allVisibleTeacherIds.length > 0 &&
+    allVisibleTeacherIds.every((id) => selectedTeachers.has(id));
+
+  const toggleSelectAllVisible = () => {
+    if (allVisibleTeacherIds.length === 0) return;
+
+    setSelectedTeachers((prev) => {
+      const next = new Set(prev);
+      if (areAllVisibleSelected) {
+        allVisibleTeacherIds.forEach((id) => next.delete(id));
+      } else {
+        allVisibleTeacherIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
 
   // Subscribe to unread counts for each conversation
   useEffect(() => {
@@ -636,6 +697,25 @@ export default function AdminChatPage() {
                   onChange={(e) => setBulkMessage(e.target.value)}
                   className="w-full p-2 text-xs border rounded resize-none h-20"
                 />
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={toggleSelectAllVisible}
+                    disabled={allVisibleTeacherIds.length === 0}
+                    className="h-8 text-xs"
+                  >
+                    {areAllVisibleSelected ? "Unselect All" : "Select All"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => loadTeachers(false)}
+                    className="h-8 text-xs"
+                  >
+                    Refresh
+                  </Button>
+                </div>
                 <Button
                   onClick={sendBulkMessage}
                   disabled={
@@ -657,18 +737,19 @@ export default function AdminChatPage() {
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading
                   teachers...
                 </div>
-              ) : filteredConversations.length === 0 ? (
+              ) : filteredTeachers.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No conversations yet
+                  No teachers found
                 </p>
               ) : (
-                filteredConversations.map((c) => {
-                  const active = conversationId === c.id;
-                  const isSelected = selectedTeachers.has(c.teacherId);
-                  const unreadCount = unreadCounts[c.id] || 0;
+                filteredTeachers.map((teacher) => {
+                  const conv = conversationByTeacherId.get(teacher.id);
+                  const active = conversationId === conv?.id;
+                  const isSelected = selectedTeachers.has(teacher.id);
+                  const unreadCount = conv ? unreadCounts[conv.id] || 0 : 0;
                   return (
                     <div
-                      key={c.id}
+                      key={teacher.id}
                       className={cn(
                         "w-full p-3 rounded border transition-colors flex items-start gap-3 cursor-pointer hover:bg-muted",
                         active && !selectedTeachers.size
@@ -684,9 +765,9 @@ export default function AdminChatPage() {
                           e.stopPropagation();
                           const newSelected = new Set(selectedTeachers);
                           if (isSelected) {
-                            newSelected.delete(c.teacherId);
+                            newSelected.delete(teacher.id);
                           } else {
-                            newSelected.add(c.teacherId);
+                            newSelected.add(teacher.id);
                           }
                           setSelectedTeachers(newSelected);
                         }}
@@ -695,13 +776,13 @@ export default function AdminChatPage() {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          setConversationId(c.id);
+                          ensureConversationOpen(teacher);
                         }}
                         className="flex-1 text-left"
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-foreground text-sm">
-                            {c.teacherName || "Teacher"}
+                            {teacher.name || "Teacher"}
                           </span>
                           {unreadCount > 0 && (
                             <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
@@ -710,11 +791,11 @@ export default function AdminChatPage() {
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {c.teacherEmail}
+                          {teacher.email || ""}
                         </div>
-                        {c.lastMessage ? (
+                        {conv?.lastMessage ? (
                           <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                            {c.lastMessage}
+                            {conv.lastMessage}
                           </div>
                         ) : null}
                       </button>
