@@ -39,7 +39,7 @@ const menuItems = [
   { href: "/admin/timetable", label: "Timetable", icon: Calendar },
   { href: "/admin/subjects", label: "Subjects", icon: Book },
   // { href: "/admin/chapters", label: "Chapters Schedule ", icon: Layers },
-  { href: "/admin/study-schedule", label: "Study Schedule", icon: BookMarked },
+  { href: "/admin/study-schedule", label: "Series Schedule", icon: BookMarked },
   // { href: "/admin/revisions", label: "Revisions", icon: FileText },
   { href: "/admin/series-exams", label: " Quizes & Revisions", icon: Clipboard },
   // { href: "/admin/quizzes", label: "Quizzes", icon: BookOpen },
