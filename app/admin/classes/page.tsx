@@ -16,6 +16,7 @@ interface CurrentUser {
   school_id?: string;
 }
 
+
 const CLASS_SUGGESTIONS = CLASS_SEQUENCE_LABELS;
 
 const CLASS_SEQUENCE = new Map(
