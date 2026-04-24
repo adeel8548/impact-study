@@ -83,8 +83,10 @@ export function AdminSchedulesContent() {
 
   useEffect(() => {
     const t = searchParams?.get("tab");
-    if (t === "revisions" || t === "exams" || t === "quizzes") {
+    if (t === "revisions" || t === "quizzes") {
       setTab(t);
+    } else if (t === "exams") {
+      setTab("revisions");
     }
   }, [searchParams]);
 
@@ -466,7 +468,7 @@ export function AdminSchedulesContent() {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Schedules</h1>
               <p className="text-muted-foreground">
-                Manage revisions, series exams, and quizzes for all classes.
+                Manage revisions and quizzes for all classes.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -488,7 +490,6 @@ export function AdminSchedulesContent() {
           <Tabs value={tab} onValueChange={setTab} className="space-y-4">
             <TabsList>
               <TabsTrigger value="revisions">Revisions</TabsTrigger>
-              <TabsTrigger value="exams">Series Exams</TabsTrigger>
               <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
             </TabsList>
 
