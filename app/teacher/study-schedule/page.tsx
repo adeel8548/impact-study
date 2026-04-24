@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TeacherSidebar } from "@/components/teacher-sidebar";
 import { Card } from "@/components/ui/card";
@@ -54,6 +54,8 @@ function getEffectiveStatus(entry: StudyScheduleEntry) {
 
 export default function TeacherStudySchedulePage() {
   const supabase = useMemo(() => createClient(), []);
+  const authResolvedRef = useRef(false);
+  const scheduleLoadedRef = useRef(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [currentUserName, setCurrentUserName] = useState<string>("");
   const [entries, setEntries] = useState<StudyScheduleEntry[]>([]);
@@ -64,6 +66,9 @@ export default function TeacherStudySchedulePage() {
 
   // Get current user
   useEffect(() => {
+    if (authResolvedRef.current) return;
+    authResolvedRef.current = true;
+
     supabase.auth.getUser().then(async ({ data }) => {
       if (data.user?.id) {
         setCurrentUserId(data.user.id);
@@ -82,6 +87,12 @@ export default function TeacherStudySchedulePage() {
 
   // Load study schedule
   useEffect(() => {
+    if (!currentUserId || scheduleLoadedRef.current) {
+      return;
+    }
+
+    scheduleLoadedRef.current = true;
+
     const loadSchedule = async () => {
       try {
         setIsLoading(true);
@@ -132,9 +143,7 @@ export default function TeacherStudySchedulePage() {
       }
     };
 
-    if (currentUserId) {
-      loadSchedule();
-    }
+    void loadSchedule();
   }, [currentUserId]);
 
   // Group entries by series

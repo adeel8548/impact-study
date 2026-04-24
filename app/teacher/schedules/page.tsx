@@ -1,18 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Pencil, Trash } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { QuizCard } from "@/components/quiz-card";
-import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
 import type { DailyQuiz, RevisionSchedule } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
@@ -22,255 +19,191 @@ type Assignment = {
   subject_name?: string | null;
 };
 
-const toLocalDate = (d: Date) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-};
-
 export default function TeacherSchedulesPage() {
   const searchParams = useSearchParams();
-  const [classes, setClasses] = useState<ClassOption[]>([]);
-  const [selectedClass, setSelectedClass] = useState<string>("");
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [teacherId, setTeacherId] = useState<string>("");
-  const [teacherName, setTeacherName] = useState<string>("");
-  const [tab, setTab] = useState<string>("revisions");
 
-  const today = useMemo(() => toLocalDate(new Date()), []);
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [selectedClass, setSelectedClass] = useState("");
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [teacherId, setTeacherId] = useState("");
+  const [teacherName, setTeacherName] = useState("Teacher");
+  const [tab, setTab] = useState("revisions");
 
   const [revisions, setRevisions] = useState<RevisionSchedule[]>([]);
   const [quizzes, setQuizzes] = useState<DailyQuiz[]>([]);
-  const [deleteQuizModalOpen, setDeleteQuizModalOpen] = useState(false);
-  const [quizToDeleteId, setQuizToDeleteId] = useState<string | null>(null);
-  const [deletingQuiz, setDeletingQuiz] = useState(false);
-
-  // Form state
-  // Quizzes editable by teacher
-  const [saving, setSaving] = useState(false);
-  const [quizSubject, setQuizSubject] = useState("");
+  const [quizSubjectId, setQuizSubjectId] = useState("");
   const [quizTopic, setQuizTopic] = useState("");
-  const [quizDate, setQuizDate] = useState(today);
+  const [quizDate, setQuizDate] = useState("");
   const [quizDuration, setQuizDuration] = useState("");
   const [quizTotalMarks, setQuizTotalMarks] = useState("");
-  const [quizEditingId, setQuizEditingId] = useState<string | null>(null);
+  const [savingQuiz, setSavingQuiz] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "teacher") {
       return;
     }
+
     setTeacherId(user.id);
     setTeacherName(user.name || "Teacher");
-    loadClasses(user.id);
-    loadAssignments(user.id);
+    void loadClasses(user.id);
+    void loadAssignments(user.id);
   }, []);
 
-  // Sync tab with query param ?tab=revisions|exams|quizzes
   useEffect(() => {
-    const t = searchParams?.get("tab");
-    if (t === "revisions" || t === "quizzes") {
-      setTab(t);
-    } else if (t === "exams") {
-      setTab("revisions");
+    const tabParam = searchParams?.get("tab");
+    if (tabParam === "revisions" || tabParam === "quizzes") {
+      setTab(tabParam);
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (selectedClass && teacherId) {
+      void loadRevisions();
+      void loadQuizzes();
+    }
+  }, [selectedClass, teacherId]);
+
+  useEffect(() => {
+    const subjects = assignments.filter((item) => item.class_id === selectedClass);
+    const stillValid = subjects.some((item) => item.subject_id === quizSubjectId);
+    if (!stillValid) {
+      setQuizSubjectId(subjects[0]?.subject_id || "");
+    }
+  }, [assignments, selectedClass, quizSubjectId]);
+
   const loadClasses = async (userId: string) => {
     try {
-      // Get assigned subjects to determine which classes to show
-      const assignRes = await fetch(`/api/teachers/${userId}/assignments`);
-      const assignJson = await assignRes.json();
-      const assignments = Array.isArray(assignJson.assignments)
-        ? assignJson.assignments
-        : [];
+      const response = await fetch(`/api/teachers/classes?teacherId=${userId}`);
+      const data = await response.json();
+      const classList = Array.isArray(data.classes) ? data.classes : [];
 
-      // Extract unique class IDs from assignments
-      const uniqueClassIds = Array.from(
-        new Set(assignments.map((a: any) => a.class_id).filter(Boolean)),
-      );
-
-      if (uniqueClassIds.length === 0) {
-        setClasses([]);
-        setSelectedClass("");
-        return;
-      }
-
-      // Fetch class details
-      const classIds = (uniqueClassIds as string[]).join(",");
-      const res = await fetch(
-        `/api/classes?ids=${encodeURIComponent(classIds)}`,
-      );
-      const data = await res.json();
-      const cls = Array.isArray(data.classes) ? data.classes : data.data || [];
-
-      setClasses(cls);
-      if (cls.length > 0) {
-        setSelectedClass(cls[0].id);
-      }
+      setClasses(classList);
+      setSelectedClass(classList[0]?.id || "");
     } catch (error) {
       console.error("Error loading classes:", error);
       toast.error("Failed to load classes");
     }
   };
 
+  const loadRevisions = async () => {
+    try {
+      const params = new URLSearchParams({ classId: selectedClass, teacherId });
+      const response = await fetch(`/api/revision-schedule?${params.toString()}`);
+      const data = await response.json();
+      setRevisions(Array.isArray(data.data) ? data.data : []);
+    } catch (error) {
+      console.error("Error loading revisions:", error);
+      toast.error("Failed to load revisions");
+    }
+  };
+
   const loadAssignments = async (userId: string) => {
     try {
-      const res = await fetch(`/api/teachers/${userId}/assignments`);
-      const json = await res.json();
-      const list: Assignment[] = Array.isArray(json.assignments)
-        ? json.assignments.map((a: any) => ({
-            class_id: a.class_id,
-            subject_id: a.subject_id,
-            subject_name: a.subject_name,
+      const response = await fetch(`/api/teachers/${userId}/assignments`);
+      const data = await response.json();
+      const list: Assignment[] = Array.isArray(data.assignments)
+        ? data.assignments.map((item: Assignment) => ({
+            class_id: item.class_id,
+            subject_id: item.subject_id,
+            subject_name: item.subject_name,
           }))
         : [];
       setAssignments(list);
     } catch (error) {
       console.error("Error loading assignments:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedClass) {
-      loadRevisions();
-      loadQuizzes();
-      const subjectsForClass = assignments.filter(
-        (a) => a.class_id === selectedClass,
-      );
-      if (subjectsForClass.length > 0) {
-        setQuizSubject(
-          subjectsForClass[0].subject_name || subjectsForClass[0].subject_id,
-        );
-      } else {
-        setQuizSubject("");
-      }
-    }
-  }, [selectedClass, assignments]);
-
-  const loadRevisions = async () => {
-    try {
-      const params = new URLSearchParams({ classId: selectedClass, teacherId });
-      const res = await fetch(`/api/revision-schedule?${params}`);
-      const json = await res.json();
-      setRevisions(json.data || []);
-    } catch (e) {
-      toast.error("Failed to load revisions");
+      toast.error("Failed to load assignments");
     }
   };
 
   const loadQuizzes = async () => {
     try {
-      // Just load quizzes for the selected class, no subject filtering needed
-      // (API will return all quizzes for the class regardless of subject)
-      const params = new URLSearchParams({
-        classId: selectedClass,
-        teacherId,
-      });
-      const res = await fetch(`/api/daily-quizzes?${params}`);
-      const json = await res.json();
-      setQuizzes(json.data || []);
-    } catch (e) {
+      const params = new URLSearchParams({ classId: selectedClass, teacherId });
+      const response = await fetch(`/api/daily-quizzes?${params.toString()}`);
+      const data = await response.json();
+      setQuizzes(Array.isArray(data.data) ? data.data : []);
+    } catch (error) {
+      console.error("Error loading quizzes:", error);
       toast.error("Failed to load quizzes");
     }
   };
 
-  const createOrUpdateQuiz = async () => {
-    if (!quizSubject || !quizTopic || !quizDate) {
-      toast.error("Fill subject, topic, date");
+  const createQuiz = async () => {
+    if (!selectedClass || !teacherId || !quizSubjectId || !quizTopic || !quizDate) {
+      toast.error("Subject, topic aur date required hain");
       return;
     }
-    setSaving(true);
-    try {
-      // Find subject_id from assignments
-      const assignment = assignments.find(
-        (a) =>
-          a.class_id === selectedClass &&
-          (a.subject_name === quizSubject || a.subject_id === quizSubject),
-      );
 
+    const selectedSubject = assignments.find(
+      (item) => item.class_id === selectedClass && item.subject_id === quizSubjectId,
+    );
+
+    setSavingQuiz(true);
+    try {
       const payload = {
-        id: quizEditingId || undefined,
         class_id: selectedClass,
-        subject: quizSubject,
-        subject_id: assignment?.subject_id || undefined,
+        subject_id: quizSubjectId,
+        subject: selectedSubject?.subject_name || quizSubjectId,
         topic: quizTopic,
         quiz_date: quizDate,
         duration_minutes: quizDuration ? Number(quizDuration) : null,
         total_marks: quizTotalMarks ? Number(quizTotalMarks) : null,
         teacher_id: teacherId,
       };
-      const method = quizEditingId ? "PUT" : "POST";
-      const res = await fetch("/api/daily-quizzes", {
-        method,
+
+      const response = await fetch("/api/daily-quizzes", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to save quiz");
-      toast.success(quizEditingId ? "Quiz updated" : "Quiz saved");
-      setQuizEditingId(null);
-      setQuizSubject("");
+      if (!response.ok) {
+        throw new Error("Failed to add quiz");
+      }
+
+      toast.success("Quiz added successfully");
       setQuizTopic("");
-      setQuizDate(today);
+      setQuizDate("");
       setQuizDuration("");
       setQuizTotalMarks("");
-      loadQuizzes();
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to save quiz");
+      void loadQuizzes();
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      toast.error("Failed to add quiz");
     } finally {
-      setSaving(false);
+      setSavingQuiz(false);
     }
   };
 
-  const deleteQuiz = async (id: string) => {
-    setDeletingQuiz(true);
-    try {
-      const res = await fetch(`/api/daily-quizzes?id=${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Delete failed");
-      toast.success("Quiz deleted");
-      setDeleteQuizModalOpen(false);
-      setQuizToDeleteId(null);
-      loadQuizzes();
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to delete quiz");
-    } finally {
-      setDeletingQuiz(false);
-    }
-  };
+  const subjectsForClass = assignments.filter((item) => item.class_id === selectedClass);
 
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }
     >
       <div className="min-h-screen bg-background">
         <TeacherHeader />
-        <div className="p-4 md:p-8 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div className="space-y-6 p-4 md:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Schedules</h1>
-              <p className="text-muted-foreground">
-                Manage revisions and daily/weekly quizzes.
-              </p>
+              <p className="text-muted-foreground">Revisions aur quizzes ka schedule.</p>
             </div>
+
             <div className="flex items-center gap-3">
               <Label className="text-sm">Class</Label>
               <select
                 value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="px-3 py-2 border border-border rounded bg-background text-foreground"
+                onChange={(event) => setSelectedClass(event.target.value)}
+                className="rounded border border-border bg-background px-3 py-2 text-foreground"
               >
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
+                {classes.map((classOption) => (
+                  <option key={classOption.id} value={classOption.id}>
+                    {classOption.name}
                   </option>
                 ))}
               </select>
@@ -285,158 +218,121 @@ export default function TeacherSchedulesPage() {
 
             <TabsContent value="revisions" className="space-y-4">
               <Card className="p-4">
-                <h3 className="font-semibold mb-3">Upcoming Revisions</h3>
+                <h3 className="mb-3 font-semibold">Upcoming Revisions</h3>
                 <div className="space-y-2">
-                  {revisions.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No revisions yet.
-                    </p>
-                  )}
-                  {revisions.map((r) => (
-                    <div
-                      key={r.id}
-                      className="flex items-center justify-between border border-border rounded p-3"
-                    >
-                      <div>
-                        <p className="font-medium">
-                          {r.subject} — {r.topic}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Date: {r.revision_date} • Teacher: {teacherName}
-                        </p>
+                  {revisions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No revisions yet.</p>
+                  ) : (
+                    revisions.map((revision) => (
+                      <div
+                        key={revision.id}
+                        className="flex items-center justify-between rounded border border-border p-3"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {revision.subject} - {revision.topic}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Date: {revision.revision_date} - Teacher: {teacherName}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </Card>
             </TabsContent>
 
             <TabsContent value="quizzes" className="space-y-4">
               <Card className="p-4 space-y-3">
-                <div className="grid md:grid-cols-4 gap-3">
-                  <div>
+                <h3 className="font-semibold">Add Quiz</h3>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+                  <div className="space-y-1">
                     <Label>Subject</Label>
                     <select
-                      value={quizSubject}
-                      onChange={(e) => setQuizSubject(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded bg-background text-foreground"
+                      value={quizSubjectId}
+                      onChange={(event) => setQuizSubjectId(event.target.value)}
+                      className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
                     >
-                      {(
-                        assignments
-                          .filter((a) => a.class_id === selectedClass)
-                          .map((a) => ({
-                            id: a.subject_id,
-                            name: a.subject_name || a.subject_id,
-                          }))
-                          .filter(
-                            (v, idx, arr) =>
-                              arr.findIndex((x) => x.id === v.id) === idx,
-                          ) || []
-                      ).map((s) => (
-                        <option key={s.id} value={s.name}>
-                          {s.name}
+                      {subjectsForClass.map((subject) => (
+                        <option key={subject.subject_id} value={subject.subject_id}>
+                          {subject.subject_name || subject.subject_id}
                         </option>
                       ))}
-                      {assignments.filter((a) => a.class_id === selectedClass)
-                        .length === 0 && (
-                        <option value="">
-                          No subjects assigned to this class
-                        </option>
+                      {subjectsForClass.length === 0 && (
+                        <option value="">No subject assigned</option>
                       )}
                     </select>
                   </div>
-                  <div>
+
+                  <div className="space-y-1 lg:col-span-2">
                     <Label>Topic</Label>
                     <Input
                       value={quizTopic}
-                      onChange={(e) => setQuizTopic(e.target.value)}
+                      onChange={(event) => setQuizTopic(event.target.value)}
+                      placeholder="Topic name"
                     />
                   </div>
-                  <div>
+
+                  <div className="space-y-1">
                     <Label>Date</Label>
                     <Input
                       type="date"
                       value={quizDate}
-                      onChange={(e) => setQuizDate(e.target.value)}
+                      onChange={(event) => setQuizDate(event.target.value)}
                     />
                   </div>
-                  <div>
-                    <Label>Duration (minutes)</Label>
+
+                  <div className="space-y-1">
+                    <Label>Duration (min)</Label>
                     <Input
                       type="number"
-                      min={0}
+                      min="0"
                       value={quizDuration}
-                      onChange={(e) => setQuizDuration(e.target.value)}
+                      onChange={(event) => setQuizDuration(event.target.value)}
                     />
                   </div>
-                  <div>
+
+                  <div className="space-y-1">
                     <Label>Total Marks</Label>
                     <Input
                       type="number"
-                      min={0}
+                      min="0"
                       value={quizTotalMarks}
-                      onChange={(e) => setQuizTotalMarks(e.target.value)}
+                      onChange={(event) => setQuizTotalMarks(event.target.value)}
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  {quizEditingId && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setQuizEditingId(null)}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                  <Button
-                    onClick={createOrUpdateQuiz}
-                    disabled={saving}
-                    className="gap-2"
-                  >
-                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                    <Plus className="w-4 h-4" />
-                    {quizEditingId ? "Update Quiz" : "Add Quiz"}
-                  </Button>
-                </div>
+
+                <Button onClick={createQuiz} disabled={savingQuiz}>
+                  {savingQuiz ? "Saving..." : "Add Quiz"}
+                </Button>
               </Card>
 
-              <div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Upcoming Quizzes
-                </h3>
-                {quizzes.length === 0 && (
-                  <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">
-                      No quizzes yet.
-                    </p>
-                  </Card>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {quizzes.map((q) => (
-                    <QuizCard
-                      key={q.id}
-                      quiz={q}
-                      teacherName={teacherName}
-                      className={
-                        classes.find((c) => c.id === selectedClass)?.name || "—"
-                      }
-                      onEdit={(quiz) => {
-                        setQuizEditingId(quiz.id);
-                        setQuizSubject(quiz.subject);
-                        setQuizTopic(quiz.topic);
-                        setQuizDate(quiz.quiz_date);
-                        setQuizDuration(
-                          quiz.duration_minutes?.toString() || "",
-                        );
-                      }}
-                      onDelete={(id) => {
-                        setQuizToDeleteId(id);
-                        setDeleteQuizModalOpen(true);
-                      }}
-                    />
-                  ))}
+              <Card className="p-4">
+                <h3 className="mb-3 font-semibold">Upcoming Quizzes</h3>
+                <div className="space-y-2">
+                  {quizzes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No quizzes yet.</p>
+                  ) : (
+                    quizzes.map((quiz) => (
+                      <div
+                        key={quiz.id}
+                        className="flex items-center justify-between rounded border border-border p-3"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {quiz.subject} - {quiz.topic}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Date: {quiz.quiz_date} - Teacher: {teacherName}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              </div>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

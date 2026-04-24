@@ -1,205 +1,388 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TeacherHeader } from "@/components/teacher-header";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { ExamChapter, SeriesExam } from "@/lib/types";
 
-type ExamChapter = {
-  id: string;
-  exam_id: string;
+type ClassOption = { id: string; name: string };
+type Assignment = {
+  class_id: string;
   subject_id: string;
-  chapter_name: string;
-  chapter_date: string;
-  max_marks: number;
+  subject_name?: string | null;
 };
 
-type SeriesExam = {
-  id: string;
-  subject: string;
-  start_date: string;
-  end_date: string;
+type ChapterRow = ExamChapter & {
+  series_id: string;
+  series_label: string;
 };
+
+type SeriesExamWithSubjectId = SeriesExam & {
+  subject_id?: string | null;
+};
+
+const normalizeSubject = (value: string) =>
+  value.trim().toLowerCase().replace(/\s+/g, " ");
 
 export default function TeacherChaptersPage() {
-  const [chapters, setChapters] = useState<ExamChapter[]>([]);
-  const [exams, setExams] = useState<SeriesExam[]>([]);
   const [loading, setLoading] = useState(true);
-  const [teacherId, setTeacherId] = useState<string>("");
-  const [selectedClass, setSelectedClass] = useState<string>("");
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [teacherId, setTeacherId] = useState("");
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [selectedClass, setSelectedClass] = useState("");
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [seriesExams, setSeriesExams] = useState<SeriesExam[]>([]);
+  const [selectedSeriesId, setSelectedSeriesId] = useState("all");
+  const [chapterRows, setChapterRows] = useState<ChapterRow[]>([]);
 
-  // Simple localStorage check for teacher role
+  const subjectsForSelectedClass = useMemo(
+    () => assignments.filter((item) => item.class_id === selectedClass),
+    [assignments, selectedClass],
+  );
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     if (!user || user.role !== "teacher") {
+      setLoading(false);
       return;
     }
+
     setTeacherId(user.id);
-    loadClasses(user.id);
+    void loadClasses(user.id);
+    void loadAssignments(user.id);
   }, []);
+
+  useEffect(() => {
+    if (!selectedClass && classes.length > 0) {
+      setSelectedClass(classes[0].id);
+    }
+  }, [classes, selectedClass]);
+
+  useEffect(() => {
+    if (subjectsForSelectedClass.length === 0) {
+      setSelectedSubjectId("");
+      setSeriesExams([]);
+      setChapterRows([]);
+      return;
+    }
+
+    const subjectStillValid = subjectsForSelectedClass.some(
+      (item) => item.subject_id === selectedSubjectId,
+    );
+    if (!subjectStillValid) {
+      setSelectedSubjectId(subjectsForSelectedClass[0].subject_id);
+    }
+  }, [selectedSubjectId, subjectsForSelectedClass]);
+
+  useEffect(() => {
+    if (!teacherId || !selectedClass || !selectedSubjectId) {
+      if (!selectedSubjectId) {
+        setSeriesExams([]);
+        setChapterRows([]);
+      }
+      return;
+    }
+
+    void loadSeriesAndChapters();
+  }, [teacherId, selectedClass, selectedSubjectId]);
 
   const loadClasses = async (userId: string) => {
     try {
-      const res = await fetch(`/api/teachers/classes?teacherId=${userId}`);
-      const data = await res.json();
-      const cls = data.classes || [];
-      setClasses(cls);
-      if (cls.length > 0) {
-        setSelectedClass(cls[0].id);
-      }
+      const response = await fetch(`/api/teachers/classes?teacherId=${userId}`);
+      const data = await response.json();
+      const classList = Array.isArray(data.classes) ? data.classes : [];
+      setClasses(classList);
+      setSelectedClass(classList[0]?.id || "");
     } catch (error) {
       console.error("Error loading classes:", error);
       toast.error("Failed to load classes");
     }
   };
 
-  // Load exams for selected class
-  useEffect(() => {
-    if (selectedClass && teacherId) {
-      loadExams();
-    }
-  }, [selectedClass, teacherId]);
-
-  const loadExams = async () => {
+  const loadAssignments = async (userId: string) => {
     try {
-      const params = new URLSearchParams({
-        classId: selectedClass,
-        teacherId,
-      });
-      const res = await fetch(`/api/series-exams?${params}`);
-      const data = await res.json();
-      setExams(data.data || []);
-      loadChapters(data.data || []);
+      const response = await fetch(`/api/teachers/${userId}/assignments`);
+      const data = await response.json();
+      const list: Assignment[] = Array.isArray(data.assignments)
+        ? data.assignments.map((item: Assignment) => ({
+            class_id: item.class_id,
+            subject_id: item.subject_id,
+            subject_name: item.subject_name,
+          }))
+        : [];
+      setAssignments(list);
     } catch (error) {
-      console.error("Error loading exams:", error);
-      toast.error("Failed to load exams");
+      console.error("Error loading assignments:", error);
+      toast.error("Failed to load assignments");
+    }
+  };
+
+  const loadSeriesAndChapters = async () => {
+    try {
+      setLoading(true);
+
+      const selectedAssignment = subjectsForSelectedClass.find(
+        (item) => item.subject_id === selectedSubjectId,
+      );
+      const subjectName = selectedAssignment?.subject_name?.trim() || "";
+      const normalizedSubjectName = subjectName
+        ? normalizeSubject(subjectName)
+        : "";
+
+      const strictParams = new URLSearchParams({
+        classId: selectedClass,
+        subjectId: selectedSubjectId,
+      });
+
+      let exams: SeriesExam[] = [];
+
+      const strictResponse = await fetch(`/api/series-exams?${strictParams.toString()}`);
+      const strictJson = await strictResponse.json();
+      exams = Array.isArray(strictJson.data) ? strictJson.data : [];
+
+      if (exams.length === 0 && subjectName) {
+        const classSubjectParams = new URLSearchParams({
+          classId: selectedClass,
+          subjectLike: subjectName,
+        });
+        const classSubjectResponse = await fetch(
+          `/api/series-exams?${classSubjectParams.toString()}`,
+        );
+        const classSubjectJson = await classSubjectResponse.json();
+        const classSubjectExams: SeriesExamWithSubjectId[] = Array.isArray(
+          classSubjectJson.data,
+        )
+          ? classSubjectJson.data
+          : [];
+        exams = classSubjectExams.filter((exam) => {
+          if (exam.subject_id && exam.subject_id === selectedSubjectId) return true;
+          return normalizeSubject(exam.subject) === normalizedSubjectName;
+        });
+      }
+
+      if (exams.length === 0) {
+        const classOnlyParams = new URLSearchParams({ classId: selectedClass });
+        const classOnlyResponse = await fetch(
+          `/api/series-exams?${classOnlyParams.toString()}`,
+        );
+        const classOnlyJson = await classOnlyResponse.json();
+        const classOnlyExams: SeriesExamWithSubjectId[] = Array.isArray(classOnlyJson.data)
+          ? classOnlyJson.data
+          : [];
+
+        exams = classOnlyExams.filter((exam) => {
+          if (exam.subject_id && exam.subject_id === selectedSubjectId) return true;
+          if (!normalizedSubjectName) return false;
+          return normalizeSubject(exam.subject) === normalizedSubjectName;
+        });
+      }
+
+      // Final fallback: derive subject<->series relation from chapters table.
+      // This handles legacy rows where series_exams.subject/subject_id is missing or inconsistent.
+      if (exams.length === 0) {
+        const classOnlyParams = new URLSearchParams({ classId: selectedClass });
+        const classOnlyResponse = await fetch(
+          `/api/series-exams?${classOnlyParams.toString()}`,
+        );
+        const classOnlyJson = await classOnlyResponse.json();
+        const classOnlyExams: SeriesExamWithSubjectId[] = Array.isArray(classOnlyJson.data)
+          ? classOnlyJson.data
+          : [];
+
+        const examWithChapters = await Promise.all(
+          classOnlyExams.map(async (exam) => {
+            const chapterResponse = await fetch(`/api/chapters?examId=${exam.id}`);
+            const chapterJson = await chapterResponse.json();
+            const rows: ExamChapter[] = Array.isArray(chapterJson.data) ? chapterJson.data : [];
+            return { exam, rows };
+          }),
+        );
+
+        exams = examWithChapters
+          .filter(({ rows }) => rows.some((row) => row.subject_id === selectedSubjectId))
+          .map(({ exam }) => exam);
+      }
+
+      setSeriesExams(exams);
+
+      const chapterListNested = await Promise.all(
+        exams.map(async (exam, index) => {
+          const chapterResponse = await fetch(`/api/chapters?examId=${exam.id}`);
+          const chapterJson = await chapterResponse.json();
+          const rows: ExamChapter[] = Array.isArray(chapterJson.data) ? chapterJson.data : [];
+
+          const label = exam.notes?.trim() || `Series ${index + 1}`;
+          return rows.map((chapter) => ({
+            ...chapter,
+            series_id: exam.id,
+            series_label: label,
+          }));
+        }),
+      );
+
+      setChapterRows(chapterListNested.flat());
+      setSelectedSeriesId("all");
+    } catch (error) {
+      console.error("Error loading chapters:", error);
+      toast.error("Failed to load chapters");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load chapters from the exams
-  const loadChapters = async (examsList: SeriesExam[]) => {
-    try {
-      const allChapters: ExamChapter[] = [];
+  const filteredRows = useMemo(() => {
+    const list =
+      selectedSeriesId === "all"
+        ? chapterRows
+        : chapterRows.filter((row) => row.series_id === selectedSeriesId);
 
-      for (const exam of examsList) {
-        const res = await fetch(`/api/chapters?examId=${exam.id}`);
-        const data = await res.json();
-        const examChapters = (data.data || []).map((chapter: ExamChapter) => ({
-          ...chapter,
-          subject: exam.subject,
-          start_date: exam.start_date,
-          end_date: exam.end_date,
-        }));
-        allChapters.push(...examChapters);
-      }
-
-      setChapters(allChapters);
-    } catch (error) {
-      console.error("Error loading chapters:", error);
-      toast.error("Failed to load chapters");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+    return [...list].sort((first, second) =>
+      (first.chapter_date || "").localeCompare(second.chapter_date || ""),
     );
-  }
+  }, [chapterRows, selectedSeriesId]);
+
+  const chapterCountBySeries = useMemo(() => {
+    return seriesExams.map((exam, index) => {
+      const label = exam.notes?.trim() || `Series ${index + 1}`;
+      const count = chapterRows.filter((row) => row.series_id === exam.id).length;
+      return {
+        id: exam.id,
+        label,
+        count,
+        start: exam.start_date,
+        end: exam.end_date,
+      };
+    });
+  }, [chapterRows, seriesExams]);
 
   return (
     <div className="min-h-screen bg-background">
       <TeacherHeader />
 
-      <div className="p-4 md:p-8 space-y-6">
-        {/* Header */}
+      <div className="space-y-6 p-4 md:p-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Chapters</h1>
+          <h1 className="text-3xl font-bold text-foreground">Series Chapters</h1>
           <p className="text-muted-foreground">
-            View chapters for your assigned subjects
+            Class aur subject select karein, phir series ke chapters table mein dekhein.
           </p>
         </div>
 
-        {/* Class Selection */}
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium">Class</label>
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            className="px-3 py-2 border border-border rounded bg-background text-foreground"
-          >
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Card className="p-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Class</Label>
+              <select
+                value={selectedClass}
+                onChange={(event) => setSelectedClass(event.target.value)}
+                className="w-full rounded border border-border bg-background px-3 py-2"
+              >
+                {classes.map((classOption) => (
+                  <option key={classOption.id} value={classOption.id}>
+                    {classOption.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Chapters List */}
-        {chapters.length === 0 ? (
-          <Card className="p-8">
-            <p className="text-center text-muted-foreground">
-              No chapters found for your subjects
-            </p>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">
-              Chapters for{" "}
-              {exams.length > 0 ? "Your Subjects" : "Selected Class"}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {chapters.map((chapter) => (
-                <Card
-                  key={chapter.id}
-                  className="p-4 border border-border hover:shadow-md transition-shadow"
-                >
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Chapter Name
-                      </p>
-                      <p className="text-lg font-semibold">
-                        {chapter.chapter_name}
-                      </p>
-                    </div>
+            <div className="space-y-2">
+              <Label>Subject</Label>
+              <select
+                value={selectedSubjectId}
+                onChange={(event) => setSelectedSubjectId(event.target.value)}
+                className="w-full rounded border border-border bg-background px-3 py-2"
+              >
+                {subjectsForSelectedClass.map((subject) => (
+                  <option key={subject.subject_id} value={subject.subject_id}>
+                    {subject.subject_name || subject.subject_id}
+                  </option>
+                ))}
+                {subjectsForSelectedClass.length === 0 && (
+                  <option value="">No subject assigned</option>
+                )}
+              </select>
+            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Subject</p>
-                        <p className="font-medium">
-                          {(chapter as any).subject || "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Max Marks
-                        </p>
-                        <p className="font-medium text-base">
-                          {chapter.max_marks}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date</p>
-                      <p className="font-medium">
-                        {new Date(chapter.chapter_date).toLocaleDateString(
-                          "en-US",
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+            <div className="space-y-2">
+              <Label>Series</Label>
+              <select
+                value={selectedSeriesId}
+                onChange={(event) => setSelectedSeriesId(event.target.value)}
+                className="w-full rounded border border-border bg-background px-3 py-2"
+              >
+                <option value="all">All Series</option>
+                {chapterCountBySeries.map((series) => (
+                  <option key={series.id} value={series.id}>
+                    {series.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+        </Card>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {chapterCountBySeries.map((series) => (
+                <Card
+                  key={series.id}
+                  className="cursor-pointer p-4 transition hover:border-primary"
+                  onClick={() => setSelectedSeriesId(series.id)}
+                >
+                  <p className="text-sm text-muted-foreground">{series.label}</p>
+                  <p className="mt-1 text-2xl font-bold">{series.count}</p>
+                  <p className="text-xs text-muted-foreground">chapters</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {series.start} to {series.end}
+                  </p>
+                </Card>
+              ))}
+              {chapterCountBySeries.length === 0 && (
+                <Card className="p-4 md:col-span-2 xl:col-span-4">
+                  <p className="text-sm text-muted-foreground">Is subject ki koi series available nahi.</p>
+                </Card>
+              )}
+            </div>
+
+            <Card className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px]">
+                  <thead>
+                    <tr className="border-b bg-muted/40 text-left text-sm">
+                      <th className="px-4 py-3 font-medium">Chapter</th>
+                      <th className="px-4 py-3 font-medium">Series</th>
+                      <th className="px-4 py-3 font-medium">Date</th>
+                      <th className="px-4 py-3 font-medium">Max Marks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRows.map((row) => (
+                      <tr key={row.id} className="border-b text-sm">
+                        <td className="px-4 py-3">{row.chapter_name}</td>
+                        <td className="px-4 py-3">{row.series_label}</td>
+                        <td className="px-4 py-3">{row.chapter_date || "-"}</td>
+                        <td className="px-4 py-3">{row.max_marks ?? "-"}</td>
+                      </tr>
+                    ))}
+                    {filteredRows.length === 0 && (
+                      <tr>
+                        <td className="px-4 py-6 text-sm text-muted-foreground" colSpan={4}>
+                          Selected filters ke liye chapters nahi mile.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </>
         )}
       </div>
     </div>
