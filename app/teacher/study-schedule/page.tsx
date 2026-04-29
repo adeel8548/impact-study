@@ -30,6 +30,12 @@ interface GroupedSchedule {
   [seriesName: string]: StudyScheduleEntry[];
 }
 
+type StatusFilter = "All" | "Pending" | "In Progress" | "Completed";
+
+function resolveSeriesName(value?: string | null) {
+  return value && value.trim() ? value.trim() : "Untitled Series";
+}
+
 function parseDateTime(date?: string, time?: string) {
   if (!date || !time) return null;
   const normalized = time.length === 5 ? `${time}:00` : time;
@@ -63,11 +69,22 @@ export default function TeacherStudySchedulePage() {
   const [assignedClassIds, setAssignedClassIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSeries, setSelectedSeries] = useState<string>("");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<StatusFilter>("All");
 
   // Get current user
   useEffect(() => {
     if (authResolvedRef.current) return;
     authResolvedRef.current = true;
+
+    const localUser =
+      typeof window !== "undefined"
+        ? JSON.parse(localStorage.getItem("currentUser") || "null")
+        : null;
+
+    if (localUser?.id) {
+      setCurrentUserId(localUser.id);
+      setCurrentUserName(localUser.name || "Teacher");
+    }
 
     supabase.auth.getUser().then(async ({ data }) => {
       if (data.user?.id) {
@@ -123,7 +140,10 @@ export default function TeacherStudySchedulePage() {
         const teacherEntries = allEntries.filter((e: StudyScheduleEntry) => {
           const bySubject = e.subject_id && subjectIds.includes(e.subject_id);
           const byClass = e.class_id && classIds.includes(e.class_id);
-          return Boolean(bySubject && byClass);
+          const byTeacher = e.teacher_id && e.teacher_id === currentUserId;
+          // Match entries if either the subject or the class is assigned to the teacher.
+          // Previously required both which could hide valid entries/series.
+          return Boolean(bySubject || byClass || byTeacher);
         });
         
         setEntries(teacherEntries);
@@ -131,7 +151,9 @@ export default function TeacherStudySchedulePage() {
         // Set first series as selected
         if (teacherEntries.length > 0) {
           const uniqueSeries = [
-            ...new Set(teacherEntries.map((e: StudyScheduleEntry) => e.series_name)),
+            ...new Set(
+              teacherEntries.map((e: StudyScheduleEntry) => resolveSeriesName(e.series_name)),
+            ),
           ];
           setSelectedSeries(uniqueSeries[0] as string);
         }
@@ -150,10 +172,11 @@ export default function TeacherStudySchedulePage() {
   const groupedSchedule = useMemo(() => {
     const grouped: GroupedSchedule = {};
     entries.forEach((entry) => {
-      if (!grouped[entry.series_name]) {
-        grouped[entry.series_name] = [];
+      const seriesName = resolveSeriesName(entry.series_name);
+      if (!grouped[seriesName]) {
+        grouped[seriesName] = [];
       }
-      grouped[entry.series_name].push(entry);
+      grouped[seriesName].push(entry);
     });
 
     // Sort by day within each series
@@ -174,16 +197,46 @@ export default function TeacherStudySchedulePage() {
   }, [groupedSchedule]);
 
   const selectedSchedule = selectedSeries ? groupedSchedule[selectedSeries] || [] : [];
+  const filteredSelectedSchedule = useMemo(() => {
+    if (selectedStatusFilter === "All") {
+      return selectedSchedule;
+    }
+
+    return selectedSchedule.filter(
+      (entry) => getEffectiveStatus(entry) === selectedStatusFilter,
+    );
+  }, [selectedSchedule, selectedStatusFilter]);
+
+  const seriesLabels = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(groupedSchedule).map(([seriesName, rows]) => {
+        const subjects = Array.from(
+          new Set(rows.map((row) => row.subject).filter((value) => value && value.trim())),
+        );
+
+        return [
+          seriesName,
+          {
+            subjects,
+            label:
+              subjects.length > 0
+                ? `${seriesName} • ${subjects.join(", ")}`
+                : seriesName,
+          },
+        ];
+      }),
+    ) as Record<string, { subjects: string[]; label: string }>;
+  }, [groupedSchedule]);
 
   // Calculate stats
   const stats = useMemo(() => {
     return {
-      total: selectedSchedule.length,
-      completed: selectedSchedule.filter((e) => getEffectiveStatus(e) === "Completed").length,
-      inProgress: selectedSchedule.filter((e) => getEffectiveStatus(e) === "In Progress").length,
-      pending: selectedSchedule.filter((e) => getEffectiveStatus(e) === "Pending").length,
+      total: filteredSelectedSchedule.length,
+      completed: filteredSelectedSchedule.filter((e) => getEffectiveStatus(e) === "Completed").length,
+      inProgress: filteredSelectedSchedule.filter((e) => getEffectiveStatus(e) === "In Progress").length,
+      pending: filteredSelectedSchedule.filter((e) => getEffectiveStatus(e) === "Pending").length,
     };
-  }, [selectedSchedule]);
+  }, [filteredSelectedSchedule]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -233,6 +286,33 @@ export default function TeacherStudySchedulePage() {
           </div>
         </div>
 
+        <Card className="p-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Status Filter</label>
+              <select
+                value={selectedStatusFilter}
+                onChange={(event) => setSelectedStatusFilter(event.target.value as StatusFilter)}
+                className="w-full rounded border border-gray-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700">Series / Subject</label>
+              <div className="rounded border border-dashed border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
+                {selectedSeries
+                  ? seriesLabels[selectedSeries]?.label || selectedSeries
+                  : "Select a series to see its subject name"}
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {entries.length === 0 ? (
           <Card className="p-12 text-center">
             <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -256,7 +336,7 @@ export default function TeacherStudySchedulePage() {
                         : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300"
                     }`}
                   >
-                    {series}
+                    {seriesLabels[series]?.label || series}
                   </button>
                 ))}
               </div>
@@ -268,7 +348,9 @@ export default function TeacherStudySchedulePage() {
                 <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Calendar className="w-5 h-5 text-blue-600" />
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedSeries}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {seriesLabels[selectedSeries]?.label || selectedSeries}
+                    </h2>
                   </div>
 
                   {/* Stats Grid */}
@@ -293,12 +375,14 @@ export default function TeacherStudySchedulePage() {
 
                 {/* Schedule Cards */}
                 <div className="grid gap-4">
-                  {selectedSchedule.length === 0 ? (
+                  {filteredSelectedSchedule.length === 0 ? (
                     <Card className="p-8 text-center">
-                      <p className="text-muted-foreground">No chapters in this series yet</p>
+                      <p className="text-muted-foreground">
+                        No chapters match the selected filter in this series
+                      </p>
                     </Card>
                   ) : (
-                    selectedSchedule.map((entry) => (
+                    filteredSelectedSchedule.map((entry) => (
                       (() => {
                         const effectiveStatus = getEffectiveStatus(entry);
                         return (

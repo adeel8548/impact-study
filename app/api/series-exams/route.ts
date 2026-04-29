@@ -16,7 +16,25 @@ export async function GET(request: NextRequest) {
 
     if (classId) query = query.eq("class_id", classId);
     if (teacherId) query = query.eq("teacher_id", teacherId);
-    if (subjectId) query = query.eq("subject_id", subjectId);
+
+    // The `series_exams` table stores `subject` as text (not `subject_id`).
+    // If the caller provides `subjectId`, translate it to subject name and filter on `subject`.
+    if (subjectId && !subject && !subjectLike) {
+      try {
+        const { data: subjectRow, error: subjectErr } = await supabase
+          .from("subjects")
+          .select("name")
+          .eq("id", subjectId)
+          .single();
+
+        if (!subjectErr && subjectRow?.name) {
+          query = query.ilike("subject", subjectRow.name);
+        }
+      } catch (e) {
+        // If lookup fails, we'll just continue without subject filtering.
+      }
+    }
+
     if (subject) query = query.ilike("subject", subject);
     if (subjectLike) query = query.ilike("subject", `%${subjectLike}%`);
     if (startDate && endDate)
@@ -46,26 +64,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const payload = Array.isArray(body) ? body : [body];
 
-    // If not array, add subject_id lookup
-    if (!Array.isArray(body) && body.subject && !body.subject_id) {
-      try {
-        const { data: subjects, error: subjectError } = await supabase
-          .from("subjects")
-          .select("id")
-          .ilike("name", body.subject)
-          .single();
-
-        if (!subjectError && subjects?.id) {
-          body.subject_id = subjects.id;
-        }
-      } catch (err) {
-        console.warn("Error looking up subject:", err);
-      }
-    }
+    // `series_exams` table does not include `subject_id` (stores `subject` text).
+    // Strip `subject_id` from payload to avoid DB column errors.
+    const sanitizedPayload = payload.map((row: any) => {
+      if (!row || typeof row !== "object") return row;
+      const { subject_id: _subjectId, ...rest } = row;
+      return rest;
+    });
 
     const { data, error } = await supabase
       .from("series_exams")
-      .insert(payload)
+      .insert(sanitizedPayload)
       .select();
     if (error) throw error;
     return NextResponse.json({ data, success: true });
@@ -85,7 +94,7 @@ export async function PUT(request: NextRequest) {
   const supabase = await createClient();
   try {
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, ...updatesRest } = body;
     if (!id) {
       return NextResponse.json(
         { error: "id is required", success: false },
@@ -93,21 +102,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // If subject is provided but subject_id is not, lookup subject_id
-    if (updates.subject && !updates.subject_id) {
-      try {
-        const { data: subjects, error: subjectError } = await supabase
-          .from("subjects")
-          .select("id")
-          .ilike("name", updates.subject)
-          .single();
-
-        if (!subjectError && subjects?.id) {
-          updates.subject_id = subjects.id;
-        }
-      } catch (err) {
-        console.warn("Error looking up subject:", err);
-      }
+    // `series_exams` stores `subject` text; ignore/strip `subject_id` if present.
+    let updates: Record<string, any> = updatesRest;
+    if ("subject_id" in updates) {
+      const { subject_id: _subjectId, ...rest } = updates as any;
+      updates = rest;
     }
 
     const { data, error } = await supabase

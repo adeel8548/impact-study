@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import type { ExamChapter, SeriesExam } from "@/lib/types";
 
 type ClassOption = { id: string; name: string };
 type Assignment = {
@@ -15,17 +14,22 @@ type Assignment = {
   subject_name?: string | null;
 };
 
-type ChapterRow = ExamChapter & {
-  series_id: string;
-  series_label: string;
+type StudyScheduleEntry = {
+  id: string;
+  day: number;
+  class_id?: string;
+  subject_id?: string;
+  subject: string;
+  chapter: string;
+  max_marks?: number;
+  description?: string | null;
+  status: "Pending" | "In Progress" | "Completed" | string;
+  teacher_id?: string | null;
+  series_name: string;
+  schedule_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
 };
-
-type SeriesExamWithSubjectId = SeriesExam & {
-  subject_id?: string | null;
-};
-
-const normalizeSubject = (value: string) =>
-  value.trim().toLowerCase().replace(/\s+/g, " ");
 
 export default function TeacherChaptersPage() {
   const [loading, setLoading] = useState(true);
@@ -34,9 +38,8 @@ export default function TeacherChaptersPage() {
   const [selectedClass, setSelectedClass] = useState("");
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
-  const [seriesExams, setSeriesExams] = useState<SeriesExam[]>([]);
-  const [selectedSeriesId, setSelectedSeriesId] = useState("all");
-  const [chapterRows, setChapterRows] = useState<ChapterRow[]>([]);
+  const [entries, setEntries] = useState<StudyScheduleEntry[]>([]);
+  const [selectedSeriesName, setSelectedSeriesName] = useState<string>("all");
 
   const subjectsForSelectedClass = useMemo(
     () => assignments.filter((item) => item.class_id === selectedClass),
@@ -64,8 +67,8 @@ export default function TeacherChaptersPage() {
   useEffect(() => {
     if (subjectsForSelectedClass.length === 0) {
       setSelectedSubjectId("");
-      setSeriesExams([]);
-      setChapterRows([]);
+      setEntries([]);
+      setSelectedSeriesName("all");
       return;
     }
 
@@ -79,14 +82,11 @@ export default function TeacherChaptersPage() {
 
   useEffect(() => {
     if (!teacherId || !selectedClass || !selectedSubjectId) {
-      if (!selectedSubjectId) {
-        setSeriesExams([]);
-        setChapterRows([]);
-      }
+      if (!selectedSubjectId) setEntries([]);
       return;
     }
 
-    void loadSeriesAndChapters();
+    void loadStudySchedule();
   }, [teacherId, selectedClass, selectedSubjectId]);
 
   const loadClasses = async (userId: string) => {
@@ -120,111 +120,24 @@ export default function TeacherChaptersPage() {
     }
   };
 
-  const loadSeriesAndChapters = async () => {
+  const loadStudySchedule = async () => {
     try {
       setLoading(true);
-
-      const selectedAssignment = subjectsForSelectedClass.find(
-        (item) => item.subject_id === selectedSubjectId,
-      );
-      const subjectName = selectedAssignment?.subject_name?.trim() || "";
-      const normalizedSubjectName = subjectName
-        ? normalizeSubject(subjectName)
-        : "";
-
-      const strictParams = new URLSearchParams({
+      const params = new URLSearchParams({
         classId: selectedClass,
         subjectId: selectedSubjectId,
       });
 
-      let exams: SeriesExam[] = [];
-
-      const strictResponse = await fetch(`/api/series-exams?${strictParams.toString()}`);
-      const strictJson = await strictResponse.json();
-      exams = Array.isArray(strictJson.data) ? strictJson.data : [];
-
-      if (exams.length === 0 && subjectName) {
-        const classSubjectParams = new URLSearchParams({
-          classId: selectedClass,
-          subjectLike: subjectName,
-        });
-        const classSubjectResponse = await fetch(
-          `/api/series-exams?${classSubjectParams.toString()}`,
-        );
-        const classSubjectJson = await classSubjectResponse.json();
-        const classSubjectExams: SeriesExamWithSubjectId[] = Array.isArray(
-          classSubjectJson.data,
-        )
-          ? classSubjectJson.data
-          : [];
-        exams = classSubjectExams.filter((exam) => {
-          if (exam.subject_id && exam.subject_id === selectedSubjectId) return true;
-          return normalizeSubject(exam.subject) === normalizedSubjectName;
-        });
+      if (teacherId) {
+        params.set("teacherId", teacherId);
       }
 
-      if (exams.length === 0) {
-        const classOnlyParams = new URLSearchParams({ classId: selectedClass });
-        const classOnlyResponse = await fetch(
-          `/api/series-exams?${classOnlyParams.toString()}`,
-        );
-        const classOnlyJson = await classOnlyResponse.json();
-        const classOnlyExams: SeriesExamWithSubjectId[] = Array.isArray(classOnlyJson.data)
-          ? classOnlyJson.data
-          : [];
+      const res = await fetch(`/api/study-schedule?${params.toString()}`);
+      const data = await res.json();
+      const list = Array.isArray(data.data) ? (data.data as StudyScheduleEntry[]) : [];
 
-        exams = classOnlyExams.filter((exam) => {
-          if (exam.subject_id && exam.subject_id === selectedSubjectId) return true;
-          if (!normalizedSubjectName) return false;
-          return normalizeSubject(exam.subject) === normalizedSubjectName;
-        });
-      }
-
-      // Final fallback: derive subject<->series relation from chapters table.
-      // This handles legacy rows where series_exams.subject/subject_id is missing or inconsistent.
-      if (exams.length === 0) {
-        const classOnlyParams = new URLSearchParams({ classId: selectedClass });
-        const classOnlyResponse = await fetch(
-          `/api/series-exams?${classOnlyParams.toString()}`,
-        );
-        const classOnlyJson = await classOnlyResponse.json();
-        const classOnlyExams: SeriesExamWithSubjectId[] = Array.isArray(classOnlyJson.data)
-          ? classOnlyJson.data
-          : [];
-
-        const examWithChapters = await Promise.all(
-          classOnlyExams.map(async (exam) => {
-            const chapterResponse = await fetch(`/api/chapters?examId=${exam.id}`);
-            const chapterJson = await chapterResponse.json();
-            const rows: ExamChapter[] = Array.isArray(chapterJson.data) ? chapterJson.data : [];
-            return { exam, rows };
-          }),
-        );
-
-        exams = examWithChapters
-          .filter(({ rows }) => rows.some((row) => row.subject_id === selectedSubjectId))
-          .map(({ exam }) => exam);
-      }
-
-      setSeriesExams(exams);
-
-      const chapterListNested = await Promise.all(
-        exams.map(async (exam, index) => {
-          const chapterResponse = await fetch(`/api/chapters?examId=${exam.id}`);
-          const chapterJson = await chapterResponse.json();
-          const rows: ExamChapter[] = Array.isArray(chapterJson.data) ? chapterJson.data : [];
-
-          const label = exam.notes?.trim() || `Series ${index + 1}`;
-          return rows.map((chapter) => ({
-            ...chapter,
-            series_id: exam.id,
-            series_label: label,
-          }));
-        }),
-      );
-
-      setChapterRows(chapterListNested.flat());
-      setSelectedSeriesId("all");
+      setEntries(list);
+      setSelectedSeriesName("all");
     } catch (error) {
       console.error("Error loading chapters:", error);
       toast.error("Failed to load chapters");
@@ -233,30 +146,43 @@ export default function TeacherChaptersPage() {
     }
   };
 
+  const seriesNames = useMemo(() => {
+    const uniq = Array.from(
+      new Set(entries.map((e) => e.series_name).filter((v) => v && v.trim())),
+    );
+    return uniq.sort((a, b) => a.localeCompare(b));
+  }, [entries]);
+
   const filteredRows = useMemo(() => {
     const list =
-      selectedSeriesId === "all"
-        ? chapterRows
-        : chapterRows.filter((row) => row.series_id === selectedSeriesId);
+      selectedSeriesName === "all"
+        ? entries
+        : entries.filter((row) => row.series_name === selectedSeriesName);
 
-    return [...list].sort((first, second) =>
-      (first.chapter_date || "").localeCompare(second.chapter_date || ""),
-    );
-  }, [chapterRows, selectedSeriesId]);
+    // Sort by schedule date if available, otherwise by day
+    return [...list].sort((a, b) => {
+      const da = a.schedule_date || "";
+      const db = b.schedule_date || "";
+      if (da !== db) return da.localeCompare(db);
+      return a.day - b.day;
+    });
+  }, [entries, selectedSeriesName]);
 
   const chapterCountBySeries = useMemo(() => {
-    return seriesExams.map((exam, index) => {
-      const label = exam.notes?.trim() || `Series ${index + 1}`;
-      const count = chapterRows.filter((row) => row.series_id === exam.id).length;
+    return seriesNames.map((series) => {
+      const rows = entries.filter((r) => r.series_name === series);
+      const count = rows.length;
+      const startDay = rows.reduce((min, r) => Math.min(min, r.day), Number.POSITIVE_INFINITY);
+      const endDay = rows.reduce((max, r) => Math.max(max, r.day), Number.NEGATIVE_INFINITY);
       return {
-        id: exam.id,
-        label,
+        id: series,
+        label: series,
         count,
-        start: exam.start_date,
-        end: exam.end_date,
+        start: Number.isFinite(startDay) ? String(startDay) : "",
+        end: Number.isFinite(endDay) ? String(endDay) : "",
       };
     });
-  }, [chapterRows, seriesExams]);
+  }, [entries, seriesNames]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -308,8 +234,8 @@ export default function TeacherChaptersPage() {
             <div className="space-y-2">
               <Label>Series</Label>
               <select
-                value={selectedSeriesId}
-                onChange={(event) => setSelectedSeriesId(event.target.value)}
+                value={selectedSeriesName}
+                onChange={(event) => setSelectedSeriesName(event.target.value)}
                 className="w-full rounded border border-border bg-background px-3 py-2"
               >
                 <option value="all">All Series</option>
@@ -334,13 +260,13 @@ export default function TeacherChaptersPage() {
                 <Card
                   key={series.id}
                   className="cursor-pointer p-4 transition hover:border-primary"
-                  onClick={() => setSelectedSeriesId(series.id)}
+                  onClick={() => setSelectedSeriesName(series.id)}
                 >
                   <p className="text-sm text-muted-foreground">{series.label}</p>
                   <p className="mt-1 text-2xl font-bold">{series.count}</p>
                   <p className="text-xs text-muted-foreground">chapters</p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {series.start} to {series.end}
+                    Day {series.start} to {series.end}
                   </p>
                 </Card>
               ))}
@@ -365,9 +291,9 @@ export default function TeacherChaptersPage() {
                   <tbody>
                     {filteredRows.map((row) => (
                       <tr key={row.id} className="border-b text-sm">
-                        <td className="px-4 py-3">{row.chapter_name}</td>
-                        <td className="px-4 py-3">{row.series_label}</td>
-                        <td className="px-4 py-3">{row.chapter_date || "-"}</td>
+                        <td className="px-4 py-3">{row.chapter}</td>
+                        <td className="px-4 py-3">{row.series_name}</td>
+                        <td className="px-4 py-3">{row.schedule_date || "-"}</td>
                         <td className="px-4 py-3">{row.max_marks ?? "-"}</td>
                       </tr>
                     ))}

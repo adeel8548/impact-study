@@ -33,10 +33,7 @@ export async function GET(req: NextRequest) {
   const teacherId = searchParams.get("teacherId");
 
   try {
-    let query = adminClient
-      .from("study_schedule")
-      .select(
-        `
+    const selectColumns = `
         id,
         day,
         class_id,
@@ -53,18 +50,45 @@ export async function GET(req: NextRequest) {
         end_time,
         created_at,
         updated_at
-      `
-      )
-      .order("day", { ascending: true });
+      `;
 
-    if (classId) query = query.eq("class_id", classId);
-    if (subjectId) query = query.eq("subject_id", subjectId);
-    if (seriesName) query = query.eq("series_name", seriesName);
-    if (teacherId) query = query.eq("teacher_id", teacherId);
+    const runQuery = async (subjectName?: string | null) => {
+      let query = adminClient
+        .from("study_schedule")
+        .select(selectColumns)
+        .order("day", { ascending: true });
 
-    const { data, error } = await query;
+      if (classId) query = query.eq("class_id", classId);
+      if (seriesName) query = query.eq("series_name", seriesName);
+      if (teacherId) query = query.eq("teacher_id", teacherId);
+
+      if (subjectName) {
+        query = query.ilike("subject", subjectName);
+      } else if (subjectId) {
+        query = query.eq("subject_id", subjectId);
+      }
+
+      return query;
+    };
+
+    let { data, error } = await runQuery();
 
     if (error) throw error;
+
+    if ((!data || data.length === 0) && subjectId) {
+      const { data: subjectRow, error: subjectError } = await adminClient
+        .from("subjects")
+        .select("name")
+        .eq("id", subjectId)
+        .single();
+
+      if (!subjectError && subjectRow?.name) {
+        const fallback = await runQuery(subjectRow.name);
+        data = fallback.data;
+        error = fallback.error;
+        if (error) throw error;
+      }
+    }
 
     const rows = (data || []).map((entry) => {
       const nextStatus = computeStatusByTiming(entry as any);

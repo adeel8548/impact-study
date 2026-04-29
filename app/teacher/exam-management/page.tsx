@@ -153,7 +153,7 @@ export default function ExamManagementPage() {
     if (selectedClass) {
       loadExams();
     }
-  }, [selectedSubject, teacherId]);
+  }, [selectedClass, selectedSubject, teacherId, subjects]);
 
   const loadSubjects = async () => {
     try {
@@ -209,20 +209,43 @@ export default function ExamManagementPage() {
     }
 
     try {
-      // include teacherId and subject text filter so teachers only see relevant series exams
-      const subjectName = subjects.find((s) => s.id === selectedSubject)?.name;
-      const params = new URLSearchParams({ classId: selectedClass });
-      if (teacherId) params.set("teacherId", teacherId);
-      if (subjectName) params.set("subject", subjectName);
-      const res = await fetch(`/api/series-exams?${params.toString()}`);
-      const data = await res.json();
-      const examList = data.data || [];
-      setExams(examList);
-      if (examList.length > 0) {
-        setSelectedExam(examList[0].id);
-      } else {
-        setSelectedExam("");
+      // Prefer subject_id filtering; legacy rows might have `subject` stored as subject_id or name.
+      const subjectName =
+        subjects.find((s) => s.id === selectedSubject)?.name || "";
+
+      const makeParams = (extra: Record<string, string | undefined>) => {
+        const p = new URLSearchParams({ classId: selectedClass });
+        if (teacherId) p.set("teacherId", teacherId);
+        Object.entries(extra).forEach(([k, v]) => {
+          if (v) p.set(k, v);
+        });
+        return p;
+      };
+
+      const fetchExams = async (params: URLSearchParams) => {
+        const res = await fetch(`/api/series-exams?${params.toString()}`);
+        const data = await res.json();
+        return (data.data || []) as SeriesExam[];
+      };
+
+      let examList = await fetchExams(
+        makeParams({ subjectId: selectedSubject }),
+      );
+
+      if (examList.length === 0) {
+        // Legacy fallback: `series_exams.subject` may contain subject_id.
+        examList = await fetchExams(
+          makeParams({ subject: selectedSubject }),
+        );
       }
+
+      if (examList.length === 0 && subjectName.trim()) {
+        // Legacy fallback: `series_exams.subject` may contain subject name.
+        examList = await fetchExams(makeParams({ subject: subjectName }));
+      }
+
+      setExams(examList);
+      setSelectedExam(examList.length > 0 ? examList[0].id : "");
     } catch (error) {
       console.error("Error loading exams:", error);
       toast.error("Failed to load exams");
@@ -296,6 +319,10 @@ export default function ExamManagementPage() {
       return;
     }
 
+    const subjectName =
+      subjects.find((s) => s.id === selectedSubject)?.name ||
+      selectedSubject;
+
     setSaving(true);
     try {
       const res = await fetch("/api/series-exams", {
@@ -304,7 +331,8 @@ export default function ExamManagementPage() {
         body: JSON.stringify({
           name: newExamName,
           class_id: selectedClass,
-          subject: selectedSubject,
+          subject_id: selectedSubject,
+          subject: subjectName,
           start_date: newExamStartDate,
           end_date: newExamEndDate,
           teacher_id: teacherId,
@@ -544,7 +572,11 @@ export default function ExamManagementPage() {
                 <option value="">Select Exam</option>
                 {exams.map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.subject}
+                    {(e as any).name && (e as any).name.trim()
+                      ? (e as any).name
+                      : e.notes && e.notes.trim()
+                        ? e.notes
+                        : e.subject}
                   </option>
                 ))}
               </select>
@@ -927,7 +959,13 @@ export default function ExamManagementPage() {
                       className="p-3 border border-border rounded cursor-pointer hover:bg-muted/50"
                       onClick={() => setSelectedExam(exam.id)}
                     >
-                      <p className="font-medium">{exam.subject}</p>
+                      <p className="font-medium">
+                        {(exam as any).name && (exam as any).name.trim()
+                          ? (exam as any).name
+                          : exam.notes && exam.notes.trim()
+                            ? exam.notes
+                            : exam.subject}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {exam.start_date} to {exam.end_date}
                       </p>

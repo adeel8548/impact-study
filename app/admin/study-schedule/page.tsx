@@ -963,7 +963,12 @@ export default function StudySchedulePage() {
                           </TableCell>
                           <TableCell>{className}</TableCell>
                           <TableCell className="font-medium text-sm text-purple-600">
-                            {entry.series_name}
+                            <div className="flex flex-col">
+                              <span>{entry.series_name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                Subject: {entry.subject}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Input
