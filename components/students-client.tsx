@@ -28,6 +28,7 @@ import { BulkFeeVoucherPrintDialog } from "@/components/modals/bulk-fee-voucher-
 import { FeeStatusButton } from "@/components/fee-status-button";
 import { deleteStudent } from "@/lib/actions/students";
 import type { Student, Class as SchoolClass } from "@/lib/types";
+import { adminCardClass } from "@/lib/admin-ui";
 
 interface StudentsClientComponentProps {
   initialStudents: any[];
@@ -227,7 +228,7 @@ export function StudentsClientComponent({
 
       {/* Fee Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="p-6 bg-white border-2 border-gray-100 group relative">
+        <Card className={adminCardClass("p-6 border-l-4 border-l-blue-500 group relative")}>
           <div className="flex items-start justify-between">
             <div className="flex flex-col flex-1">
               <span className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
@@ -269,7 +270,7 @@ export function StudentsClientComponent({
           </div>
         </Card>
 
-        <Card className="p-6 bg-white border-2 border-gray-100 group relative">
+        <Card className={adminCardClass("p-6 border-l-4 border-l-green-500 group relative")}>
           <div className="flex items-start justify-between">
             <div className="flex flex-col flex-1">
               <span className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
@@ -311,7 +312,7 @@ export function StudentsClientComponent({
           </div>
         </Card>
 
-        <Card className="p-6  bg-white border-2 border-gray-100 group relative">
+        <Card className={adminCardClass("p-6 border-l-4 border-l-red-500 group relative")}>
           <div className="flex items-start justify-between">
             <div className="flex flex-col flex-1">
               <span className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
@@ -354,7 +355,7 @@ export function StudentsClientComponent({
         </Card>
       </div>
 
-      <Card className="p-4 mb-6">
+      <Card className={adminCardClass("p-4 mb-6")}>
         <div className="flex gap-4 flex-wrap items-center">
           <div className="flex-1 min-w-64">
             <div className="relative">
@@ -395,9 +396,9 @@ export function StudentsClientComponent({
         </div>
       </Card>
 
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto overflow-y-auto h-[70vh]">
-          <table className="w-full">
+      <Card className={adminCardClass("overflow-hidden w-full")}>
+        <div className="w-full overflow-x-auto overflow-y-auto h-[70vh]">
+          <table className="w-full min-w-max">
             <thead className="bg-secondary border-b border-border sticky top-0">
               <tr>
                 <th className="text-left p-4 font-semibold text-foreground">

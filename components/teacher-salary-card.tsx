@@ -13,6 +13,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { cn, formatTo12Hour } from "@/lib/utils";
+import { adminCardClass } from "@/lib/admin-ui";
 import { SalaryStatusButton } from "@/components/salary-status-button";
 
 interface TeacherSalaryCardProps {
@@ -70,7 +71,7 @@ export function TeacherSalaryCard({
   }, [assignedClasses, teacher.name]);
 
   return (
-    <Card className="p-6 flex flex-col gap-4">
+    <Card className={adminCardClass("p-6 flex flex-col gap-4 hover:scale-[1.01]")}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-foreground">

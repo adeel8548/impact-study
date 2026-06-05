@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
+import { adminCardClass } from "@/lib/admin-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,30 +84,20 @@ export default function SchoolSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <AdminSidebar />
-      <div className="flex-1 p-8">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              School Settings
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Configure school timing and other settings
-            </p>
-          </div>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <AdminPageHeader
+        title="School Settings"
+        description="Configure school timing and other settings"
+      />
 
-          <Card className="p-6">
+      <Card className={adminCardClass("p-6")}>
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="w-5 h-5 text-primary" />
@@ -186,9 +177,7 @@ export default function SchoolSettingsPage() {
                 school
               </li>
             </ul>
-          </Card>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 }

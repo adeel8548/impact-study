@@ -22,30 +22,31 @@ const COLORS = ["#3b82f6", "#52b788", "#f59e0b", "#ef4444", "#8b5cf6"];
 interface AdminDashboardChartsProps {
   monthlyFeesData: Array<{ month: string; collected: number; pending: number }>;
   attendanceData: Array<{
-    date: string;
+    day: string;
     present: number;
     absent: number;
-    leave: number;
   }>;
   feesStatusData: Array<{ name: string; value: number }>;
+  classDistribution: Array<{ name: string; students: number }>;
 }
 
 export function AdminDashboardCharts({
   monthlyFeesData,
   attendanceData,
   feesStatusData,
+  classDistribution,
 }: AdminDashboardChartsProps) {
   return (
     <>
       {/* Monthly Fees Collection */}
-      <Card className="p-6">
+      <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
         <h3 className="text-lg font-bold text-foreground mb-4">
           Monthly Fees Collection
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={monthlyFeesData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis stroke="var(--color-muted-foreground)" />
+            <XAxis dataKey="month" stroke="var(--color-muted-foreground)" />
             <YAxis stroke="var(--color-muted-foreground)" />
             <Tooltip
               contentStyle={{
@@ -72,14 +73,14 @@ export function AdminDashboardCharts({
       </Card>
 
       {/* Weekly Attendance */}
-      <Card className="p-6">
+      <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
         <h3 className="text-lg font-bold text-foreground mb-4">
           Weekly Attendance Trend
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={attendanceData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis stroke="var(--color-muted-foreground)" />
+            <XAxis dataKey="day" stroke="var(--color-muted-foreground)" />
             <YAxis stroke="var(--color-muted-foreground)" />
             <Tooltip
               contentStyle={{
@@ -108,7 +109,7 @@ export function AdminDashboardCharts({
       </Card>
 
       {/* Fees Status */}
-      <Card className="p-6">
+      <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
         <h3 className="text-lg font-bold text-foreground mb-4">
           Fees Payment Status
         </h3>
@@ -130,9 +131,50 @@ export function AdminDashboardCharts({
                 />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "var(--color-card)",
+                border: "1px solid var(--color-border)",
+              }}
+              labelStyle={{ color: "var(--color-foreground)" }}
+            />
             <Legend />
           </PieChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {/* Class Distribution */}
+      <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
+        <h3 className="text-lg font-bold text-foreground mb-4">
+          Students by Class
+        </h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={classDistribution}
+            layout="vertical"
+            margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+            <XAxis stroke="var(--color-muted-foreground)" />
+            <YAxis
+              dataKey="name"
+              type="category"
+              width={140}
+              stroke="var(--color-muted-foreground)"
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "var(--color-card)",
+                border: "1px solid var(--color-border)",
+              }}
+              labelStyle={{ color: "var(--color-foreground)" }}
+            />
+            <Bar
+              dataKey="students"
+              fill="var(--color-chart-2)"
+              radius={[0, 8, 8, 0]}
+            />
+          </BarChart>
         </ResponsiveContainer>
       </Card>
     </>

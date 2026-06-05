@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
+import { adminCardClass } from "@/lib/admin-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -146,18 +147,14 @@ export default function SubjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8 space-y-6">
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Subjects</h1>
-            <p className="text-muted-foreground">Manage subjects for classes</p>
-          </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Subjects"
+        description="Manage subjects for classes"
+      />
 
-          {loading ? (
-            <Card className="p-8">
+      {loading ? (
+        <Card className={adminCardClass("p-8")}>
               <div className="flex items-center justify-center py-12">
                 <div className="text-center space-y-4">
                   <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
@@ -168,7 +165,7 @@ export default function SubjectsPage() {
           ) : (
             <>
               {/* Class Selection */}
-              <Card className="p-4">
+              <Card className={adminCardClass("p-4")}>
                 <Label className="text-sm">Select Class</Label>
                 <select
                   value={selectedClass}
@@ -184,7 +181,7 @@ export default function SubjectsPage() {
               </Card>
 
               {/* Add/Edit Form */}
-              <Card className="p-4 space-y-3">
+              <Card className={adminCardClass("p-4 space-y-3")}>
                 <h3 className="font-semibold">
                   {editingId ? "Edit Subject" : "Add New Subject"}
                 </h3>
@@ -215,7 +212,7 @@ export default function SubjectsPage() {
               </Card>
 
               {/* Subjects List */}
-              <Card className="p-4">
+              <Card className={adminCardClass("p-4")}>
                 <h3 className="font-semibold mb-4">
                   Subjects for{" "}
                   {classes.find((c) => c.id === selectedClass)?.name}
@@ -255,8 +252,6 @@ export default function SubjectsPage() {
               </Card>
             </>
           )}
-        </div>
-      </div>
     </div>
   );
 }

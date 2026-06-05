@@ -9,6 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AdminPageHeader } from "@/components/admin-page-header";
+import { adminCardClass } from "@/lib/admin-ui";
 
 export default function SetupPage() {
   const [loading, setLoading] = useState(false);
@@ -40,9 +42,13 @@ export default function SetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-8">
-      <div className="max-w-2xl mx-auto">
-        <Card>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <AdminPageHeader
+        title="School Management Portal - Setup"
+        description="Create test users for the system"
+      />
+
+      <Card className={adminCardClass()}>
           <CardHeader>
             <CardTitle>School Management Portal - Setup</CardTitle>
             <CardDescription>Create test users for the system</CardDescription>
@@ -124,8 +130,7 @@ export default function SetupPage() {
               </ol>
             </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
     </div>
   );
 }

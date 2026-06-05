@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminDashboardClient } from "@/components/admin-dashboard-client";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +14,7 @@ export default async function AdminDashboard() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <AdminSidebar />
-        <div className="md:pl-64 p-8" />
-      </div>
-    );
+    return null;
   }
 
   const { data: profile } = await supabase
@@ -33,23 +28,19 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <>
+      <AdminPageHeader
+        title="Admin Dashboard"
+        description="Welcome back! Here's your school overview with live insights."
+        badge="Premium View"
+        actions={
+          <span className="hidden sm:inline-flex text-xs font-medium px-3 py-1.5 rounded-full bg-secondary/60 text-foreground/80 border border-border/60">
+            Dark mode ready
+          </span>
+        }
+      />
 
-      <div className="md:pl-64">
-        <div className="p-4  md:p-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground">
-              Welcome back! Here's your school overview.
-            </p>
-          </div>
-
-          <AdminDashboardClient />
-        </div>
-      </div>
-    </div>
+      <AdminDashboardClient />
+    </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Edit, Calendar } from "lucide-react";
+import { adminCardClass } from "@/lib/admin-ui";
 
 interface Teacher {
   id: string;
@@ -562,11 +563,8 @@ export default function TimetablePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -574,24 +572,17 @@ export default function TimetablePage() {
   const timetableGrid = getTimetableGrid();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <AdminSidebar />
-      <div className="flex-1 p-8 md:pl-72 overflow-x-scroll ">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Teacher Timetable
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Manage lecture schedules for all teachers
-              </p>
-            </div>
-            <Button onClick={openAddModal}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Lecture
-            </Button>
-          </div>
+    <div className="space-y-6 overflow-x-scroll">
+      <AdminPageHeader
+        title="Teacher Timetable"
+        description="Manage lecture schedules for all teachers"
+        actions={
+          <Button onClick={openAddModal}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Lecture
+          </Button>
+        }
+      />
 
           {pageErrors.length > 0 && (
             <div className="rounded-md border border-red-300 bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200 p-4">
@@ -605,7 +596,7 @@ export default function TimetablePage() {
           )}
 
           {/* Filters */}
-          <Card className="p-4">
+          <Card className={adminCardClass("p-4")}>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="space-y-2">
                 <Label>Filter by Teacher</Label>
@@ -705,7 +696,7 @@ export default function TimetablePage() {
           </Card>
 
           {/* Timetable Grid */}
-          <Card className="p-6 overflow-x-auto">
+          <Card className={adminCardClass("p-6 overflow-x-auto")}>
             <div className="min-w-[1200px]">
               <table className="w-full border-black overflow-x-auto ">
                 <thead>

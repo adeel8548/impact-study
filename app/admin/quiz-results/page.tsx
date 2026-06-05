@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { QuizResultsClient } from "@/components/quiz-results-client";
 
 export const dynamic = "force-dynamic";
@@ -14,15 +14,9 @@ export default async function QuizResultsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <AdminSidebar />
-        <div className="md:pl-64 p-8" />
-      </div>
-    );
+    return null;
   }
 
-  // Check if user is admin
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -34,26 +28,13 @@ export default async function QuizResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Quiz Results Management"
+        description="Manage and track quiz results with add, update, and delete operations"
+      />
 
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8 space-y-6">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Quiz Results Management
-              </h1>
-              <p className="text-muted-foreground">
-                Manage and track quiz results by class with add, update, and
-                delete operations
-              </p>
-            </div>
-          </div>
-
-          <QuizResultsClient />
-        </div>
-      </div>
+      <QuizResultsClient />
     </div>
   );
 }

@@ -25,7 +25,7 @@ interface DashboardStats {
 }
 
 interface ChartData {
-  monthlyFees: Array<{ month: string; collected: number }>;
+  monthlyFees: Array<{ month: string; collected: number; pending: number }>;
   weeklyAttendance: Array<{ day: string; present: number; absent: number }>;
   feeStatus: Array<{ name: string; value: number }>;
   classDistribution: Array<{ name: string; students: number }>;
@@ -91,111 +91,132 @@ export function AdminDashboardClient() {
   }
 
   return (
-    <>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card className="p-6 border-l-4 border-l-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-muted-foreground text-sm font-medium mb-1">
-                Total Students
-              </p>
-              <p className="text-3xl font-bold text-foreground">
-                {stats?.students || 0}
-              </p>
-            </div>
-            <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </Card>
+    <div className="relative">
+      <div className="absolute -top-24 -left-24 h-72 w-72 bg-gradient-to-br from-blue-500/20 to-transparent blur-2xl rounded-full pointer-events-none" />
+      <div className="absolute -top-28 -right-28 h-72 w-72 bg-gradient-to-br from-indigo-500/20 to-transparent blur-2xl rounded-full pointer-events-none" />
 
-        <Card className="p-6 border-l-4 border-l-indigo-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-muted-foreground text-sm font-medium mb-1">
-                Total Teachers
-              </p>
-              <p className="text-3xl font-bold text-foreground">
-                {stats?.teachers || 0}
-              </p>
+      <div className="relative">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-muted-foreground text-sm font-medium mb-1">
+                  Total Students
+                </p>
+                <p className="text-3xl font-bold text-foreground">
+                  {stats?.students || 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/0 border border-blue-500/25 flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+              </div>
             </div>
-            <div className="p-3 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
-              <Briefcase className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-6 border-l-4 border-l-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-muted-foreground text-sm font-medium mb-1">
-                Total Classes
-              </p>
-              <p className="text-3xl font-bold text-foreground">
-                {stats?.classes || 0}
-              </p>
+          <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-muted-foreground text-sm font-medium mb-1">
+                  Total Teachers
+                </p>
+                <p className="text-3xl font-bold text-foreground">
+                  {stats?.teachers || 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-500/0 border border-indigo-500/25 flex items-center justify-center">
+                <Briefcase className="w-6 h-6 text-indigo-600 dark:text-indigo-300" />
+              </div>
             </div>
-            <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-              <BookOpen className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-6 border-l-4 border-l-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-muted-foreground text-sm font-medium mb-1">
-                Fees Collected
-              </p>
-              <p className="text-3xl font-bold text-foreground">
-                ₹{(stats?.fees.paid || 0).toLocaleString()}
-              </p>
+          <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-muted-foreground text-sm font-medium mb-1">
+                  Total Classes
+                </p>
+                <p className="text-3xl font-bold text-foreground">
+                  {stats?.classes || 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/0 border border-green-500/25 flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-green-600 dark:text-green-300" />
+              </div>
             </div>
-            <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-              <DollarSign className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+          </Card>
+
+          <Card className="p-6 bg-card/70 backdrop-blur border-border/60 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-muted-foreground text-sm font-medium mb-1">
+                  Fees Overview
+                </p>
+                <p className="text-3xl font-bold text-foreground">
+                  ₹{(stats?.fees.paid || 0).toLocaleString()}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                    Paid: {stats?.fees.paid || 0}
+                  </span>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                    Pending: {stats?.fees.pending || 0}
+                  </span>
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/0 border border-purple-500/25 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-purple-600 dark:text-purple-300" />
+              </div>
             </div>
+          </Card>
+        </div>
+
+        {/* Charts + Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {charts && (
+              <AdminDashboardCharts
+                monthlyFeesData={charts.monthlyFees}
+                attendanceData={charts.weeklyAttendance}
+                feesStatusData={charts.feeStatus}
+                classDistribution={charts.classDistribution}
+              />
+            )}
           </div>
-        </Card>
+
+          <Card className="p-6 bg-card/70 backdrop-blur border-border/60">
+            <h3 className="text-lg font-bold text-foreground mb-4">
+              Quick Actions
+            </h3>
+            <div className="space-y-3">
+              <Button className="w-full justify-start h-auto py-3 px-4 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900">
+                <Users className="w-4 h-4 mr-2" />
+                Add New Student
+              </Button>
+              <Button className="w-full justify-start h-auto py-3 px-4 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900">
+                <Briefcase className="w-4 h-4 mr-2" />
+                Add New Teacher
+              </Button>
+              <Button className="w-full justify-start h-auto py-3 px-4 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-200 hover:bg-green-100 dark:hover:bg-green-900">
+                <DollarSign className="w-4 h-4 mr-2" />
+                Collect Fees
+              </Button>
+
+              <div className="p-4 bg-yellow-50/60 dark:bg-yellow-950/40 rounded-xl border border-yellow-500/20 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-700 dark:text-yellow-300" />
+                <div>
+                  <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                    Pending Fees
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {stats?.fees.pending || 0} amount pending
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {charts && (
-          <AdminDashboardCharts
-            monthlyFeesData={charts.monthlyFees}
-            attendanceData={charts.weeklyAttendance}
-            feesStatusData={charts.feeStatus}
-          />
-        )}
-
-        {/* Quick Actions */}
-        <Card className="p-6">
-          <h3 className="text-lg font-bold text-foreground mb-4">
-            Quick Actions
-          </h3>
-          <div className="space-y-3">
-            <Button className="w-full justify-start h-auto py-3 px-4 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900">
-              <Users className="w-4 h-4 mr-2" />
-              Add New Student
-            </Button>
-            <Button className="w-full justify-start h-auto py-3 px-4 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900">
-              <Briefcase className="w-4 h-4 mr-2" />
-              Add New Teacher
-            </Button>
-            <Button className="w-full justify-start h-auto py-3 px-4 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900">
-              <DollarSign className="w-4 h-4 mr-2" />
-              Collect Fees
-            </Button>
-            <div className="p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                {stats?.fees.pending || 0} students with pending fees
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </>
+    </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { ExamCard } from "@/components/exam-card";
 import { QuizCard } from "@/components/quiz-card";
 import type { DailyQuiz, RevisionSchedule, SeriesExam } from "@/lib/types";
+import { adminCardClass } from "@/lib/admin-ui";
 
 type ClassOption = { id: string; name: string };
 type TeacherOption = { id: string; name: string };
@@ -460,30 +461,30 @@ export function AdminSchedulesContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8 space-y-6">
+    <div className="space-y-6">
+          <AdminPageHeader
+            title="Schedules"
+            description="Manage revisions and quizzes for all classes."
+            actions={
+              <div className="flex items-center gap-3">
+                <Label className="text-sm">Class</Label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="px-3 py-2 border border-border rounded bg-background text-foreground"
+                >
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            }
+          />
+          
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Schedules</h1>
-              <p className="text-muted-foreground">
-                Manage revisions and quizzes for all classes.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm">Class</Label>
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="px-3 py-2 border border-border rounded bg-background text-foreground"
-              >
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 
@@ -494,7 +495,7 @@ export function AdminSchedulesContent() {
             </TabsList>
 
             <TabsContent value="revisions" className="space-y-4">
-              <Card className="p-4 space-y-3">
+              <Card className={adminCardClass("p-4 space-y-3")}>
                 <div className="grid md:grid-cols-4 gap-3">
                   <div>
                     <Label>Subject</Label>
@@ -562,7 +563,7 @@ export function AdminSchedulesContent() {
                 </div>
               </Card>
 
-              <Card className="p-4">
+              <Card className={adminCardClass("p-4")}>
                 <h3 className="font-semibold mb-3">Revisions</h3>
                 <div className="space-y-2">
                   {revisions.length === 0 && (
@@ -616,7 +617,7 @@ export function AdminSchedulesContent() {
             </TabsContent>
 
             <TabsContent value="exams" className="space-y-4">
-              <Card className="p-4 space-y-3">
+              <Card className={adminCardClass("p-4 space-y-3")}>
                 <div className="grid md:grid-cols-3 gap-3">
                   <div>
                     <Label>Subject</Label>
@@ -716,7 +717,7 @@ export function AdminSchedulesContent() {
                   Series Exams
                 </h3>
                 {exams.length === 0 && (
-                  <Card className="p-4">
+                  <Card className={adminCardClass("p-4")}>
                     <p className="text-sm text-muted-foreground">
                       No exams yet.
                     </p>
@@ -754,7 +755,7 @@ export function AdminSchedulesContent() {
             </TabsContent>
 
             <TabsContent value="quizzes" className="space-y-4">
-              <Card className="p-4 space-y-3">
+              <Card className={adminCardClass("p-4 space-y-3")}>
                 <div className="grid md:grid-cols-5 gap-3">
                   <div>
                     <Label>Subject</Label>
@@ -843,7 +844,7 @@ export function AdminSchedulesContent() {
                   Quizzes
                 </h3>
                 {quizzes.length === 0 && (
-                  <Card className="p-4">
+                  <Card className={adminCardClass("p-4")}>
                     <p className="text-sm text-muted-foreground">
                       No quizzes yet.
                     </p>
@@ -884,8 +885,7 @@ export function AdminSchedulesContent() {
               </div>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
+        
     </div>
   );
 }

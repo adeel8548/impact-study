@@ -165,26 +165,30 @@ export function AdminSidebar() {
   return (
     <>
       <button
-        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-primary text-primary-foreground rounded-lg"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-primary text-primary-foreground rounded-lg"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
 
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-sidebar  border-r border-sidebar-border transition-transform duration-300 z-40 ${
+        className={`fixed left-0 top-0 h-full w-64 bg-sidebar/80 backdrop-blur border-r border-sidebar-border/70 transition-transform duration-300 z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="p-6 border-b text-center border-sidebar-border">
-          <div className="flex justify-center items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <img src={Logo.src} alt="SchoolHub Logo" className="w-10 h-10" />
+        <div className="p-6 border-b border-sidebar-border/70">
+          <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 bg-white/90 dark:bg-white/10 rounded-xl flex items-center justify-center border border-white/30">
+                <img
+                  src={Logo.src}
+                  alt="SchoolHub Logo"
+                  className="w-10 h-10"
+                />
+              </div>
+              <h1 className="text-xl font-bold text-sidebar-foreground truncate">
+                Impact Academy
+              </h1>
             </div>
-          </div>
-          <h1 className="text-xl font-bold text-sidebar-foreground">
-            Impact Academy
-          </h1>
         </div>
 
         <nav className="flex flex-col gap-1 p-4 flex-1 h-[420px] overflow-y-auto">
@@ -199,8 +203,8 @@ export function AdminSidebar() {
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground ring-1 ring-sidebar-ring/40"
+                    : "text-sidebar-foreground/90 hover:bg-sidebar-accent/70"
                 }`}
               >
                 <Icon className="w-5 h-5" />

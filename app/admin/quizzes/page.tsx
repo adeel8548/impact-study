@@ -9,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Plus, Trash2, Edit2, Search, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import type { QuizResult } from "@/lib/types";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { DeleteConfirmationModal } from "@/components/modals/delete-confirmation-modal";
+import { adminCardClass } from "@/lib/admin-ui";
 
 type Student = { id: string; name: string; classId?: string };
 type Teacher = { id: string; name: string };
@@ -281,26 +282,18 @@ export default function QuizMarksPage() {
   )?.name;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      <div className="pl-64  space-y-6">
-        <div className="p-4 md:p-8 space-y-6">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Quiz Marks Management
-              </h1>
-              <p className="text-muted-foreground">
-                {currentUser?.role === "admin"
-                  ? "Manage quiz marks for all students"
-                  : "Manage quiz marks for your students"}
-              </p>
-            </div>
-          </div>
+    <>
+      <AdminPageHeader
+        title="Quiz Marks Management"
+        description={
+          currentUser?.role === "admin"
+            ? "Manage quiz marks for all students"
+            : "Manage quiz marks for your students"
+        }
+      />
 
-          {loading ? (
-            <Card className="p-8">
+      {loading ? (
+            <Card className={adminCardClass("p-8")}>
               <div className="flex items-center justify-center py-12">
                 <div className="text-center space-y-4">
                   <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
@@ -544,8 +537,7 @@ export default function QuizMarksPage() {
               </Tabs>
             </>
           )}
-        </div>
-      </div>
+      
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
@@ -559,6 +551,6 @@ export default function QuizMarksPage() {
         onConfirm={handleConfirmDeleteResult}
         isLoading={deleting}
       />
-    </div>
+    </>
   );
 }

@@ -1,31 +1,21 @@
-import { AdminSidebar } from "@/components/admin-sidebar";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin-page-header";
+import { adminCardClass } from "@/lib/admin-ui";
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <div className="space-y-6">
+      <AdminPageHeader title="Setup" description="Loading setup..." />
 
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8 space-y-6">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">Setup</h1>
-              <p className="text-muted-foreground">Loading setup...</p>
-            </div>
+      <Card className={adminCardClass("p-8")}>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+            <p className="text-muted-foreground">Loading data...</p>
           </div>
-
-          <Card className="p-8">
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center space-y-4">
-                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-                <p className="text-muted-foreground">Loading data...</p>
-              </div>
-            </div>
-          </Card>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

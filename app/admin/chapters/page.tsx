@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
+import { adminCardClass } from "@/lib/admin-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -211,20 +212,14 @@ export default function ChaptersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8 space-y-6">
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Chapters</h1>
-            <p className="text-muted-foreground">
-              Manage chapters for series exams
-            </p>
-          </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Chapters"
+        description="Manage chapters for series exams"
+      />
 
-          {/* Selection Section */}
-          <Card className="p-6 bg-white">
+      {/* Selection Section */}
+      <Card className={adminCardClass("p-6")}>
             <h2 className="text-lg font-semibold mb-4">Select Exam</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Class Selection */}
@@ -301,7 +296,7 @@ export default function ChaptersPage() {
 
           {/* Add/Edit Form */}
           {selectedExam && (
-            <Card className="p-6 bg-white">
+            <Card className={adminCardClass("p-6")}>
               <h3 className="text-lg font-semibold mb-4">
                 {editingId ? "Edit Chapter" : "Add New Chapter"}
               </h3>
@@ -360,7 +355,7 @@ export default function ChaptersPage() {
 
           {/* Chapters List */}
           {selectedExam && (
-            <Card className="p-6 bg-white">
+            <Card className={adminCardClass("p-6")}>
               <h3 className="text-lg font-semibold mb-4">Chapters List</h3>
               {chapters.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
@@ -424,8 +419,6 @@ export default function ChaptersPage() {
               )}
             </Card>
           )}
-        </div>
-      </div>
     </div>
   );
 }

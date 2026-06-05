@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminsClientComponent } from "@/components/admins-client";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +14,7 @@ export default async function AdminManagement() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <AdminSidebar />
-        <div className="md:pl-64 p-8" />
-      </div>
-    );
+    return null;
   }
 
   const { data: profile } = await supabase
@@ -39,24 +34,13 @@ export default async function AdminManagement() {
     .order("created_at", { ascending: false, nullsLast: true });
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <>
+      <AdminPageHeader
+        title="Admin Management"
+        description="Create and manage system administrators"
+      />
 
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Admin Management
-              </h1>
-              <p className="text-muted-foreground">
-                Create and manage system administrators
-              </p>
-            </div>
-            <AdminsClientComponent initialAdmins={admins} />
-          </div>
-        </div>
-      </div>
-    </div>
+      <AdminsClientComponent initialAdmins={admins} />
+    </>
   );
 }

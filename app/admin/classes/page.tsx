@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
+import { adminCardClass } from "@/lib/admin-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";
@@ -196,28 +197,20 @@ export default function ClassManagement() {
   if (isLoading) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
-
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8">
-          <div className="flex flex-col md:flex-row justify-between items-start mb-8">
-            <div className="px-2 md:px-0">
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Class Management
-              </h1>
-              <p className="text-muted-foreground">
-                Manage classes and assign teachers
-              </p>
-            </div>
-            <Button
-              className="gap-2 bg-primary text-primary-foreground"
-              onClick={() => handleOpenModal()}
-            >
-              <Plus className="w-4 h-4" />
-              Add Class
-            </Button>
-          </div>
+    <>
+      <AdminPageHeader
+        title="Class Management"
+        description="Manage classes and assign teachers"
+        actions={
+          <Button
+            className="gap-2 bg-primary text-primary-foreground"
+            onClick={() => handleOpenModal()}
+          >
+            <Plus className="w-4 h-4" />
+            Add Class
+          </Button>
+        }
+      />
 
           <div className="mb-6 rounded-xl border bg-card p-4 shadow-sm">
             <div className="mb-3 text-sm font-medium text-foreground">
@@ -243,7 +236,7 @@ export default function ClassManagement() {
             {classes?.map((cls) => (
               <Card
                 key={cls.id}
-                className="p-6 hover:shadow-lg transition-shadow"
+                className={adminCardClass("p-6")}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -325,8 +318,6 @@ export default function ClassManagement() {
             onConfirm={handleConfirmDelete}
             isLoading={deleting}
           />
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

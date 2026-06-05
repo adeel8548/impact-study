@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
+import { adminCardClass } from "@/lib/admin-ui";
 import { Button } from "@/components/ui/button";
 import { StudentFeesClient } from "@/components/student-fees-client";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -41,48 +42,35 @@ export default function FeesManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <AdminSidebar />
-        <div className="md:pl-64 p-8 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <>
+      <AdminPageHeader
+        title="Student Fees Management"
+        description="Track, manage, and process student fee payments by month"
+      />
 
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">
-              Student Fees Management
-            </h1>
-            <p className="text-muted-foreground">
-              Track, manage, and process student fee payments by month
-            </p>
-          </div>
-
-          {error && (
-            <div className="flex gap-2 p-4 bg-red-50 dark:bg-red-950 border border-red-200 rounded-lg mb-6">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {students.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">
-                No students found in the system
-              </p>
-            </Card>
-          ) : (
-            <StudentFeesClient students={students} />
-          )}
+      {error && (
+        <div className="flex gap-2 p-4 bg-red-50 dark:bg-red-950 border border-red-200 rounded-lg mb-6">
+          <AlertCircle className="w-5 h-5 text-red-600" />
+          <p className="text-sm text-red-600">{error}</p>
         </div>
-      </div>
-    </div>
+      )}
+
+      {students.length === 0 ? (
+        <Card className={adminCardClass("p-8 text-center")}>
+          <p className="text-muted-foreground">
+            No students found in the system
+          </p>
+        </Card>
+      ) : (
+        <StudentFeesClient students={students} />
+      )}
+    </>
   );
 }

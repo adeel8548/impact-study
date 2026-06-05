@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
+import { adminCardClass } from "@/lib/admin-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -414,32 +415,24 @@ export default function TeacherManagement() {
   // }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
-
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8">
-          <div className="flex flex-col md:flex-row justify-between items-start mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Teacher Management
-              </h1>
-              <p className="text-muted-foreground">
-                Manage and assign teachers to classes
-              </p>
-            </div>
-            <Button
-              onClick={handleAddTeacher}
-              className="gap-2 bg-primary text-primary-foreground"
-            >
-              <Plus className="w-4 h-4" />
-              Add Teacher
-            </Button>
-          </div>
+    <>
+      <AdminPageHeader
+        title="Teacher Management"
+        description="Manage and assign teachers to classes"
+        actions={
+          <Button
+            onClick={handleAddTeacher}
+            className="gap-2 bg-primary text-primary-foreground"
+          >
+            <Plus className="w-4 h-4" />
+            Add Teacher
+          </Button>
+        }
+      />
 
           {/* Salary Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card className="p-6 border-l-4 border-l-blue-500">
+            <Card className={adminCardClass("p-6 border-l-4 border-l-blue-500")}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-muted-foreground text-sm font-medium mb-1">
@@ -472,7 +465,7 @@ export default function TeacherManagement() {
                 </div>
               </div>
             </Card>
-            <Card className="p-6 border-l-4 border-l-green-500">
+            <Card className={adminCardClass("p-6 border-l-4 border-l-green-500")}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-muted-foreground text-sm font-medium mb-1">
@@ -515,7 +508,7 @@ export default function TeacherManagement() {
               </div>
             </Card>
 
-            <Card className="p-6 border-l-4 border-l-red-500">
+            <Card className={adminCardClass("p-6 border-l-4 border-l-red-500")}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-muted-foreground text-sm font-medium mb-1">
@@ -560,7 +553,7 @@ export default function TeacherManagement() {
           </div>
 
           {/* Search */}
-          <Card className="p-4 mb-6">
+          <Card className={adminCardClass("p-4 mb-6")}>
             <div className="relative">
               <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <Input
@@ -574,7 +567,7 @@ export default function TeacherManagement() {
 
           {/* Teachers Grid */}
           {/* Teachers Grid or Loader */}
-          <Card className="p-6">
+          <Card className={adminCardClass("p-6")}>
             {isLoading ? (
               <div className="h-60 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -638,7 +631,7 @@ export default function TeacherManagement() {
                 </div>
 
                 {filteredTeachers.length === 0 && (
-                  <Card className="p-8 text-center">
+                  <Card className={adminCardClass("p-8 text-center")}>
                     <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
                     <p className="text-muted-foreground">
                       {searchTerm
@@ -650,8 +643,6 @@ export default function TeacherManagement() {
               </>
             )}
           </Card>
-        </div>
-      </div>
 
       {/* Teacher Modal */}
       <TeacherModal
@@ -796,6 +787,6 @@ export default function TeacherManagement() {
         teacherId={selectedTeacher?.id || ""}
         teacherName={selectedTeacher?.name || ""}
       />
-    </div>
+    </>
   );
 }

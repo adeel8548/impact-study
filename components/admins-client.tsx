@@ -57,10 +57,10 @@ export function AdminsClientComponent({
         Add Admin
       </Button>
 
-      <div className="mt-8 space-y-4">
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+      <div className="mt-8 space-y-4 w-full">
+        <Card className="overflow-hidden w-full">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[720px]">
               <thead className="bg-secondary border-b border-border">
                 <tr>
                   <th className="text-left p-4 font-semibold text-foreground">

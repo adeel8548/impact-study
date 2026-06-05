@@ -9,13 +9,14 @@ import React, {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ChatWindow } from "@/components/chat/ChatWindow";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, MessageSquare, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { adminCardClass } from "@/lib/admin-ui";
 
 import {
   ensureConversation,
@@ -627,10 +628,8 @@ export default function AdminChatPage() {
 
   if (!isFirebaseConfigured) {
     return (
-      <div className="flex min-h-screen">
-        <AdminSidebar />
-        <main className="flex-1 ml-0 md:ml-64 p-4 md:p-6 space-y-4">
-          <Card className="p-6 bg-red-50 border-red-200">
+      <main className="space-y-4">
+          <Card className={adminCardClass("p-6 bg-red-50 border-red-200")}>
             <h2 className="text-red-900 font-semibold mb-2">
               ⚠️ Firebase Not Configured
             </h2>
@@ -651,15 +650,28 @@ export default function AdminChatPage() {
             </p>
           </Card>
         </main>
-      </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-6 space-y-4">
-        <div className="flex items-center gap-3 justify-between">
+      <main className="space-y-4">
+        <AdminPageHeader
+          title="Admin ↔ Teacher Chat"
+          description="Select a teacher to start chatting in real time."
+          actions={
+            <div className="relative">
+              <Bell className="w-6 h-6 text-muted-foreground cursor-pointer hover:text-foreground" />
+              {Object.values(unreadCounts).reduce((a, b) => a + b, 0) > 0 && (
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                  {Object.values(unreadCounts).reduce((a, b) => a + b, 0) > 99
+                    ? "99+"
+                    : Object.values(unreadCounts).reduce((a, b) => a + b, 0)}
+                </span>
+              )}
+            </div>
+          }
+        />
+        <div className="flex items-center gap-3 justify-between hidden">
           <div className="flex items-center gap-3">
             <MessageSquare className="w-5 h-5" />
             <div>
@@ -683,7 +695,7 @@ export default function AdminChatPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4 space-y-3 overflow-y-auto h-[500px]">
+          <Card className={adminCardClass("p-4 space-y-3 overflow-y-auto h-[500px]")}>
             <div className="space-y-2">
               <Input
                 placeholder="Search teacher (Enter to start new chat)"
@@ -813,7 +825,7 @@ export default function AdminChatPage() {
             </div>
           </Card>
 
-          <Card className="p-4 md:col-span-2 flex flex-col h-[500px] overflow-hidden">
+          <Card className={adminCardClass("p-4 md:col-span-2 flex flex-col h-[500px] overflow-hidden")}>
             {conversationId ? (
               <div className="flex-1 flex flex-col overflow-hidden">
                 <ChatWindow
@@ -835,6 +847,5 @@ export default function AdminChatPage() {
           </Card>
         </div>
       </main>
-    </div>
   );
 }

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AttendanceGrid } from "@/components/attendance-grid";
+import { adminCardClass } from "@/lib/admin-ui";
 import { AdminAttendanceMarkingModal } from "@/components/modals/admin-attendance-marking-modal";
 import { LeaveReasonModal } from "@/components/modals/leave-reason-modal";
 import { LateReasonModal } from "@/components/modals/late-reason-modal";
@@ -777,21 +778,13 @@ export default function AdminAttendancePage() {
   const selectedClassObj = classes.find((c) => c.id === selectedClass);
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <>
+      <AdminPageHeader
+        title="Attendance Management"
+        description="Mark and track daily attendance for students and teachers"
+      />
 
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">
-              Attendance Management
-            </h1>
-            <p className="text-muted-foreground">
-              Mark and track daily attendance for students and teachers
-            </p>
-          </div>
-
-          <Tabs
+      <Tabs
             value={activeTab}
             onValueChange={(val) =>
               setActiveTab(val as "students" | "teachers")
@@ -805,7 +798,7 @@ export default function AdminAttendancePage() {
 
             {/* Students Tab */}
             <TabsContent value="students" className="space-y-6">
-              <Card className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <Card className={adminCardClass("p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4")}>
                 <div className="flex flex-col">
                   <label className="text-sm font-medium text-foreground mb-2 block">
                     Select Class
@@ -912,7 +905,7 @@ export default function AdminAttendancePage() {
               </Card>
 
               {selectedClassObj && (
-                <Card className="p-6">
+                <Card className={adminCardClass("p-6")}>
                   <div className="flex flex-col md:flex-row items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-foreground">
                       {selectedClassObj.name} - Student Attendance
@@ -1065,7 +1058,7 @@ export default function AdminAttendancePage() {
 
             {/* Teachers Tab */}
             <TabsContent value="teachers" className="space-y-6">
-              <Card className="p-6">
+              <Card className={adminCardClass("p-6")}>
                 <div className="flex flex-col md:flex-row items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-foreground">
                     Teacher Attendance
@@ -1320,7 +1313,7 @@ export default function AdminAttendancePage() {
                 )}
               </Card>
 
-              <Card className="p-4 space-y-3 border border-border">
+              <Card className={adminCardClass("p-4 space-y-3")}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-foreground">
@@ -1558,8 +1551,6 @@ export default function AdminAttendancePage() {
               }}
             />
           )}
-        </div>
-      </div>
       {/* Summary Modals */}
       <AttendanceSummaryModal
         open={studentSummaryOpen}
@@ -1598,6 +1589,6 @@ export default function AdminAttendancePage() {
           return r.label;
         })()}
       />
-    </div>
+    </>
   );
 }

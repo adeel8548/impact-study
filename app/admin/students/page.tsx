@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { StudentsClientComponent } from "@/components/students-client";
 import { StudentsCountCard } from "@/components/students-count-card";
 import { getFeeSummary } from "@/lib/actions/fees";
@@ -18,12 +18,7 @@ export default async function StudentManagement() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <AdminSidebar />
-        <div className="md:pl-64 p-8" />
-      </div>
-    );
+    return null;
   }
 
   const { data: profile } = await supabase
@@ -84,31 +79,19 @@ export default async function StudentManagement() {
   const { totalFees, paidFees, unpaidFees } = await getFeeSummary();
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Student Management"
+        description="Manage and organize all students"
+      />
 
-      <div className="md:pl-64">
-        <div className="p-4 md:p-8 space-y-6">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
-                Student Management
-              </h1>
-              <p className="text-muted-foreground">
-                Manage and organize all students
-              </p>
-            </div>
-          </div>
+      <StudentsCountCard />
 
-          <StudentsCountCard />
-
-          <StudentsClientComponent
-            initialStudents={studentsWithFees || []}
-            classes={orderedClasses}
-            feeSummary={{ totalFees, paidFees, unpaidFees }}
-          />
-        </div>
-      </div>
+      <StudentsClientComponent
+        initialStudents={studentsWithFees || []}
+        classes={orderedClasses}
+        feeSummary={{ totalFees, paidFees, unpaidFees }}
+      />
     </div>
   );
 }

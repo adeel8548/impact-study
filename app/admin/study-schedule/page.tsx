@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Trash2, Plus, Download, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { adminCardClass } from "@/lib/admin-ui";
 
 interface StudyScheduleEntry {
   id: string;
@@ -631,11 +632,39 @@ export default function StudySchedulePage() {
   }, [filteredEntries]);
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-6 space-y-6">
+    <main className="space-y-6">
+      <AdminPageHeader
+        title="Study Schedule"
+        description="Create and manage your academy's study plan"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                setIsAddModalOpen(true);
+                if (seriesOptions.length > 0) {
+                  setSelectedSeriesOption(seriesOptions[0]);
+                  setNewSeriesName(seriesOptions[0]);
+                } else {
+                  setSelectedSeriesOption("new");
+                }
+                if (classes.length > 0 && !selectedClass) {
+                  setSelectedClass(classes[0].id);
+                }
+              }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add New
+            </Button>
+            <Button onClick={handleExportCSV} variant="outline" className="gap-2">
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
+          </div>
+        }
+      />
         {/* Header */}
-        <div className="flex items-center gap-3 justify-between">
+        <div className="hidden">
           <div className="flex items-center gap-3">
             <BookOpen className="w-6 h-6" />
             <div>
@@ -671,7 +700,7 @@ export default function StudySchedulePage() {
           </div>
         </div>
 
-        <Card className="p-4">
+        <Card className={adminCardClass("p-4")}>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium">Class Filter</label>
             <div className="w-full max-w-xs">
@@ -1087,6 +1116,5 @@ export default function StudySchedulePage() {
           </ul>
         </Card>
       </main>
-    </div>
   );
 }

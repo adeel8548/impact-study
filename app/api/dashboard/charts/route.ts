@@ -47,6 +47,11 @@ export async function GET(request: NextRequest) {
             (sum, f) => sum + (f.paid ? f.amount || 0 : 0),
             0,
           ) || 0,
+        pending:
+          monthData?.reduce(
+            (sum, f) => sum + (!f.paid ? f.amount || 0 : 0),
+            0,
+          ) || 0,
       };
     });
 

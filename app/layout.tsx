@@ -6,6 +6,7 @@ import "./globals.css";
 // Initialize Firebase
 import "@/lib/firebase";
 import { GlobalNotificationProvider } from "@/components/global-notification-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -25,9 +26,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`} suppressHydrationWarning>
-        <GlobalNotificationProvider />
-        {children}
-        <Analytics />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <GlobalNotificationProvider />
+          {children}
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );
