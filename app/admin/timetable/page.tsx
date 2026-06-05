@@ -793,8 +793,6 @@ export default function TimetablePage() {
               </table>
             </div>
           </Card>
-        </div>
-      </div>
 
       {/* Add/Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
